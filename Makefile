@@ -57,18 +57,8 @@ help:
 	@echo "------------------------------------------------------------------------"
 	@grep -E '^[0-9a-zA-Z_/%\-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-.bootstrap:
-	git clone git@github.com:L3-iGrant/bootstrap.git "$(CURDIR)/.bootstrap"
-	git --git-dir=$(CURDIR)/.bootstrap/.git --work-tree=$(CURDIR)/.bootstrap checkout cors
-
-.PHONY: bootstrap
-bootstrap: .bootstrap ## Boostraps development environment
-	git -C $(CURDIR)/.bootstrap fetch --all --prune
-	@if [ -d $(CURDIR)/.bootstrap/scripts/docker-proxy/vhost.d ] ; then \
-		sudo rm -rf $(CURDIR)/.bootstrap/scripts/docker-proxy/vhost.d; \
-	fi
-	git -C $(CURDIR)/.bootstrap reset --hard origin/cors
-	make -C .bootstrap bootstrap
+bootstrap: resources/ssl/development ## Boostraps development environment
+	make -C resources/ssl/development bootstrap
 
 setup: bootstrap build/docker/builder ## Sets up development environment
 	@$(CURDIR)/resources/scripts/setup-development-environment.sh
