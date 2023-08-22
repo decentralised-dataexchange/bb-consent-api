@@ -1,4 +1,4 @@
-module github.com/igrant/api
+module github.com/bb-consent/api
 
 go 1.18
 

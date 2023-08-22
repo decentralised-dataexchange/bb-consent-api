@@ -1,8 +1,8 @@
-PROJECT := igrant
+PROJECT := bb-consent
 APP     := api
 NAME    = $(PROJECT)-$(APP)
 
-PROJECT_PACKAGE         := github.com/igrant/$(APP)
+PROJECT_PACKAGE         := github.com/bb-consent/$(APP)
 PKG_LIST_CMD = go list ./... | grep -v '/vendor/\|/mocks/\|/tmp/'
 SOURCE_FILES = $(shell /usr/bin/find . -type f -name '*.go' -not \( -path './vendor/*' -or -path './mocks/*' -or -path './tmp/*' -or -path './resources/*' \))
 
@@ -14,17 +14,17 @@ PKGS = $(shell $(PKG_LIST_CMD))
 
 VERSION   ?= $(shell git describe --tags --abbrev=0)
 CANDIDATE ?= "dev"
-CONTAINER_API ?= "igrant_api_dev"
+CONTAINER_API ?= "bb-consent_api_dev"
 DB_CONTAINER_NAME = "mongo"
 KAFKA_BROKER_CONTAINER_NAME = "broker"
 
 CONTAINER_DEFAULT_RUN_FLAGS := \
 	--rm $(TERM_FLAGS) \
 	$(EXTRA_RUN_ARGS) \
-	--env GOOGLE_APPLICATION_CREDENTIALS=/opt/igrant/api/kubernetes-config/keyfile.json \
+	--env GOOGLE_APPLICATION_CREDENTIALS=/opt/bb-consent/api/kubernetes-config/keyfile.json \
 	-v "$(CURDIR)":/go/src/$(PROJECT_PACKAGE) \
-	-v $(CURDIR)/resources/config/:/opt/igrant/api/config/:ro \
-	-v $(CURDIR)/resources/kubernetes-config/:/opt/igrant/api/kubernetes-config/:ro \
+	-v $(CURDIR)/resources/config/:/opt/bb-consent/api/config/:ro \
+	-v $(CURDIR)/resources/kubernetes-config/:/opt/bb-consent/api/kubernetes-config/:ro \
 	-w /go/src/$(PROJECT_PACKAGE)
 
 GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD | sed -E 's/[^a-zA-Z0-9]+/-/g')
@@ -53,7 +53,7 @@ UNAME := $(shell uname -m)
 .PHONY: help
 help:
 	@echo "------------------------------------------------------------------------"
-	@echo "iGrant API"
+	@echo "BB Consent API"
 	@echo "------------------------------------------------------------------------"
 	@grep -E '^[0-9a-zA-Z_/%\-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
@@ -184,10 +184,10 @@ publish: $(DEPLOY_VERSION_FILE) ## Publish latest production Docker image to doc
 	gcloud docker -- push $(DEPLOY_VERSION)
 
 deploy/production: $(DEPLOY_VERSION_FILE) ## Deploy to K8s cluster (e.g. make deploy/{preview,staging,production})
-	kubectl set image deployment/igrant-api-demo igrant-api-demo=$(DEPLOY_VERSION) -n demo
+	kubectl set image deployment/bb-consent-api-demo bb-consent-api-demo=$(DEPLOY_VERSION) -n demo
 
 deploy/staging: $(DEPLOY_VERSION_FILE) ## Deploy to K8s cluster (e.g. make deploy/{preview,staging,production})
-	kubectl set image deployment/igrant-api-staging igrant-api-staging=$(DEPLOY_VERSION) -n staging
+	kubectl set image deployment/bb-consent-api-staging bb-consent-api-staging=$(DEPLOY_VERSION) -n staging
 
 .PHONY: release
 release:  ## Produces binaries needed for a release

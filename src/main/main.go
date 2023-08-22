@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/bb-consent/api/src/config"
 	"github.com/gorilla/mux"
-	"github.com/igrant/api/src/config"
 )
 
 func handleCommandLineArgs() (configFileName string) {
@@ -18,10 +18,10 @@ func handleCommandLineArgs() (configFileName string) {
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	log.Println("Starting igrant api")
+	log.Println("Starting bb-consent api")
 
 	configFileName := handleCommandLineArgs()
-	configFile := "/opt/igrant/api/config/" + configFileName
+	configFile := "/opt/bb-consent/api/config/" + configFileName
 	_, err := config.Load(configFile)
 	if err != nil {
 		log.Printf("Failed to load config file %s \n", configFile)
