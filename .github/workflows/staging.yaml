@@ -8,7 +8,7 @@ on:
 # Environment variables available to all jobs and steps in this workflow
 env:
   GITHUB_SHA: ${{ github.sha }}
-  GKE_ZONE: europe-west3-c
+  GKE_ZONE: europe-west4-c
   GKE_CLUSTER: igrant-cluster
   REGISTRY_HOSTNAME: eu.gcr.io
 
