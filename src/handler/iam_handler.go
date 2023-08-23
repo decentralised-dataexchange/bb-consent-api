@@ -769,6 +769,93 @@ func VerifyOtp(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+type resetPasswordReq struct {
+	Password string `valid:"required"`
+}
+
+type iamPasswordResetReq struct {
+	Type      string `json:"type"`
+	Value     string `json:"value"`
+	Temporary bool   `json:"temporary"`
+}
+
+// ResetPassword Resets an user password
+func ResetPassword(w http.ResponseWriter, r *http.Request) {
+	userName := token.GetUserName(r)
+	userIamID := token.GetIamID(r)
+
+	var resetReq resetPasswordReq
+	b, _ := ioutil.ReadAll(r.Body)
+	json.Unmarshal(b, &resetReq)
+
+	var status = http.StatusInternalServerError
+	t, status, iamErr, err := getAdminToken()
+	if err != nil {
+		log.Printf("Failed to get admin token, user: %v registration", userName)
+		handleError(w, userName, status, iamErr, err)
+		return
+	}
+
+	valid, err := govalidator.ValidateStruct(resetReq)
+	if !valid {
+		log.Printf("Missing mandatory params required to reset password")
+		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	var e iamError
+	iamReq := iamPasswordResetReq{"password", resetReq.Password, false}
+	jsonReq, _ := json.Marshal(iamReq)
+	req, err := http.NewRequest("PUT", iamConfig.URL+"/auth/admin/realms/"+iamConfig.Realm+"/users/"+userIamID+"/reset-password", bytes.NewBuffer(jsonReq))
+	if err != nil {
+		log.Printf("Failed to reset user:%v password ", userName)
+		handleError(w, userName, status, iamErr, err)
+		return
+	}
+
+	req.Header.Add("Authorization", "Bearer "+t.AccessToken)
+	req.Header.Add("Content-Type", "application/json")
+
+	//dump, err := httputil.DumpRequest(req, true)
+	//dump, err := httputil.DumpRequestOut(req, true)
+	//log.Printf("\n %q \n", dump)
+
+	client := http.Client{
+		Timeout: timeout,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Failed to reset user:%v password ", userName)
+		handleError(w, userName, status, iamErr, err)
+		return
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusNoContent {
+		body, _ := ioutil.ReadAll(resp.Body)
+		type errorMsg struct {
+			ErrorMessage string `json:"errorMessage"`
+		}
+		var errMsg errorMsg
+		json.Unmarshal(body, &errMsg)
+		e.Error = errMsg.ErrorMessage
+		e.ErrorType = "Reset password failed"
+		response, _ := json.Marshal(e)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(resp.StatusCode)
+		w.Write(response)
+	}
+	//TODO; json response needed for the creation successful.
+	type resetPasswordResp struct {
+		Msg string `json:"msg"`
+	}
+
+	response, _ := json.Marshal(resetPasswordResp{"User password resetted successfully"})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
+
 func generateVerificationCode() (code string, err error) {
 	var table = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
 	codeSize := 6
