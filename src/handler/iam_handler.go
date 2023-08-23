@@ -951,6 +951,67 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+type logoutReq struct {
+	RefreshToken string `valid:"required"`
+	ClientID     string `valid:"required"`
+}
+
+// LogoutUser Logouts a user
+func LogoutUser(w http.ResponseWriter, r *http.Request) {
+	var lReq logoutReq
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	json.Unmarshal(b, &lReq)
+
+	// validating request payload for logout
+	valid, err := govalidator.ValidateStruct(lReq)
+
+	if !valid {
+		log.Printf("Failed to logout user:%v", token.GetUserName(r))
+		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	data := url.Values{}
+	data.Set("refresh_token", lReq.RefreshToken)
+	data.Add("client_id", lReq.ClientID)
+
+	resp, err := http.PostForm(iamConfig.URL+"/auth/realms/"+iamConfig.Realm+"/protocol/openid-connect/logout", data)
+	if err != nil {
+		m := fmt.Sprintf("Failed to logout user:%v", token.GetUserName(r))
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		m := fmt.Sprintf("Failed to logout user:%v", token.GetUserName(r))
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+	if resp.StatusCode != http.StatusNoContent {
+		var e iamError
+		json.Unmarshal(body, &e)
+		response, _ := json.Marshal(e)
+		w.WriteHeader(resp.StatusCode)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(response)
+		return
+	}
+	u, err := user.Get(token.GetUserID(r))
+	if err != nil {
+		m := fmt.Sprintf("Failed to locate user:%v", token.GetUserName(r))
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+	if len(u.Roles) != 0 {
+		actionLog := fmt.Sprintf("%v logged out", u.Email)
+		actionlog.LogOrgSecurityCalls(token.GetUserID(r), token.GetUserName(r), u.Roles[0].OrgID, actionLog)
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func generateVerificationCode() (code string, err error) {
 	var table = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
 	codeSize := 6
