@@ -42,6 +42,17 @@ func Delete(otpID string) error {
 	return collection(s).RemoveId(bson.ObjectIdHex(otpID))
 }
 
+// UpdateVerified Updates the verified filed
+func UpdateVerified(o Otp) error {
+	s := session()
+	defer s.Close()
+	c := collection(s)
+
+	err := c.Update(bson.M{"_id": o.ID}, bson.M{"$set": bson.M{"verified": o.Verified}})
+
+	return err
+}
+
 // PhoneNumberExist Check if phone number is already in the colleciton
 func PhoneNumberExist(phone string) (o Otp, err error) {
 	s := session()
