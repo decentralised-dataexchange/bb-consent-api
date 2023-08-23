@@ -174,7 +174,7 @@ publish: $(DEPLOY_VERSION_FILE) ## Publish latest production Docker image to doc
 	docker push $(DEPLOY_VERSION)
 
 deploy/production: $(DEPLOY_VERSION_FILE) ## Deploy to K8s cluster (e.g. make deploy/{preview,staging,production})
-	kubectl set image deployment/demo-consent-bb-api demo-consent-bb-api=$(DEPLOY_VERSION) -n govstack
+	kubectl set image deployment/demo-consent-bb-api demo-consent-bb-api=$(DEPLOY_VERSION) -n govstack-demo
 
 deploy/staging: $(DEPLOY_VERSION_FILE) ## Deploy to K8s cluster (e.g. make deploy/{preview,staging,production})
 	kubectl set image deployment/staging-consent-bb-api staging-consent-bb-api=$(DEPLOY_VERSION) -n govstack
