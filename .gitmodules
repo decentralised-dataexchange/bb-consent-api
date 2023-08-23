@@ -1,3 +1,3 @@
 [submodule "resources/config"]
 	path = resources/config
-	url = git@github.com:decentralised-dataexchange/bb-consent-api-config.git
+	url = https://github.com/decentralised-dataexchange/bb-consent-api-config.git
