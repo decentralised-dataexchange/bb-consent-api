@@ -8,6 +8,26 @@ import (
 	"runtime"
 )
 
+const (
+	// ClientTypeIos IoS client
+	ClientTypeIos = 1
+
+	// ClientTypeAndroid Android client
+	ClientTypeAndroid = 2
+
+	// ConsentStatusAllow string for consent status
+	ConsentStatusAllow = "Allow"
+
+	// ConsentStatusDisAllow string for consent status
+	ConsentStatusDisAllow = "Disallow"
+
+	// ConsentStatusAskMe string for consent status
+	ConsentStatusAskMe = "AskMe"
+
+	// iGrant Admin role
+	iGrantAdminRole = 1000
+)
+
 type status struct {
 	Code    int
 	Message string

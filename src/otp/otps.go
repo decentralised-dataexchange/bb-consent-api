@@ -24,6 +24,16 @@ func collection(s *mgo.Session) *mgo.Collection {
 	return s.DB(database.DB.Name).C("otps")
 }
 
+// Add Adds the otp to the db
+func Add(otp Otp) (Otp, error) {
+	s := session()
+	defer s.Close()
+
+	otp.ID = bson.NewObjectId()
+
+	return otp, collection(s).Insert(&otp)
+}
+
 // Delete Deletes the otp entry by ID
 func Delete(otpID string) error {
 	s := session()
@@ -50,4 +60,18 @@ func PhoneNumberExist(phone string) (o Otp, err error) {
 	q.One(&o)
 
 	return o, err
+}
+
+// SearchPhone Search phone number in otp db
+func SearchPhone(phone string) (Otp, error) {
+	s := session()
+	defer s.Close()
+
+	var result Otp
+	err := collection(s).Find(bson.M{"phone": phone}).One(&result)
+	if err != nil {
+		return result, err
+	}
+
+	return result, err
 }
