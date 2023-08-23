@@ -333,6 +333,115 @@ type loginResp struct {
 	Token iamToken
 }
 
+// LoginUser Implements the user login
+func LoginUser(w http.ResponseWriter, r *http.Request) {
+	var lReq loginReq
+
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	json.Unmarshal(b, &lReq)
+
+	log.Printf("Login username: %v", lReq.Username)
+
+	// validating the request payload
+	valid, err := govalidator.ValidateStruct(lReq)
+
+	if !valid {
+		log.Printf("Invalid request params for authentication")
+		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	t, status, iamErr, err := getToken(lReq.Username, lReq.Password, "igrant-ios-app", iamConfig.Realm)
+	if err != nil {
+		if (iamError{}) != iamErr {
+			resp, _ := json.Marshal(iamErr)
+			w.WriteHeader(status)
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(resp)
+			return
+		}
+		m := fmt.Sprintf("Failed to get token for user:%v", lReq.Username)
+		common.HandleError(w, status, m, err)
+		return
+	}
+	//TODO: Remove me when the auth server is per dev environment
+	u, err := user.GetByEmail(lReq.Username)
+	if err != nil {
+		m := fmt.Sprintf("Login failed for non existant user:%v", lReq.Username)
+		common.HandleError(w, http.StatusUnauthorized, m, err)
+		return
+	}
+
+	if len(u.Roles) > 0 {
+		m := fmt.Sprintf("Login not allowed for admin users:%v", lReq.Username)
+		common.HandleError(w, http.StatusUnauthorized, m, err)
+		return
+	}
+
+	resp, _ := json.Marshal(t)
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(resp)
+}
+
+// LoginUserV11 Implements the user login V1.1
+func LoginUserV11(w http.ResponseWriter, r *http.Request) {
+	var lReq loginReq
+
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	json.Unmarshal(b, &lReq)
+
+	log.Printf("Login username: %v", lReq.Username)
+
+	// validating the request payload
+	valid, err := govalidator.ValidateStruct(lReq)
+
+	if !valid {
+		log.Printf("Invalid request params for authentication")
+		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	//TODO: Check whether user exist in the user db before returning token
+
+	t, status, iamErr, err := getToken(lReq.Username, lReq.Password, "igrant-ios-app", iamConfig.Realm)
+	if err != nil {
+		if (iamError{}) != iamErr {
+			resp, _ := json.Marshal(iamErr)
+			w.WriteHeader(status)
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(resp)
+			return
+		}
+		m := fmt.Sprintf("Failed to get token for user:%v", lReq.Username)
+		common.HandleError(w, status, m, err)
+		return
+	}
+
+	accessToken, err := token.ParseToken(t.AccessToken)
+	if err != nil {
+		m := fmt.Sprintf("Failed to parse token for user:%v", lReq.Username)
+		common.HandleError(w, status, m, err)
+		return
+	}
+	u, err := user.GetByIamID(accessToken.IamID)
+	if err != nil {
+		m := fmt.Sprintf("User: %v does not exist", lReq.Username)
+		common.HandleError(w, status, m, err)
+		return
+	}
+
+	lResp := loginResp{u, t}
+	resp, _ := json.Marshal(lResp)
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(resp)
+}
+
 // LoginAdminUser Implements the admin users login
 func LoginAdminUser(w http.ResponseWriter, r *http.Request) {
 	var lReq loginReq

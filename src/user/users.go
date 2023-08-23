@@ -106,3 +106,15 @@ func Get(userID string) (User, error) {
 
 	return result, err
 }
+
+// GetByEmail Get user details by email
+func GetByEmail(email string) (User, error) {
+	s := session()
+	defer s.Close()
+
+	var u User
+
+	err := collection(s).Find(bson.M{"email": email}).Select(bson.M{"iamid": 1, "name": 1, "roles": 1}).One(&u)
+
+	return u, err
+}
