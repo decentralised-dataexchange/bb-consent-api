@@ -856,6 +856,101 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+type forgotPassword struct {
+	Username string `valid:"required,email"`
+}
+
+// ForgotPassword User forgot the password, need to reset the password
+func ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var fp forgotPassword
+
+	b, _ := ioutil.ReadAll(r.Body)
+	json.Unmarshal(b, &fp)
+
+	// validating request params
+	valid, err := govalidator.ValidateStruct(fp)
+	if !valid {
+		log.Printf("Invalid request params for forgot password")
+		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	log.Printf("User: %v forgot password", fp.Username)
+
+	//Get user details from DB
+	u, err := user.GetByEmail(fp.Username)
+	if err != nil {
+		log.Printf("User with %v doesnt exist", fp.Username)
+		handleError(w, fp.Username, http.StatusNotFound, iamError{}, err)
+		return
+	}
+
+	//curl  https://iam.igrant.io/auth/admin/realms/igrant-users/users/8b906c86-1ab2-4b32-becc-ba0349cb29ee/execute-actions-email -d '["UPDATE_PASSWORD"]' -X PUT -v
+	var status = http.StatusInternalServerError
+	t, status, iamErr, err := getAdminToken()
+	if err != nil {
+		log.Printf("Failed to get admin token, password forgot user: %v", fp.Username)
+		handleError(w, fp.Username, status, iamErr, err)
+		return
+	}
+
+	var e iamError
+	//var iamReq = []byte(["UPDATE_PASSWORD"])
+	var iamReq []string
+	iamReq = append(iamReq, "UPDATE_PASSWORD")
+	jsonReq, _ := json.Marshal(iamReq)
+
+	req, err := http.NewRequest("PUT", iamConfig.URL+"/auth/admin/realms/"+iamConfig.Realm+"/users/"+u.IamID+"/execute-actions-email", bytes.NewBuffer(jsonReq))
+	if err != nil {
+		log.Printf("Failed to trigger forgot password action for user:%v", fp.Username)
+		handleError(w, fp.Username, status, iamErr, err)
+		return
+	}
+
+	req.Header.Add("Authorization", "Bearer "+t.AccessToken)
+	req.Header.Add("Content-Type", "application/json")
+
+	//dump, err := httputil.DumpRequest(req, true)
+	//dump, err := httputil.DumpRequestOut(req, true)
+	//log.Printf("\n %q \n", dump)
+
+	client := http.Client{
+		Timeout: timeout,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Failed to trigger reset password email for user:%v", u.Name)
+		handleError(w, fp.Username, status, iamErr, err)
+		return
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		type errorMsg struct {
+			ErrorMessage string `json:"errorMessage"`
+		}
+		var errMsg errorMsg
+		json.Unmarshal(body, &errMsg)
+		e.Error = errMsg.ErrorMessage
+		e.ErrorType = "Forgot password handling failed"
+		response, _ := json.Marshal(e)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(resp.StatusCode)
+		w.Write(response)
+		return
+	}
+	//TODO; json response needed for the creation successful.
+	type resetPasswordResp struct {
+		Msg string `json:"msg"`
+	}
+
+	response, _ := json.Marshal(resetPasswordResp{"User forgot password action handled successfully"})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
+
 func generateVerificationCode() (code string, err error) {
 	var table = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
 	codeSize := 6
