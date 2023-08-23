@@ -3,6 +3,8 @@ package main
 import (
 	"net/http"
 
+	"github.com/bb-consent/api/src/handler"
+	m "github.com/bb-consent/api/src/middleware"
 	"github.com/gorilla/mux"
 )
 
@@ -15,5 +17,8 @@ func healthz(w http.ResponseWriter, r *http.Request) {
 // SetRoutes sets the routes that the back end server serves
 func SetRoutes(r *mux.Router) {
 	r.HandleFunc("/", healthz).Methods("GET")
+
+	//Login
+	r.Handle("/v1/users/register", m.Chain(handler.RegisterUser, m.LoggerNoAuth())).Methods("POST")
 
 }
