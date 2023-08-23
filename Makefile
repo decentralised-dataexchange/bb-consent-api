@@ -171,7 +171,7 @@ build/docker/deployable: $(DIST_FILE) ## Builds deployable docker image for prev
 
 .PHONY: publish
 publish: $(DEPLOY_VERSION_FILE) ## Publish latest production Docker image to docker hub
-	gcloud docker -- push $(DEPLOY_VERSION)
+	docker push $(DEPLOY_VERSION)
 
 deploy/production: $(DEPLOY_VERSION_FILE) ## Deploy to K8s cluster (e.g. make deploy/{preview,staging,production})
 	kubectl set image deployment/demo-consent-bb-api demo-consent-bb-api=$(DEPLOY_VERSION) -n govstack
