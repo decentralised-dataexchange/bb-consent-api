@@ -713,6 +713,62 @@ func verifyPhoneNumber(w http.ResponseWriter, r *http.Request, clientType int) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+type verifyOtpReq struct {
+	Phone string `valid:"required"`
+	Otp   string `valid:"required"`
+}
+
+// VerifyOtp Verifies the Otp
+func VerifyOtp(w http.ResponseWriter, r *http.Request) {
+	var otpReq verifyOtpReq
+	var valResp validateResp
+
+	b, _ := ioutil.ReadAll(r.Body)
+	json.Unmarshal(b, &otpReq)
+
+	valid, err := govalidator.ValidateStruct(otpReq)
+	if valid != true {
+		log.Printf("Missing mandatory params for verify otp")
+		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	o, err := otp.SearchPhone(otpReq.Phone)
+	if err != nil {
+		valResp.Result = false
+		valResp.Message = "Unregistered phone number: " + otpReq.Phone
+		response, _ := json.Marshal(valResp)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(response)
+		return
+	}
+
+	valResp.Result = true
+	valResp.Message = "Otp validatiation Succeeded"
+	if err != nil || o.Otp != otpReq.Otp || o.Phone != otpReq.Phone {
+		valResp.Result = false
+		valResp.Message = "Otp validatiation failed with mismatch in otp data"
+
+	} else {
+		o.Verified = true
+		//TODO: When user registration comes, locate the details and match and then remove this entry
+		//TODO: Periodic delete of stale OTP entries based on creation time needed
+		err := otp.UpdateVerified(o)
+		if err != nil {
+			m := fmt.Sprintf("Failed to update internal database")
+			common.HandleError(w, http.StatusInternalServerError, m, err)
+			return
+		}
+	}
+
+	response, _ := json.Marshal(valResp)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+	return
+}
+
 func generateVerificationCode() (code string, err error) {
 	var table = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
 	codeSize := 6
