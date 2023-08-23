@@ -174,10 +174,10 @@ publish: $(DEPLOY_VERSION_FILE) ## Publish latest production Docker image to doc
 	gcloud docker -- push $(DEPLOY_VERSION)
 
 deploy/production: $(DEPLOY_VERSION_FILE) ## Deploy to K8s cluster (e.g. make deploy/{preview,staging,production})
-	kubectl set image deployment/bb-consent-api-demo bb-consent-api-demo=$(DEPLOY_VERSION) -n demo
+	kubectl set image deployment/demo-consent-bb-api demo-consent-bb-api=$(DEPLOY_VERSION) -n govstack
 
 deploy/staging: $(DEPLOY_VERSION_FILE) ## Deploy to K8s cluster (e.g. make deploy/{preview,staging,production})
-	kubectl set image deployment/bb-consent-api-staging bb-consent-api-staging=$(DEPLOY_VERSION) -n staging
+	kubectl set image deployment/staging-consent-bb-api staging-consent-bb-api=$(DEPLOY_VERSION) -n govstack
 
 .PHONY: release
 release:  ## Produces binaries needed for a release
