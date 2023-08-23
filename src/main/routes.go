@@ -22,6 +22,7 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/users/register", m.Chain(handler.RegisterUser, m.LoggerNoAuth())).Methods("POST")
 	r.Handle("/v1/users/login", m.Chain(handler.LoginUser, m.LoggerNoAuth())).Methods("POST")
 	r.Handle("/v1.1/users/login", m.Chain(handler.LoginUserV11, m.LoggerNoAuth())).Methods("POST")
+	r.Handle("/v1/users/validate/email", m.Chain(handler.ValidateUserEmail, m.LoggerNoAuth())).Methods("POST")
 
 	// Admin login
 	r.Handle("/v1/users/admin/login", m.Chain(handler.LoginAdminUser, m.LoggerNoAuth())).Methods("POST")
