@@ -6,6 +6,14 @@ import (
 	"net/http"
 
 	"github.com/bb-consent/api/src/config"
+	"github.com/bb-consent/api/src/database"
+	"github.com/bb-consent/api/src/email"
+	"github.com/bb-consent/api/src/firebaseUtils"
+	"github.com/bb-consent/api/src/handler"
+	"github.com/bb-consent/api/src/kafkaUtils"
+	"github.com/bb-consent/api/src/notifications"
+	"github.com/bb-consent/api/src/token"
+	"github.com/bb-consent/api/src/webhooks"
 	"github.com/gorilla/mux"
 )
 
@@ -22,13 +30,45 @@ func main() {
 
 	configFileName := handleCommandLineArgs()
 	configFile := "/opt/bb-consent/api/config/" + configFileName
-	_, err := config.Load(configFile)
+	config, err := config.Load(configFile)
 	if err != nil {
 		log.Printf("Failed to load config file %s \n", configFile)
 		panic(err)
 	}
 
 	log.Printf("config file: %s loaded\n", configFile)
+
+	err = database.Init(config)
+	if err != nil {
+		panic(err)
+	}
+	log.Println("Data base session opened")
+
+	webhooks.Init(config)
+	log.Println("Webhooks configuration initialized")
+
+	err = kafkaUtils.Init(config)
+	if err != nil {
+		panic(err)
+	}
+	log.Println("Kafka producer client initialised")
+
+	handler.IamInit(config)
+	log.Println("Iam initialized")
+
+	email.Init(config)
+	log.Println("Email initialized")
+
+	token.Init(config)
+	log.Println("Token initialized")
+
+	err = notifications.Init()
+	if err != nil {
+		panic(err)
+	}
+
+	firebaseUtils.Init(config)
+	log.Println("Firebase initialized")
 
 	router := mux.NewRouter()
 	SetRoutes(router)
