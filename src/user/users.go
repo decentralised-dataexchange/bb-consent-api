@@ -118,3 +118,22 @@ func GetByEmail(email string) (User, error) {
 
 	return u, err
 }
+
+// EmailExist Check if email id is already in the collection
+func EmailExist(email string) (bool, error) {
+	s := session()
+	defer s.Close()
+
+	q := collection(s).Find(bson.M{"email": email}).Limit(1)
+
+	c, err := q.Count()
+	if err != nil {
+		return false, err
+	}
+
+	if c == 0 {
+		return false, err
+	}
+
+	return true, err
+}
