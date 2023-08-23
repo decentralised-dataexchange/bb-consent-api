@@ -137,3 +137,22 @@ func EmailExist(email string) (bool, error) {
 
 	return true, err
 }
+
+// PhoneNumberExist Check if phone number is already in the collection
+func PhoneNumberExist(phone string) (bool, error) {
+	s := session()
+	defer s.Close()
+
+	q := collection(s).Find(bson.M{"phone": phone}).Limit(1)
+
+	c, err := q.Count()
+	if err != nil {
+		return false, err
+	}
+
+	if c == 0 {
+		return false, err
+	}
+
+	return true, err
+}

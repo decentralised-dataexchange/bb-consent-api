@@ -16,8 +16,10 @@ import (
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/email"
+	"github.com/bb-consent/api/src/otp"
 	"github.com/bb-consent/api/src/token"
 	"github.com/bb-consent/api/src/user"
+	"github.com/globalsign/mgo/bson"
 )
 
 type registerReq struct {
@@ -546,6 +548,75 @@ func ValidateUserEmail(w http.ResponseWriter, r *http.Request) {
 	if exist == true {
 		valResp.Result = false
 		valResp.Message = "Email address is in use"
+	}
+
+	response, _ := json.Marshal(valResp)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
+
+type validatePhoneNumberReq struct {
+	Phone string `valid:"required"`
+}
+
+// ValidatePhoneNumber Check if the phone number is already in use
+func ValidatePhoneNumber(w http.ResponseWriter, r *http.Request) {
+	var validateReq validatePhoneNumberReq
+	var valResp validateResp
+
+	b, _ := ioutil.ReadAll(r.Body)
+	json.Unmarshal(b, &validateReq)
+
+	// validating request payload
+	valid, err := govalidator.ValidateStruct(validateReq)
+	if valid != true {
+		log.Printf("Missing mandatory params for validating phone number")
+		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	valResp.Result = true
+	valResp.Message = "Phone number is not in use"
+
+	//Check whether the phone number is unique
+	exist, err := user.PhoneNumberExist(validateReq.Phone)
+	if err != nil {
+		m := fmt.Sprintf("Failed to validate user phone number: %v", validateReq.Phone)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	if exist == true {
+		valResp.Result = false
+		valResp.Message = "Phone number is in use"
+		response, _ := json.Marshal(valResp)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(response)
+		return
+	}
+
+	//Check whether the phone number is in otp colleciton
+	o, err := otp.PhoneNumberExist(validateReq.Phone)
+	if err != nil {
+		m := fmt.Sprintf("Failed to validate user phone number: %v", validateReq.Phone)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	if o != (otp.Otp{}) {
+		if bson.NewObjectId().Time().Sub(o.ID.Time()) > 2*time.Minute {
+			err = otp.Delete(o.ID.Hex())
+			if err != nil {
+				m := fmt.Sprintf("Failed to clear expired otp")
+				common.HandleError(w, http.StatusInternalServerError, m, err)
+				return
+			}
+		} else {
+			valResp.Result = false
+			valResp.Message = "Phone number is in use"
+		}
 	}
 
 	response, _ := json.Marshal(valResp)
