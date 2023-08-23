@@ -64,6 +64,25 @@ var timeout time.Duration
 var iamConfig config.Iam
 var twilioConfig config.Twilio
 
+// IamInit Initialize the IAM handler
+func IamInit(config *config.Configuration) {
+	iamConfig = config.Iam
+	twilioConfig = config.Twilio
+	timeout = time.Duration(time.Duration(iamConfig.Timeout) * time.Second)
+
+	/*
+		memStorage := storage.NewMemoryStorage()
+		s := scheduler.New(memStorage)
+		_, err := s.RunEvery(24*time.Hour, clearStaleOtps)
+		if err != nil {
+			log.Printf("err in scheduling clearStaleOtps: %v", err)
+		}
+
+		//TODO: Enable this later phase
+		//s.Start()
+	*/
+}
+
 // RegisterUser Registers a new user
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	var regReq registerReq
