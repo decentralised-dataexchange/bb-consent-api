@@ -5,66 +5,6 @@ import (
 	"os"
 )
 
-// PricingPlan data type
-type PricingPlan struct {
-	ID string
-}
-
-// UsageLimit data type
-type UsageLimit struct {
-	APICallsLimit              string `json:"api"`
-	UserLimit                  string `json:"users"`
-	VerificationsLimit         string `json:"verifications"`
-	VerifierAppActivationLimit string `json:"verifierappactivation"`
-}
-
-// FixedPriceModel data type
-type FixedPriceModel struct {
-	Price      float64
-	Validity   int // Number of days
-	UsageLimit UsageLimit
-	SEKPlan    PricingPlan
-}
-
-// TimeCommitmentDiscount data type
-type TimeCommitmentDiscount struct {
-	DisplayOption string  `json:"displayOption"`
-	Value         float64 `json:"value"`
-}
-
-// PayPerUserModel data type
-type PayPerUserModel struct {
-	BasePrice               float64
-	VolumeDiscount          float64
-	FirstThreshold          float64
-	UserCommitmentValues    []int
-	TimeCommitmentDiscounts []TimeCommitmentDiscount
-	UsageLimit              UsageLimit
-	SEKPlan                 PricingPlan
-}
-
-// PricingModels data type
-type PricingModels struct {
-	FreeTrial             FixedPriceModel
-	Starter               FixedPriceModel
-	PayPerUser            PayPerUserModel
-	FreeTrialVerifierPlan FixedPriceModel
-	StarterVerifierPlan   FixedPriceModel
-	PremiumVerifierPlan   FixedPriceModel
-}
-
-// StripeConfig data type
-type StripeConfig struct {
-	APIKey string
-}
-
-// ServiceAgreement data type
-type ServiceAgreement struct {
-	URL      string
-	Version  string
-	FileName string
-}
-
 // JSONWebKeys The jwks keys needed to validate the tokens
 type JSONWebKeys struct {
 	RsaRawN string
@@ -114,29 +54,6 @@ type SmtpConfig struct {
 	AdminEmail string
 }
 
-// PrivacyDashboardDeploymentConfig privacy dashboard deployment configuration
-type PrivacyDashboardDeploymentConfig struct {
-	KubernetesClusterIP  string
-	DockerRegistryAPIURL string
-	GoogleProjectID      string
-	DockerImageName      string
-	BackendAPIBaseURL    string
-}
-
-// SSIAriesCloudAgentDeploymentConfig SSI aries cloudagent deployment configuration
-type SSIAriesCloudAgentDeploymentConfig struct {
-	KubernetesClusterIP       string
-	DockerRegistryAPIURL      string
-	GoogleProjectID           string
-	DockerImageName           string
-	BackendAPIBaseURL         string
-	AgentBaseURL              string
-	ETHNodeRPC                string
-	IntermediaryETHPrivateKey string
-	ContractAddress           string
-	ContractABIURL            string
-}
-
 // KafkaBrokerConfig Kafka broker configuration
 type KafkaBrokerConfig struct {
 	URL string
@@ -161,21 +78,11 @@ type Configuration struct {
 		UserName string
 		Password string
 	}
-	Iam                   Iam
-	Twilio                Twilio
-	Firebase              Firebase
-	VerifierAppFirebase   Firebase
-	DataWalletAppFirebase Firebase
-	Smtp                  SmtpConfig
-	Billing               struct {
-		PricingModels            PricingModels
-		StripeConfig             StripeConfig
-		ServiceAgreement         ServiceAgreement
-		VerifierServiceAgreement ServiceAgreement
-	}
-	PrivacyDashboardDeployment   PrivacyDashboardDeploymentConfig
-	SSIAriesCloudAgentDeployment SSIAriesCloudAgentDeploymentConfig
-	Webhooks                     WebhooksConfig
+	Iam      Iam
+	Twilio   Twilio
+	Firebase Firebase
+	Smtp     SmtpConfig
+	Webhooks WebhooksConfig
 }
 
 // Load the config file
