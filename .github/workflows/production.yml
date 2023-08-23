@@ -6,8 +6,6 @@ on:
 
 # Environment variables available to all jobs and steps in this workflow
 env:
-  GKE_PROJECT: ${{ secrets.GKE_PROJECT_JENKINS }}
-  GKE_EMAIL: ${{ secrets.GKE_EMAIL_JENKINS }}
   GITHUB_SHA: ${{ github.sha }}
   GKE_ZONE: europe-west3-c
   GKE_CLUSTER: igrant-cluster
@@ -32,7 +30,7 @@ jobs:
         with:
           version: "270.0.0"
           service_account_key: ${{ secrets.GKE_SA_KEY }}
-          project_id: ${{ env.GKE_PROJECT }}
+          project_id: ${{ secrets.GKE_PROJECT }}
 
       # Configure Docker to use the gcloud command-line tool as a credential
       # helper for authentication
