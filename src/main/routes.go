@@ -38,5 +38,6 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/user", m.Chain(handler.GetCurrentUser, m.Logger(), m.Authenticate())).Methods("GET")
 	r.Handle("/v1/user", m.Chain(handler.UpdateCurrentUser, m.Logger(), m.Authenticate())).Methods("PATCH")
 	r.Handle("/v1/user/register/ios", m.Chain(handler.UserClientRegister, m.Logger(), m.Authenticate())).Methods("POST")
+	r.Handle("/v1/user/register/android", m.Chain(handler.UserClientRegister, m.Logger(), m.Authenticate())).Methods("POST")
 
 }
