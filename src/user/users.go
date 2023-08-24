@@ -80,6 +80,14 @@ func Update(userID string, u User) (User, error) {
 	return u, err
 }
 
+// Delete Deletes the user by ID
+func Delete(userID string) error {
+	s := session()
+	defer s.Close()
+
+	return collection(s).RemoveId(bson.ObjectIdHex(userID))
+}
+
 // GetByIamID Get the user by IamID
 func GetByIamID(iamID string) (User, error) {
 	var result User
