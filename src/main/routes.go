@@ -36,5 +36,6 @@ func SetRoutes(r *mux.Router) {
 
 	//user
 	r.Handle("/v1/user", m.Chain(handler.GetCurrentUser, m.Logger(), m.Authenticate())).Methods("GET")
+	r.Handle("/v1/user", m.Chain(handler.UpdateCurrentUser, m.Logger(), m.Authenticate())).Methods("PATCH")
 
 }
