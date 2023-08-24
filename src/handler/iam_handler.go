@@ -227,6 +227,47 @@ func registerUser(iamRegReq iamUserRegisterReq, adminToken string) (int, iamErro
 	return resp.StatusCode, e, err
 }
 
+type userUpdateReq struct {
+	Firstname string `json:"firstName"`
+}
+
+// UpdateIamUser Update user info on IAM server end.
+func UpdateIamUser(Name string, iamID string) error {
+	var userUp userUpdateReq
+	userUp.Firstname = Name
+
+	t, _, _, err := getAdminToken()
+	if err != nil {
+		log.Printf("Failed to get admin token, user: %v update err:%v", Name, err)
+		return err
+	}
+
+	jsonReq, _ := json.Marshal(userUp)
+	req, err := http.NewRequest("PUT", iamConfig.URL+"/auth/admin/realms/"+iamConfig.Realm+"/users/"+iamID, bytes.NewBuffer(jsonReq))
+	if err != nil {
+		log.Printf("Failed to form update user request err:%v", err)
+		return err
+	}
+
+	req.Header.Add("Authorization", "Bearer "+t.AccessToken)
+	req.Header.Add("Content-Type", "application/json")
+
+	client := http.Client{
+		Timeout: timeout,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		log.Printf("Failed to update user with status code: %v", resp.StatusCode)
+		return errors.New("failed to update user")
+	}
+	return nil
+}
+
 func getUserIamID(userName string, adminToken string) (string, int, iamError, error) {
 	var userID = ""
 	var status = http.StatusInternalServerError

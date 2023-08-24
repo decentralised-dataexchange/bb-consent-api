@@ -67,6 +67,19 @@ func Add(user User) (User, error) {
 	return user, collection(s).Insert(&user)
 }
 
+// Update Update the user details
+func Update(userID string, u User) (User, error) {
+	s := session()
+	defer s.Close()
+
+	err := collection(s).UpdateId(bson.ObjectIdHex(userID), u)
+	if err != nil {
+		return User{}, err
+	}
+	u, err = Get(userID)
+	return u, err
+}
+
 // GetByIamID Get the user by IamID
 func GetByIamID(iamID string) (User, error) {
 	var result User
