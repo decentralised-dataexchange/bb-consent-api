@@ -1,6 +1,12 @@
 package handler
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+
+	"github.com/bb-consent/api/src/common"
+	"github.com/bb-consent/api/src/token"
 	"github.com/bb-consent/api/src/user"
 )
 
@@ -30,4 +36,24 @@ func GetUser(userID string) (user.User, error) {
 		return user, err
 	}
 	return user, err
+}
+
+type userResp struct {
+	User user.User
+}
+
+// GetCurrentUser Gets the currernt authenticated user details
+func GetCurrentUser(w http.ResponseWriter, r *http.Request) {
+	userID := token.GetUserID(r)
+
+	u, err := user.Get(userID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch user by id:%v", userID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(userResp{u})
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
 }
