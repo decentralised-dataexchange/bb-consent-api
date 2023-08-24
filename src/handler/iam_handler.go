@@ -166,6 +166,50 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+// UnregisterUser Removes a new user
+func UnregisterUser(w http.ResponseWriter, r *http.Request) {
+	userName := token.GetUserName(r)
+	userIamID := token.GetIamID(r)
+	t, status, iamErr, err := getAdminToken()
+	if err != nil {
+		log.Printf("Failed to get admin token, user: %v registration", userName)
+		handleError(w, userName, status, iamErr, err)
+		return
+	}
+
+	status, iamErr, err = unregisterUser(userIamID, t.AccessToken)
+	if err != nil {
+		log.Printf("Failed to unregister user: %v err: %v", userName, err)
+		handleError(w, userName, status, iamErr, err)
+		return
+	}
+	u, err := user.GetByIamID(userIamID)
+	if err != nil {
+		log.Printf("Failed to get user: %v id: %v to Db err: %v", userName, userIamID, err)
+		m := fmt.Sprintf("Failed to unregister user: %v", userName)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+	err = user.Delete(u.ID.Hex())
+	if err != nil {
+		log.Printf("Failed to delete user: %v id: %v to Db err: %v", userName, u.ID, err)
+		m := fmt.Sprintf("Failed to register user: %v", userName)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	log.Printf("successfully unregistered user: %v", userName)
+	//TODO; json response needed for the creation successful.
+	type unregisterResponse struct {
+		Msg string `json:"msg"`
+	}
+	resp := unregisterResponse{"User removed successfully"}
+	response, _ := json.Marshal(resp)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
+
 func handleError(w http.ResponseWriter, userName string, status int, iamErr iamError, err error) {
 	if (iamError{}) != iamErr {
 		log.Printf("Failed to register err:%v", err)
@@ -223,6 +267,46 @@ func registerUser(iamRegReq iamUserRegisterReq, adminToken string) (int, iamErro
 		e.Error = errMsg.ErrorMessage
 		e.ErrorType = "Creation failed"
 		return resp.StatusCode, e, errors.New("failed to register user")
+	}
+	return resp.StatusCode, e, err
+}
+
+// unregisterUser Unregisters an existing user
+func unregisterUser(iamUserID string, adminToken string) (int, iamError, error) {
+	var e iamError
+	var status = http.StatusInternalServerError
+	req, err := http.NewRequest("DELETE", iamConfig.URL+"/auth/admin/realms/"+iamConfig.Realm+"/users/"+iamUserID, nil)
+	if err != nil {
+		return status, e, err
+	}
+
+	req.Header.Add("Authorization", "Bearer "+adminToken)
+	req.Header.Add("Content-Type", "application/json")
+
+	//dump, err := httputil.DumpRequest(req, true)
+	//dump, err := httputil.DumpRequestOut(req, true)
+
+	client := http.Client{
+		Timeout: timeout,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return status, e, err
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusNoContent {
+		body, _ := ioutil.ReadAll(resp.Body)
+		defer resp.Body.Close()
+
+		type errorMsg struct {
+			ErrorMessage string `json:"errorMessage"`
+		}
+		var errMsg errorMsg
+		json.Unmarshal(body, &errMsg)
+		e.Error = errMsg.ErrorMessage
+		e.ErrorType = "Creation failed"
+		return resp.StatusCode, e, errors.New("failed to unregister user")
 	}
 	return resp.StatusCode, e, err
 }
