@@ -169,3 +169,18 @@ func PhoneNumberExist(phone string) (bool, error) {
 
 	return true, err
 }
+
+// UpdateClientDeviceInfo Update the client device info
+func UpdateClientDeviceInfo(userID string, client ClientInfo) (User, error) {
+	s := session()
+	defer s.Close()
+	c := collection(s)
+
+	err := c.Update(bson.M{"_id": bson.ObjectIdHex(userID)}, bson.M{"$set": bson.M{"client": client}})
+	if err != nil {
+		return User{}, err
+	}
+	//TODO: Is this DB get necessary?
+	u, err := Get(userID)
+	return u, err
+}
