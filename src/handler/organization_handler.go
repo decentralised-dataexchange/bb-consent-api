@@ -382,3 +382,69 @@ func handleEulaUpdateNotification(o org.Organization) {
 		log.Printf("Failed to close the iterator: %v", iter)
 	}
 }
+
+type adminReq struct {
+	UserID string `valid:"required"`
+	RoleID int    `valid:"required"`
+}
+
+// AddOrgAdmin Add admins, dpo and other roles to organization users
+func AddOrgAdmin(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+
+	var aReq adminReq
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	json.Unmarshal(b, &aReq)
+
+	//TODO: Validate the struct
+	valid, err := govalidator.ValidateStruct(aReq)
+	if valid != true {
+		log.Printf("Missing mandatory params for adding organization admin")
+		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	// validating UserID provided
+	_, err = user.Get(aReq.UserID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to add admin user to organization: %v invalid UserID: %v", organizationID, aReq.UserID)
+		common.HandleError(w, http.StatusBadRequest, m, nil)
+		return
+	}
+
+	if !common.IsValidRoleID(aReq.RoleID) {
+		m := fmt.Sprintf("Failed to add admin user(%v) to organization: %v invalid RoleID: %v", aReq.UserID, organizationID, aReq.RoleID)
+		common.HandleError(w, http.StatusBadRequest, m, nil)
+		return
+	}
+
+	addAdminReq := org.Admin{UserID: aReq.UserID, RoleID: aReq.RoleID}
+	o, err := org.AddAdminUsers(organizationID, addAdminReq)
+	if err != nil {
+		m := fmt.Sprintf("Failed to add admin user(%v) to organization: %v", aReq.UserID, organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	userOrg := user.Org{OrgID: o.ID, Name: o.Name, Location: o.Location, Type: o.Type.Type, TypeID: o.Type.ID}
+	_, err = user.UpdateOrganization(aReq.UserID, userOrg)
+	if err != nil {
+		m := fmt.Sprintf("Failed to add user(%v) to organization: %v", aReq.UserID, organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	_, err = user.AddRole(aReq.UserID, user.Role{RoleID: aReq.RoleID, OrgID: organizationID})
+	if err != nil {
+		m := fmt.Sprintf("Failed to set user(%v) as %v to organization: %v", aReq.UserID, common.GetRole(aReq.RoleID), organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(organization{o})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}

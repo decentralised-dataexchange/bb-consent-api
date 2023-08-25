@@ -242,3 +242,19 @@ func UpdateOrganizationsSubscribedUsers(org org.Organization) error {
 	}
 	return nil
 }
+
+// UpdateOrganization Updates organization to user collection
+func UpdateOrganization(userID string, org Org) (User, error) {
+	s := session()
+	defer s.Close()
+	c := collection(s)
+
+	var result User
+	err := c.Update(bson.M{"_id": bson.ObjectIdHex(userID)}, bson.M{"$push": bson.M{"orgs": org}})
+	if err != nil {
+		return result, err
+	}
+
+	err = c.FindId(bson.ObjectIdHex(userID)).One(&result)
+	return result, err
+}
