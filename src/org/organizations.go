@@ -267,3 +267,16 @@ func GetAdminUsers(organizationID string) (Organization, error) {
 
 	return result, err
 }
+
+// DeleteAdminUsers Delete admin users from organization
+func DeleteAdminUsers(organizationID string, admin Admin) (Organization, error) {
+	s := session()
+	defer s.Close()
+
+	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(organizationID)}, bson.M{"$pull": bson.M{"admins": admin}})
+	if err != nil {
+		return Organization{}, err
+	}
+	o, err := Get(organizationID)
+	return o, err
+}

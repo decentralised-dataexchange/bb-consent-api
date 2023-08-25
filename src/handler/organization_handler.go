@@ -474,3 +474,44 @@ func GetOrgAdmins(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
+
+// DeleteOrgAdmin Delete admins from organization
+func DeleteOrgAdmin(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+
+	var aReq adminReq
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	json.Unmarshal(b, &aReq)
+
+	//TODO: Validate the struct
+	valid, err := govalidator.ValidateStruct(aReq)
+	if valid != true {
+		log.Printf("Missing mandatory params for deleting organization admin")
+		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	deleteAdminReq := org.Admin{RoleID: aReq.RoleID, UserID: aReq.UserID}
+	o, err := org.DeleteAdminUsers(organizationID, deleteAdminReq)
+	if err != nil {
+		m := fmt.Sprintf("Failed to delete admin user(%v) from organization: %v", aReq, organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	_, err = user.DeleteOrganization(aReq.UserID, o.ID.Hex())
+	if err != nil {
+		m := fmt.Sprintf("Failed to delete admin user(%v) from organization: %v", aReq, organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	_, err = user.RemoveRole(aReq.UserID, user.Role{RoleID: aReq.RoleID, OrgID: o.ID.Hex()})
+
+	response, _ := json.Marshal(organization{o})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
