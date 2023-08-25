@@ -42,6 +42,17 @@ func Get(organizationTypeID string) (OrgType, error) {
 	return result, err
 }
 
+// GetAll Gets all organization types
+func GetAll() ([]OrgType, error) {
+	s := session()
+	defer s.Close()
+
+	var results []OrgType
+	err := collection(s).Find(nil).All(&results)
+
+	return results, err
+}
+
 // Update Update the organization type
 func Update(organizationTypeID string, typeName string) (OrgType, error) {
 	s := session()
