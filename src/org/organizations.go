@@ -217,3 +217,16 @@ func Update(org Organization) (Organization, error) {
 	err := collection(s).UpdateId(org.ID, org)
 	return org, err
 }
+
+// UpdateCoverImage Update the organization image
+func UpdateCoverImage(organizationID string, imageID string, imageURL string) (Organization, error) {
+	s := session()
+	defer s.Close()
+
+	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(organizationID)}, bson.M{"$set": bson.M{"coverimageid": imageID, "coverimageurl": imageURL}})
+	if err != nil {
+		return Organization{}, err
+	}
+	o, err := Get(organizationID)
+	return o, err
+}
