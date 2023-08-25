@@ -22,6 +22,15 @@ func collection(s *mgo.Session) *mgo.Collection {
 	return s.DB(database.DB.Name).C("orgTypes")
 }
 
+// Add Adds an organization
+func Add(ot OrgType) (OrgType, error) {
+	s := session()
+	defer s.Close()
+
+	ot.ID = bson.NewObjectId()
+	return ot, collection(s).Insert(&ot)
+}
+
 // Get Gets organization type by given id
 func Get(organizationTypeID string) (OrgType, error) {
 	s := session()
