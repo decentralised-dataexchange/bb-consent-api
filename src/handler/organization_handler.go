@@ -1399,3 +1399,38 @@ func AddUserToOrganization(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
 }
+
+// DeleteUserFromOrganization Remove user from organization
+func DeleteUserFromOrganization(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+	userID := mux.Vars(r)["userID"]
+
+	org, err := org.Get(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to find organization with ID:%v", organizationID)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	err = consent.DeleteByUserOrg(userID, organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to remove user :%v consents from organization:%v", userID, organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	user, err := user.DeleteOrganization(userID, org.ID.Hex())
+
+	if err != nil {
+		m := fmt.Sprintf("Failed to remove user:%v from organization:%v", userID, organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Trigger webhooks
+	go webhooks.TriggerOrgSubscriptionWebhookEvent(userID, organizationID, webhooks.EventTypes[webhooks.EventTypeOrgUnSubscribed])
+
+	response, _ := json.Marshal(userResp{user})
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
+}

@@ -52,3 +52,11 @@ func Add(consent Consents) (Consents, error) {
 	consent.ID = bson.NewObjectId()
 	return consent, collection(s).Insert(&consent)
 }
+
+// DeleteByUserOrg Deletes the consent by userID, orgID
+func DeleteByUserOrg(userID string, orgID string) error {
+	s := session()
+	defer s.Close()
+
+	return collection(s).Remove(bson.M{"userid": userID, "orgid": orgID})
+}
