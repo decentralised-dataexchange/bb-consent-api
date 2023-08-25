@@ -89,3 +89,18 @@ func UpdateOrganizationType(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 }
+
+// DeleteOrganizationType Gets organization Type by given id
+func DeleteOrganizationType(w http.ResponseWriter, r *http.Request) {
+	typeID := mux.Vars(r)["typeID"]
+
+	//TODO: Find all organizations with this type and then reject deletion if atleast one org exist.
+	err := ot.Delete(typeID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to delete organization type: %v", typeID)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

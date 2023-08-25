@@ -54,3 +54,11 @@ func Update(organizationTypeID string, typeName string) (OrgType, error) {
 	}
 	return OrgType{}, err
 }
+
+// Delete Deletes an organization
+func Delete(organizationTypeID string) error {
+	s := session()
+	defer s.Close()
+
+	return collection(s).Remove(bson.M{"_id": bson.ObjectIdHex(organizationTypeID)})
+}
