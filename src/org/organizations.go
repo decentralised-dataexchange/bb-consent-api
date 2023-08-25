@@ -451,3 +451,16 @@ func GetTemplate(organizationID string, templateID string) (Template, error) {
 	}
 	return Template{}, errors.New("Failed to find the template")
 }
+
+// SetEnabled Sets the enabled status to true/false
+func SetEnabled(organizationID string, enabled bool) (Organization, error) {
+	s := session()
+	defer s.Close()
+
+	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(organizationID)}, bson.M{"$set": bson.M{"enabled": enabled}})
+	if err != nil {
+		return Organization{}, err
+	}
+	o, err := Get(organizationID)
+	return o, err
+}
