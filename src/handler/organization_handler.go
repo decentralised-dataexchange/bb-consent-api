@@ -853,6 +853,72 @@ func deletePurposeIDFromTemplate(purposeID string, orgID string, templates []org
 	return nil
 }
 
+type template struct {
+	Consent    string   `valid:"required"`
+	PurposeIDs []string `valid:"required"`
+}
+type templateReq struct {
+	Templates []template
+}
+
+// AddConsentTemplates Adds an organization template
+func AddConsentTemplates(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+
+	o, err := org.Get(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	var tReq templateReq
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	json.Unmarshal(b, &tReq)
+
+	// validating request payload
+	valid, err := govalidator.ValidateStruct(tReq)
+	if !valid {
+		log.Printf("Missing mandatory fields for adding consent template to org: %v", organizationID)
+		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	// validating purposeIDs provided
+	for _, t := range tReq.Templates {
+		// checking if purposeID provided exist in the org
+		for _, p := range t.PurposeIDs {
+			_, err = org.GetPurpose(organizationID, p)
+			if err != nil {
+				m := fmt.Sprintf("Invalid purposeID:%v provided;Failed to update templates to organization: %v", p, o.Name)
+				common.HandleError(w, http.StatusBadRequest, m, err)
+				return
+			}
+		}
+
+		// Appending the new template to existing org templates
+		o.Templates = append(o.Templates, org.Template{
+			ID:         bson.NewObjectId().Hex(),
+			Consent:    t.Consent,
+			PurposeIDs: t.PurposeIDs,
+		})
+	}
+
+	orgResp, err := org.UpdateTemplates(o.ID.Hex(), o.Templates)
+	if err != nil {
+		m := fmt.Sprintf("Failed to update templates to organization: %v", o.Name)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(organization{orgResp})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(response)
+}
+
 type globalPolicyConfigurationResp struct {
 	PolicyURL     string
 	DataRetention org.DataRetention
