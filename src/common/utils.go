@@ -45,6 +45,11 @@ var orgRoles = []OrgRole{
 	{ID: 2, Role: "Dpo"},
 	{ID: 3, Role: "Developer"}}
 
+// GetRole Gets Role details by ID
+func GetRole(roleID int) OrgRole {
+	return orgRoles[roleID-1]
+}
+
 // GetRoleID Gets RoleID
 func GetRoleID(role string) int {
 	for _, r := range orgRoles {
@@ -53,6 +58,16 @@ func GetRoleID(role string) int {
 		}
 	}
 	return 0
+}
+
+// IsValidRoleID Check if the role id is valid or not
+func IsValidRoleID(roleID int) bool {
+	for _, role := range orgRoles {
+		if roleID == role.ID {
+			return true
+		}
+	}
+	return false
 }
 
 // HandleError Common function to formulate error and set the status

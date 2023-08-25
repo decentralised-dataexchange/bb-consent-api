@@ -243,3 +243,16 @@ func UpdateLogoImage(organizationID string, imageID string, imageURL string) (Or
 	o, err := Get(organizationID)
 	return o, err
 }
+
+// AddAdminUsers Add admin users to organization
+func AddAdminUsers(organizationID string, admin Admin) (Organization, error) {
+	s := session()
+	defer s.Close()
+
+	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(organizationID)}, bson.M{"$push": bson.M{"admins": admin}})
+	if err != nil {
+		return Organization{}, err
+	}
+	o, err := Get(organizationID)
+	return o, err
+}
