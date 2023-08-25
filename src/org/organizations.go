@@ -230,3 +230,16 @@ func UpdateCoverImage(organizationID string, imageID string, imageURL string) (O
 	o, err := Get(organizationID)
 	return o, err
 }
+
+// UpdateLogoImage Update the organization image
+func UpdateLogoImage(organizationID string, imageID string, imageURL string) (Organization, error) {
+	s := session()
+	defer s.Close()
+
+	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(organizationID)}, bson.M{"$set": bson.M{"logoimageid": imageID, "logoimageurl": imageURL}})
+	if err != nil {
+		return Organization{}, err
+	}
+	o, err := Get(organizationID)
+	return o, err
+}
