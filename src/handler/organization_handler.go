@@ -13,12 +13,14 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
+	"github.com/bb-consent/api/src/consent"
 	"github.com/bb-consent/api/src/image"
 	"github.com/bb-consent/api/src/notifications"
 	"github.com/bb-consent/api/src/org"
 	"github.com/bb-consent/api/src/orgtype"
 	"github.com/bb-consent/api/src/token"
 	"github.com/bb-consent/api/src/user"
+	"github.com/bb-consent/api/src/webhooks"
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/mux"
 )
@@ -1314,4 +1316,86 @@ func UpdateGlobalPolicyConfiguration(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 
+}
+
+const (
+	// subscribeMethodUnknown Anyone can subscribe freely
+	subscribeMethodUndefined = 0
+
+	// subscribeMethodKeyBased Users need tokens from Org to subscribe
+	subscribeMethodKeyBased = 1
+
+	// subscribeMethodOpenIDBased Users need to authenticate using Org credentials to subscribe
+	subscribeMethodOpenIDBased = 2
+)
+
+type userInfo struct {
+	UserID       string `valid:"required"`
+	SubscribeKey string //Key is mandatory if the org has method key-based set.
+}
+
+// AddUserToOrganization binds a user to an organization
+func AddUserToOrganization(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	u := userInfo{}
+	json.Unmarshal(b, &u)
+
+	// validating request params
+	valid, err := govalidator.ValidateStruct(u)
+	if !valid {
+		log.Printf("Missing mandatory params for adding user to organization")
+		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	o, err := org.Get(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to locate organization with id:%v", organizationID)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+	if !o.Enabled {
+		m := fmt.Sprintf("Can not subscribe to disabled organization:%v", organizationID)
+		common.HandleError(w, http.StatusBadRequest, m, err)
+		return
+	}
+
+	if o.Subs.Method == subscribeMethodKeyBased {
+		if u.SubscribeKey != o.Subs.Key {
+			m := fmt.Sprintf("Can not subscribe, Invalid subscription token, organization:%v", organizationID)
+			common.HandleError(w, http.StatusBadRequest, m, err)
+			return
+		}
+	}
+
+	userOrg := user.Org{OrgID: o.ID, Name: o.Name, Location: o.Location, Type: o.Type.Type, TypeID: o.Type.ID}
+	updatedUser, err := user.UpdateOrganization(u.UserID, userOrg)
+
+	if err != nil {
+		m := fmt.Sprintf("Failed to add user: %v to organization :%v", u.UserID, organizationID)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	//Add empty consent for this user and organization
+	var con consent.Consents
+	con.OrgID = organizationID
+	con.UserID = u.UserID
+	_, err = consent.Add(con)
+	if err != nil {
+		m := fmt.Sprintf("Failed to add consent for user: %v to organization :%v", u.UserID, organizationID)
+		//TODO: remove the organization from the user
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Trigger webhooks
+	go webhooks.TriggerOrgSubscriptionWebhookEvent(u.UserID, organizationID, webhooks.EventTypes[webhooks.EventTypeOrgSubscribed])
+
+	response, _ := json.Marshal(userResp{updatedUser})
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
 }

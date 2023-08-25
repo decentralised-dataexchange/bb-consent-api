@@ -26,3 +26,16 @@ func LogOrgSecurityCalls(userID string, uName string, orgID string, aLog string)
 
 	doActionLog(l)
 }
+
+// LogOrgWebhookCalls Logs all webhook triggers based on different events
+func LogOrgWebhookCalls(userID string, uName string, orgID string, aLog string) {
+	var l ActionLog
+	l.OrgID = orgID
+	l.UserID = userID
+	l.UserName = uName
+	l.Action = aLog
+	l.Type = LogTypeWebhook
+	l.TypeStr = GetTypeStr(l.Type)
+
+	doActionLog(l)
+}
