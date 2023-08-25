@@ -941,6 +941,44 @@ func GetTemplates(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+// DeleteConsentTemplateByID Deletes an organization templates
+func DeleteConsentTemplateByID(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+	templateID := mux.Vars(r)["templateID"]
+
+	o, err := org.Get(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	var templateToDelete org.Template
+	for _, t := range o.Templates {
+		if t.ID == templateID {
+			templateToDelete = t
+		}
+	}
+
+	if templateToDelete.ID != templateID {
+		m := fmt.Sprintf("Failed to find template with ID: %v in organization: %v", templateID, o.Name)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	orgResp, err := org.DeleteTemplates(o.ID.Hex(), templateToDelete)
+	if err != nil {
+		m := fmt.Sprintf("Failed to delete template: %v from organization: %v", templateID, o.Name)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(organization{orgResp})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(response)
+}
+
 type globalPolicyConfigurationResp struct {
 	PolicyURL     string
 	DataRetention org.DataRetention
