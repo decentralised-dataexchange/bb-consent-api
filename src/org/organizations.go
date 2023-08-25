@@ -208,3 +208,12 @@ func Get(organizationID string) (Organization, error) {
 
 	return result, err
 }
+
+// Update Updates the organization
+func Update(org Organization) (Organization, error) {
+	s := session()
+	defer s.Close()
+
+	err := collection(s).UpdateId(org.ID, org)
+	return org, err
+}
