@@ -104,3 +104,19 @@ func DeleteOrganizationType(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+// GetOrganizationTypeByID Gets organization Type by given id
+func GetOrganizationTypeByID(w http.ResponseWriter, r *http.Request) {
+	typeID := mux.Vars(r)["typeID"]
+	orgType, err := ot.Get(typeID)
+
+	if err != nil {
+		m := fmt.Sprintf("Failed to get organization type: %v", typeID)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(orgType)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
+}
