@@ -322,6 +322,34 @@ func UpdateOrgEula(w http.ResponseWriter, r *http.Request) {
 	//w.Write(response)
 }
 
+// DeleteOrgEula Updates an organization EULA URL
+func DeleteOrgEula(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+
+	o, err := org.Get(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	o.EulaURL = ""
+
+	orgResp, err := org.Update(o)
+	if err != nil {
+		m := fmt.Sprintf("Failed to update organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	go handleEulaUpdateNotification(orgResp)
+
+	//response, _ := json.Marshal(organization{orgResp})
+	//w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusAccepted)
+	//w.Write(response)
+}
+
 // TODO: Group these to err, info and introduce global counters
 var consentGetErrCount = 0
 var notificationErrCount = 0
