@@ -181,3 +181,27 @@ func UpdateOrganizationTypeImage(w http.ResponseWriter, r *http.Request) {
 	}
 	go org.UpdateOrganizationsOrgType(orgType)
 }
+
+// GetOrganizationTypeImage Retrieves the organizationType image
+func GetOrganizationTypeImage(w http.ResponseWriter, r *http.Request) {
+	organizationTypeID := mux.Vars(r)["typeID"]
+
+	//TODO: Get only the imageID from the organizationType and not the whole organizationType.
+	organizationType, err := ot.Get(organizationTypeID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch organizationType: %v", organizationTypeID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	image, err := image.Get(organizationType.ImageID)
+
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch image with id: %v", organizationType.ImageID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Write(image.Data)
+}
