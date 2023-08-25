@@ -192,3 +192,16 @@ func UpdateClientDeviceInfo(userID string, client ClientInfo) (User, error) {
 	u, err := Get(userID)
 	return u, err
 }
+
+// AddRole Add roles to users
+func AddRole(userID string, role Role) (User, error) {
+	s := session()
+	defer s.Close()
+
+	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(userID)}, bson.M{"$push": bson.M{"roles": role}})
+	if err != nil {
+		return User{}, err
+	}
+	u, err := Get(userID)
+	return u, err
+}
