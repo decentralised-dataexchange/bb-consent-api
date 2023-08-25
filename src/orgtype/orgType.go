@@ -73,3 +73,12 @@ func Delete(organizationTypeID string) error {
 
 	return collection(s).Remove(bson.M{"_id": bson.ObjectIdHex(organizationTypeID)})
 }
+
+// UpdateImage Update the org type image
+func UpdateImage(organizationTypeID string, imageID string, imageURL string) error {
+	s := session()
+	defer s.Close()
+
+	return collection(s).Update(bson.M{"_id": bson.ObjectIdHex(organizationTypeID)},
+		bson.M{"$set": bson.M{"imageid": imageID, "imageurl": imageURL}})
+}
