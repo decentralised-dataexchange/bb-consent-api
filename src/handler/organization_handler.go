@@ -618,6 +618,28 @@ func AddConsentPurposes(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+type getPurposesResp struct {
+	OrgID    string
+	Purposes []org.Purpose
+}
+
+// GetPurposes Gets an organization purposes
+func GetPurposes(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+
+	o, err := org.Get(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(getPurposesResp{OrgID: o.ID.Hex(), Purposes: o.Purposes})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(response)
+}
+
 // Check if the lawful usage ID provided is valid
 func isValidLawfulBasisOfProcessing(lawfulBasis int) bool {
 	isFound := false
