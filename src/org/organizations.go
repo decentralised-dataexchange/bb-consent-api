@@ -197,3 +197,14 @@ func Add(org Organization) (Organization, error) {
 	org.ID = bson.NewObjectId()
 	return org, collection(s).Insert(&org)
 }
+
+// Get Gets a single organization by given id
+func Get(organizationID string) (Organization, error) {
+	s := session()
+	defer s.Close()
+
+	var result Organization
+	err := collection(s).FindId(bson.ObjectIdHex(organizationID)).One(&result)
+
+	return result, err
+}

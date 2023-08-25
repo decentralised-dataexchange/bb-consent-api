@@ -15,6 +15,7 @@ import (
 	"github.com/bb-consent/api/src/orgtype"
 	"github.com/bb-consent/api/src/token"
 	"github.com/bb-consent/api/src/user"
+	"github.com/gorilla/mux"
 )
 
 type organization struct {
@@ -102,5 +103,21 @@ func AddOrganization(w http.ResponseWriter, r *http.Request) {
 	response, _ := json.Marshal(organization{orgResp})
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+	w.Write(response)
+}
+
+// GetOrganizationByID Gets a single organization by given id
+func GetOrganizationByID(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+	o, err := org.Get(organizationID)
+
+	if err != nil {
+		m := fmt.Sprintf("Failed to get organization by ID :%v", organizationID)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	response, _ := json.Marshal(organization{o})
 	w.Write(response)
 }
