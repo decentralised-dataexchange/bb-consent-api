@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"runtime"
+	"strconv"
 )
 
 const (
@@ -45,6 +46,12 @@ var orgRoles = []OrgRole{
 	{ID: 2, Role: "Dpo"},
 	{ID: 3, Role: "Developer"}}
 
+// PaginationLinks pagination links
+type PaginationLinks struct {
+	Self string `json:"self,omitempty"`
+	Next string `json:"next,omitempty"`
+}
+
 // GetRole Gets Role details by ID
 func GetRole(roleID int) OrgRole {
 	return orgRoles[roleID-1]
@@ -73,6 +80,37 @@ func IsValidRoleID(roleID int) bool {
 		}
 	}
 	return false
+}
+
+// CreatePaginationLinks Creates the self and next links for paginated responses
+func CreatePaginationLinks(r *http.Request, startID string, nextID string, limit int) (pagination PaginationLinks) {
+	url := "https://" + r.Host + r.URL.Path
+
+	pagination.Self = url + "?limit=" + strconv.Itoa(limit)
+
+	if nextID != "" {
+		pagination.Next = url + "?startid=" + nextID + "&limit=" + strconv.Itoa(limit)
+	}
+
+	return pagination
+}
+
+// ParsePaginationQueryParameters Parses the query parameters that are for pagination
+func ParsePaginationQueryParameters(r *http.Request) (startID string, limit int) {
+	startID = ""
+
+	startIDs, ok := r.URL.Query()["startid"]
+
+	if ok {
+		startID = startIDs[0]
+	}
+
+	limits, ok := r.URL.Query()["limit"]
+
+	if ok {
+		limit, _ = strconv.Atoi(limits[0])
+	}
+	return
 }
 
 // HandleError Common function to formulate error and set the status
