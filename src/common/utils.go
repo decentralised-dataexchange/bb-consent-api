@@ -33,6 +33,28 @@ type status struct {
 	Message string
 }
 
+// OrgRole Organization role definition
+type OrgRole struct {
+	ID   int
+	Role string
+}
+
+// Note: Dont change the ID(s) if new role needed then add at the end
+var orgRoles = []OrgRole{
+	{ID: 1, Role: "Admin"},
+	{ID: 2, Role: "Dpo"},
+	{ID: 3, Role: "Developer"}}
+
+// GetRoleID Gets RoleID
+func GetRoleID(role string) int {
+	for _, r := range orgRoles {
+		if r.Role == role {
+			return r.ID
+		}
+	}
+	return 0
+}
+
 // HandleError Common function to formulate error and set the status
 func HandleError(w http.ResponseWriter, code int, message string, err error) {
 	s := status{code, message}

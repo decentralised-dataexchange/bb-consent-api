@@ -18,6 +18,8 @@ func healthz(w http.ResponseWriter, r *http.Request) {
 func SetRoutes(r *mux.Router) {
 	r.HandleFunc("/", healthz).Methods("GET")
 
+	r.Handle("/v1/organizations", m.Chain(handler.AddOrganization, m.Logger(), m.Authenticate())).Methods("POST")
+
 	//Login
 	r.Handle("/v1/users/register", m.Chain(handler.RegisterUser, m.LoggerNoAuth())).Methods("POST")
 	r.Handle("/v1/users/login", m.Chain(handler.LoginUser, m.LoggerNoAuth())).Methods("POST")
