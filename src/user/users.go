@@ -258,3 +258,48 @@ func UpdateOrganization(userID string, org Org) (User, error) {
 	err = c.FindId(bson.ObjectIdHex(userID)).One(&result)
 	return result, err
 }
+
+func GetUserOrgDetails(u User, oID string) (org Org, found bool) {
+	for _, o := range u.Orgs {
+		if o.OrgID.Hex() == oID {
+			return o, true
+		}
+	}
+	return org, false
+}
+
+// DeleteOrganization Remove user from an organization
+func DeleteOrganization(userID string, orgID string) (User, error) {
+	s := session()
+	defer s.Close()
+	c := collection(s)
+
+	u, err := Get(userID)
+	if err != nil {
+		return User{}, err
+	}
+	org, _ := GetUserOrgDetails(u, orgID)
+	//Check found == true
+
+	var result User
+	err = c.Update(bson.M{"_id": bson.ObjectIdHex(userID)}, bson.M{"$pull": bson.M{"orgs": org}})
+	if err != nil {
+		return result, err
+	}
+
+	err = c.FindId(bson.ObjectIdHex(userID)).One(&result)
+	return result, err
+}
+
+// RemoveRole Remove role of an user
+func RemoveRole(userID string, role Role) (User, error) {
+	s := session()
+	defer s.Close()
+
+	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(userID)}, bson.M{"$pull": bson.M{"roles": role}})
+	if err != nil {
+		return User{}, err
+	}
+	u, err := Get(userID)
+	return u, err
+}
