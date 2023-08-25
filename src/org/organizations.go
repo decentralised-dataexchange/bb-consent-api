@@ -1,6 +1,7 @@
 package org
 
 import (
+	"errors"
 	"log"
 
 	"github.com/bb-consent/api/src/database"
@@ -377,6 +378,24 @@ func DeletePurposes(organizationID string, purposes Purpose) (Organization, erro
 	return o, err
 }
 
+// GetPurpose Get the organization purpose by ID
+func GetPurpose(organizationID string, purposeID string) (Purpose, error) {
+	s := session()
+	defer s.Close()
+
+	o, err := Get(organizationID)
+	if err != nil {
+		return Purpose{}, err
+	}
+
+	for _, p := range o.Purposes {
+		if p.ID == purposeID {
+			return p, nil
+		}
+	}
+	return Purpose{}, errors.New("failed to find the purpose")
+}
+
 // AddTemplates Add the organization templates
 func AddTemplates(organizationID string, template Template) error {
 	s := session()
@@ -395,6 +414,19 @@ func DeleteTemplates(organizationID string, templates Template) (Organization, e
 	defer s.Close()
 
 	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(organizationID)}, bson.M{"$pull": bson.M{"templates": templates}})
+	if err != nil {
+		return Organization{}, err
+	}
+	o, err := Get(organizationID)
+	return o, err
+}
+
+// UpdateTemplates Update the organization templates
+func UpdateTemplates(organizationID string, templates []Template) (Organization, error) {
+	s := session()
+	defer s.Close()
+
+	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(organizationID)}, bson.M{"$set": bson.M{"templates": templates}})
 	if err != nil {
 		return Organization{}, err
 	}
