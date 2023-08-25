@@ -183,6 +183,50 @@ type KeycloakOpenIDClientAccess struct {
 	Manage    bool `json:"manage"`
 }
 
+// Lawful basis of processing IDs
+const (
+	ConsentBasis            = 0
+	ContractBasis           = 1
+	LegalObligationBasis    = 2
+	VitalInterestBasis      = 3
+	PublicTaskBasis         = 4
+	LegitimateInterestBasis = 5
+)
+
+// LawfulBasisOfProcessingMapping Structure defining lawful basis of processing label and ID mapping
+type LawfulBasisOfProcessingMapping struct {
+	ID  int
+	Str string
+}
+
+// LawfulBasisOfProcessingMappings List of available lawful basis of processing mappings
+var LawfulBasisOfProcessingMappings = []LawfulBasisOfProcessingMapping{
+	{
+		ID:  ConsentBasis,
+		Str: "Consent",
+	},
+	{
+		ID:  ContractBasis,
+		Str: "Contract",
+	},
+	{
+		ID:  LegalObligationBasis,
+		Str: "Legal Obligation",
+	},
+	{
+		ID:  VitalInterestBasis,
+		Str: "Vital Interest",
+	},
+	{
+		ID:  PublicTaskBasis,
+		Str: "Public Task",
+	},
+	{
+		ID:  LegitimateInterestBasis,
+		Str: "Legitimate Interest",
+	},
+}
+
 func session() *mgo.Session {
 	return database.DB.Session.Copy()
 }
@@ -305,4 +349,17 @@ func UpdateOrganizationsOrgType(oType orgtype.OrgType) error {
 	}
 	log.Println("successfully updated organiztions for type name change")
 	return nil
+}
+
+// UpdatePurposes Update the organization purposes
+func UpdatePurposes(organizationID string, purposes []Purpose) (Organization, error) {
+	s := session()
+	defer s.Close()
+
+	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(organizationID)}, bson.M{"$set": bson.M{"purposes": purposes}})
+	if err != nil {
+		return Organization{}, err
+	}
+	o, err := Get(organizationID)
+	return o, err
 }

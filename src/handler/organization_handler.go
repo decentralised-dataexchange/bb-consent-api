@@ -19,6 +19,7 @@ import (
 	"github.com/bb-consent/api/src/orgtype"
 	"github.com/bb-consent/api/src/token"
 	"github.com/bb-consent/api/src/user"
+	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/mux"
 )
 
@@ -524,4 +525,117 @@ func GetOrganizationRoles(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
+}
+
+type purpose struct {
+	Name                    string `valid:"required"`
+	Description             string `valid:"required"`
+	LawfulBasisOfProcessing int
+	PolicyURL               string `valid:"required"`
+	AttributeType           int
+	Jurisdiction            string
+	Disclosure              string
+	IndustryScope           string
+	DataRetention           org.DataRetention
+	Restriction             string
+	Shared3PP               bool
+	SSIID                   string
+}
+
+type purposeReq struct {
+	Purposes []purpose
+}
+
+// AddConsentPurposes Adds consent purpose to the organization
+func AddConsentPurposes(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+
+	o, err := org.Get(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	var pReq purposeReq
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	json.Unmarshal(b, &pReq)
+
+	// validating request payload
+	valid, err := govalidator.ValidateStruct(pReq)
+	if !valid {
+		log.Printf("Missing mandatory fields for a adding consent purpose to org")
+		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	for _, p := range pReq.Purposes {
+
+		// Proceed if lawful basis of processing provided is valid
+		if !isValidLawfulBasisOfProcessing(p.LawfulBasisOfProcessing) {
+			continue
+		}
+
+		tempLawfulUsage := getLawfulUsageByLawfulBasis(p.LawfulBasisOfProcessing)
+
+		tempPurpose := org.Purpose{
+			ID:                      bson.NewObjectId().Hex(),
+			Name:                    p.Name,
+			Description:             p.Description,
+			LawfulUsage:             tempLawfulUsage,
+			LawfulBasisOfProcessing: p.LawfulBasisOfProcessing,
+			PolicyURL:               p.PolicyURL,
+			AttributeType:           p.AttributeType,
+			Jurisdiction:            p.Jurisdiction,
+			Disclosure:              p.Disclosure,
+			IndustryScope:           p.IndustryScope,
+			DataRetention:           p.DataRetention,
+			Restriction:             p.Restriction,
+			Shared3PP:               p.Shared3PP,
+			SSIID:                   p.SSIID}
+
+		o.Purposes = append(o.Purposes, tempPurpose)
+	}
+
+	orgResp, err := org.UpdatePurposes(o.ID.Hex(), o.Purposes)
+	if err != nil {
+		m := fmt.Sprintf("Failed to update purpose to organization: %v", o.Name)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+	/*
+		u, err := user.Get(token.GetUserID(r))
+		if err != nil {
+			//notifications.SendPurposeUpdateNotification(u, o.ID.Hex(), )
+		}
+	*/
+
+	response, _ := json.Marshal(organization{orgResp})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(response)
+}
+
+// Check if the lawful usage ID provided is valid
+func isValidLawfulBasisOfProcessing(lawfulBasis int) bool {
+	isFound := false
+	for _, lawfulBasisOfProcessingMapping := range org.LawfulBasisOfProcessingMappings {
+		if lawfulBasisOfProcessingMapping.ID == lawfulBasis {
+			isFound = true
+			break
+		}
+	}
+
+	return isFound
+}
+
+// Fetch the lawful usage based on the lawful basis ID
+func getLawfulUsageByLawfulBasis(lawfulBasis int) bool {
+	if lawfulBasis == org.ConsentBasis {
+		return false
+	} else {
+		return true
+	}
 }
