@@ -640,6 +640,52 @@ func GetPurposes(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+// DeleteConsentPurposeByID Deletes the given purpose by ID
+func DeleteConsentPurposeByID(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+	purposeID := mux.Vars(r)["purposeID"]
+
+	o, err := org.Get(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	var purposeToDelete org.Purpose
+	for _, p := range o.Purposes {
+		if p.ID == purposeID {
+			purposeToDelete = p
+		}
+	}
+
+	if purposeToDelete == (org.Purpose{}) {
+		m := fmt.Sprintf("Failed to find purpose with ID: %v in organization: %v", purposeID, o.Name)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	//TODO: Before we delete purpose, need to remove the purpose from the templates
+	err = deletePurposeIDFromTemplate(purposeID, o.ID.Hex(), o.Templates)
+	if err != nil {
+		m := fmt.Sprintf("Failed to update template for organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	orgResp, err := org.DeletePurposes(o.ID.Hex(), purposeToDelete)
+	if err != nil {
+		m := fmt.Sprintf("Failed to delete purpose: %v from organization: %v", purposeID, o.Name)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(organization{orgResp})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(response)
+}
+
 // Check if the lawful usage ID provided is valid
 func isValidLawfulBasisOfProcessing(lawfulBasis int) bool {
 	isFound := false
@@ -660,4 +706,36 @@ func getLawfulUsageByLawfulBasis(lawfulBasis int) bool {
 	} else {
 		return true
 	}
+}
+
+func deletePurposeIDFromTemplate(purposeID string, orgID string, templates []org.Template) error {
+	for _, t := range templates {
+		for _, p := range t.PurposeIDs {
+			if p == purposeID {
+				var template org.Template
+				template.Consent = t.Consent
+				template.ID = t.ID
+				for _, p := range t.PurposeIDs {
+					if p != purposeID {
+						template.PurposeIDs = append(template.PurposeIDs, p)
+					}
+				}
+				_, err := org.DeleteTemplates(orgID, t)
+				if err != nil {
+					fmt.Printf("Failed to delete template: %v from organization: %v", t.ID, orgID)
+					return err
+				}
+				if len(template.PurposeIDs) == 0 {
+					continue
+				}
+				err = org.AddTemplates(orgID, template)
+				if err != nil {
+					fmt.Printf("Failed to add template: %v from organization: %v", t.ID, orgID)
+					return err
+				}
+				continue
+			}
+		}
+	}
+	return nil
 }
