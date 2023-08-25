@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/bb-consent/api/src/database"
+	"github.com/bb-consent/api/src/org"
 	mgo "github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 )
@@ -204,4 +205,30 @@ func AddRole(userID string, role Role) (User, error) {
 	}
 	u, err := Get(userID)
 	return u, err
+}
+
+// UpdateOrganizationsSubscribedUsers Updates the embedded organization snippet for all users
+func UpdateOrganizationsSubscribedUsers(org org.Organization) error {
+	s := session()
+	defer s.Close()
+	c := collection(s)
+
+	var result User
+	iter := c.Find(bson.M{"orgs.orgid": org.ID}).Iter()
+	for iter.Next(&result) {
+		for i := range result.Orgs {
+			if result.Orgs[i].OrgID == org.ID {
+				result.Orgs[i].Name = org.Name
+				result.Orgs[i].Location = org.Location
+			}
+			err := c.UpdateId(result.ID, result)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if err := iter.Close(); err != nil {
+		return err
+	}
+	return nil
 }
