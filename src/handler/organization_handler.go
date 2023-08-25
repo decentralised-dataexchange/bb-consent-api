@@ -1062,6 +1062,29 @@ func DeleteConsentTemplatesByID(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+type getTemplateResp struct {
+	OrgID    string
+	Template org.Template
+}
+
+// GetTemplateByID Gets an organization templates
+func GetTemplateByID(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+	templateID := mux.Vars(r)["templateID"]
+
+	t, err := org.GetTemplate(organizationID, templateID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch organization: %v tempalte: %v", organizationID, templateID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(getTemplateResp{OrgID: organizationID, Template: t})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(response)
+}
+
 func removeElementFromSlice(slice []string, index int) []string {
 
 	newSlice := make([]string, 0)

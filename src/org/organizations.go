@@ -433,3 +433,21 @@ func UpdateTemplates(organizationID string, templates []Template) (Organization,
 	o, err := Get(organizationID)
 	return o, err
 }
+
+// GetTemplate Get the organization template by ID
+func GetTemplate(organizationID string, templateID string) (Template, error) {
+	s := session()
+	defer s.Close()
+
+	o, err := Get(organizationID)
+	if err != nil {
+		return Template{}, err
+	}
+
+	for _, t := range o.Templates {
+		if t.ID == templateID {
+			return t, nil
+		}
+	}
+	return Template{}, errors.New("Failed to find the template")
+}
