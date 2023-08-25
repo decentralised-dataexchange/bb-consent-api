@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -11,6 +13,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
+	"github.com/bb-consent/api/src/image"
 	"github.com/bb-consent/api/src/org"
 	"github.com/bb-consent/api/src/orgtype"
 	"github.com/bb-consent/api/src/token"
@@ -170,4 +173,45 @@ func UpdateOrganization(w http.ResponseWriter, r *http.Request) {
 	//w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
 	//w.Write(response)
+}
+
+// UpdateOrganizationCoverImage Inserts the image and update the id to user
+func UpdateOrganizationCoverImage(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+
+	file, _, err := r.FormFile("orgimage")
+	if err != nil {
+		m := fmt.Sprintf("Failed to extract image organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+	defer file.Close()
+
+	buf := bytes.NewBuffer(nil)
+	_, err = io.Copy(buf, file)
+	if err != nil {
+		m := fmt.Sprintf("Failed to copy image organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	imageID, err := image.Add(buf.Bytes())
+	if err != nil {
+		m := fmt.Sprintf("Failed to store image in data store organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	imageURL := "https://" + r.Host + "/v1/organizations/" + organizationID + "/image/" + imageID
+	o, err := org.UpdateCoverImage(organizationID, imageID, imageURL)
+	if err != nil {
+		m := fmt.Sprintf("Failed to update organization: %v with image: %v details", organizationID, imageID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(organization{o})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
 }
