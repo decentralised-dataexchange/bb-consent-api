@@ -686,6 +686,77 @@ func DeleteConsentPurposeByID(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+// UpdatePurposeByID Update the given purpose by ID
+func UpdatePurposeByID(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+	purposeID := mux.Vars(r)["purposeID"]
+
+	var uReq purpose
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	json.Unmarshal(b, &uReq)
+
+	o, err := org.Get(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Proceed if lawful basis of processing provided is valid
+	if !isValidLawfulBasisOfProcessing(uReq.LawfulBasisOfProcessing) {
+		m := fmt.Sprintf("Invalid lawful basis of processing provided")
+		common.HandleError(w, http.StatusBadRequest, m, err)
+		return
+	}
+
+	tempLawfulUsage := getLawfulUsageByLawfulBasis(uReq.LawfulBasisOfProcessing)
+
+	var found = false
+	for i := range o.Purposes {
+		if o.Purposes[i].ID == purposeID {
+			found = true
+			o.Purposes[i].Name = strings.TrimSpace(uReq.Name)
+			o.Purposes[i].Description = strings.TrimSpace(uReq.Description)
+			o.Purposes[i].PolicyURL = strings.TrimSpace(uReq.PolicyURL)
+			o.Purposes[i].LawfulUsage = tempLawfulUsage
+			o.Purposes[i].LawfulBasisOfProcessing = uReq.LawfulBasisOfProcessing
+			o.Purposes[i].Jurisdiction = uReq.Jurisdiction
+			o.Purposes[i].Disclosure = uReq.Disclosure
+			o.Purposes[i].IndustryScope = uReq.IndustryScope
+			o.Purposes[i].DataRetention = uReq.DataRetention
+			o.Purposes[i].Restriction = uReq.Restriction
+			o.Purposes[i].Shared3PP = uReq.Shared3PP
+			if (o.Purposes[i].AttributeType != uReq.AttributeType) ||
+				(o.Purposes[i].SSIID != uReq.SSIID) {
+				m := fmt.Sprintf("Can not modify attributeType or SSIID for purpose: %v organization: %v",
+					organizationID, purposeID)
+				common.HandleError(w, http.StatusBadRequest, m, err)
+				return
+			}
+		}
+	}
+
+	if !found {
+		m := fmt.Sprintf("Failed to find purpose with ID: %v in organization: %v", purposeID, o.Name)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	o, err = org.Update(o)
+	if err != nil {
+		m := fmt.Sprintf("Failed to update purpose: %v in organization: %v", purposeID, o.Name)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(organization{o})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(response)
+}
+
 // Check if the lawful usage ID provided is valid
 func isValidLawfulBasisOfProcessing(lawfulBasis int) bool {
 	isFound := false
