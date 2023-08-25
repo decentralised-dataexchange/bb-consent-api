@@ -208,6 +208,30 @@ func AddRole(userID string, role Role) (User, error) {
 	return u, err
 }
 
+// GetOrgSubscribeUsers Get list of users subscribed to an organizations
+func GetOrgSubscribeUsers(orgID string, startID string, limit int) ([]User, string, error) {
+	s := session()
+	defer s.Close()
+
+	var results []User
+	var err error
+	limit = 10000
+	if startID == "" {
+		err = collection(s).Find(bson.M{"orgs.orgid": bson.ObjectIdHex(orgID)}).Select(bson.M{"name": 1, "phone": 1, "email": 1}).Sort("-_id").Limit(limit).All(&results)
+	} else {
+		err = collection(s).Find(bson.M{"orgs.orgid": bson.ObjectIdHex(orgID), "_id": bson.M{"$lt": bson.ObjectIdHex(startID)}}).Select(bson.M{"name": 1, "phone": 1, "email": 1}).Sort("-_id").Limit(limit).All(&results)
+	}
+
+	var lastID = ""
+	if err == nil {
+		if len(results) != 0 && len(results) == (limit) {
+			lastID = results[len(results)-1].ID.Hex()
+		}
+	}
+
+	return results, lastID, err
+}
+
 // GetOrgSubscribeIter Get Iterator to users subscribed to an organizations
 func GetOrgSubscribeIter(orgID string) *mgo.Iter {
 	s := session()
