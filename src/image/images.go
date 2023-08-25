@@ -32,3 +32,13 @@ func Add(image []byte) (imageID string, err error) {
 
 	return i.ID.Hex(), err
 }
+
+// Get Fetches the image by ID
+func Get(imageID string) (Image, error) {
+	s := session()
+	defer s.Close()
+
+	var image Image
+	err := collection(s).FindId(bson.ObjectIdHex(imageID)).One(&image)
+	return image, err
+}
