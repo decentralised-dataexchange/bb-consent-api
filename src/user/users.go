@@ -218,6 +218,21 @@ func GetOrgSubscribeIter(orgID string) *mgo.Iter {
 	return iter
 }
 
+// GetOrgSubscribeCount Get count of users subscribed to an organizations
+func GetOrgSubscribeCount(orgID string) (int, error) {
+	s := session()
+	defer s.Close()
+
+	count, err := collection(s).Find(bson.M{"orgs.orgid": bson.ObjectIdHex(orgID)}).Count()
+
+	if err != nil {
+		log.Printf("Failed to find user count by org id:%v err:%v", orgID, err)
+		return 0, err
+	}
+
+	return count, err
+}
+
 // UpdateOrgTypeOfSubscribedUsers Updates the embedded organization type snippet for all users
 func UpdateOrgTypeOfSubscribedUsers(orgType orgtype.OrgType) error {
 	s := session()
