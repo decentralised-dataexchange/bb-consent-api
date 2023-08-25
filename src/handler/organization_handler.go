@@ -979,6 +979,102 @@ func DeleteConsentTemplateByID(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+// DeleteConsentTemplatesByID Deletes an organization templates
+func DeleteConsentTemplatesByID(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+	purposeID := mux.Vars(r)["purposeID"]
+
+	o, err := org.Get(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Validating provided purposeID
+	isPurposeFound := false
+	for _, p := range o.Purposes {
+		if p.ID == purposeID {
+			isPurposeFound = true
+		}
+	}
+
+	if !isPurposeFound {
+		m := fmt.Sprintf("Failed to find purpose:%v for organization: %v", purposeID, organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	var toBeDeletedTemplateIDs []string
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	json.Unmarshal(b, &toBeDeletedTemplateIDs)
+
+	toBeDeletedTemplateIndexs := make([]int, 0)
+
+	for _, toBeDeletedTemplateID := range toBeDeletedTemplateIDs {
+		for templateIndex, orgTemplate := range o.Templates {
+
+			if orgTemplate.ID == toBeDeletedTemplateID {
+
+				toBeDeletedTemplateIndexs = append(toBeDeletedTemplateIndexs, templateIndex)
+
+			}
+		}
+
+	}
+
+	toBeNotDeletedTemplates := make([]org.Template, 0)
+	for _, templateIndex := range toBeDeletedTemplateIndexs {
+		templatePurposeIDs := o.Templates[templateIndex].PurposeIDs
+
+		for templatePurposeIDIndex, templatePurposeID := range templatePurposeIDs {
+			if templatePurposeID == purposeID {
+				o.Templates[templateIndex].PurposeIDs = removeElementFromSlice(o.Templates[templateIndex].PurposeIDs, templatePurposeIDIndex)
+			}
+
+		}
+
+	}
+
+	for _, tempOrgTemplate := range o.Templates {
+		if len(tempOrgTemplate.PurposeIDs) > 0 {
+			toBeNotDeletedTemplates = append(toBeNotDeletedTemplates, tempOrgTemplate)
+		}
+	}
+
+	o.Templates = toBeNotDeletedTemplates
+	o, err = org.Update(o)
+	if err != nil {
+		m := fmt.Sprintf("Failed to delete templates in organization: %v", o.ID.Hex())
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	if o.HlcSupport {
+		log.Println("Haven't implemented ledger integrations")
+	}
+
+	response, _ := json.Marshal(organization{o})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
+
+func removeElementFromSlice(slice []string, index int) []string {
+
+	newSlice := make([]string, 0)
+
+	for tempIndex, _ := range slice {
+		if tempIndex != index {
+			newSlice = append(newSlice, slice[tempIndex])
+		}
+	}
+
+	return newSlice
+}
+
 type globalPolicyConfigurationResp struct {
 	PolicyURL     string
 	DataRetention org.DataRetention
