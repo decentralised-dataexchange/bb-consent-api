@@ -757,6 +757,48 @@ func UpdatePurposeByID(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+// GetPurposeByID Get a purpose by ID
+func GetPurposeByID(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["organizationID"]
+	purposeID := mux.Vars(r)["purposeID"]
+
+	o, err := org.Get(orgID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get organization: %v", orgID)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	type purposeTemplates struct {
+		ID      string
+		Consent string
+	}
+
+	type purposeDetails struct {
+		Purpose   org.Purpose
+		Templates []purposeTemplates
+	}
+	var pDetails purposeDetails
+	for _, p := range o.Purposes {
+		if p.ID == purposeID {
+			pDetails.Purpose = p
+		}
+	}
+
+	for _, t := range o.Templates {
+		for _, pID := range t.PurposeIDs {
+			if pID == purposeID {
+				pDetails.Templates = append(pDetails.Templates, purposeTemplates{ID: t.ID, Consent: t.Consent})
+			}
+		}
+	}
+
+	response, _ := json.Marshal(pDetails)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
+
 // Check if the lawful usage ID provided is valid
 func isValidLawfulBasisOfProcessing(lawfulBasis int) bool {
 	isFound := false
