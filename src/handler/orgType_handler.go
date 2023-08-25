@@ -120,3 +120,17 @@ func GetOrganizationTypeByID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
 }
+
+// GetOrganizationTypes Gets all organization types
+func GetOrganizationTypes(w http.ResponseWriter, r *http.Request) {
+	results, err := ot.GetAll()
+	if err != nil {
+		m := fmt.Sprintf("Failed to get organization types")
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(results)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
+}

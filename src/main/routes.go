@@ -19,12 +19,13 @@ func SetRoutes(r *mux.Router) {
 	r.HandleFunc("/", healthz).Methods("GET")
 
 	r.Handle("/v1/organizations", m.Chain(handler.AddOrganization, m.Logger(), m.Authenticate())).Methods("POST")
+	r.Handle("/v1/organizations/types", m.Chain(handler.GetOrganizationTypes, m.LoggerNoAuth())).Methods("GET")
+	r.Handle("/v1/organizations/roles", m.Chain(handler.GetOrganizationRoles, m.Logger(), m.Authenticate())).Methods("GET")
 	r.Handle("/v1/organizations/{organizationID}", m.Chain(handler.GetOrganizationByID, m.Logger(), m.Authenticate())).Methods("GET")
 	r.Handle("/v1/organizations/{organizationID}", m.Chain(handler.UpdateOrganization, m.Logger(), m.Authenticate())).Methods("PATCH")
 	r.Handle("/v1/organizations/{organizationID}/coverimage", m.Chain(handler.UpdateOrganizationCoverImage, m.Logger(), m.Authenticate())).Methods("POST")
 	r.Handle("/v1/organizations/{organizationID}/logoimage", m.Chain(handler.UpdateOrganizationLogoImage, m.Logger(), m.Authenticate())).Methods("POST")
 	r.Handle("/v1/organizations/{organizationID}/image/{imageID}", m.Chain(handler.GetOrganizationImage, m.Logger(), m.Authenticate())).Methods("GET")
-	r.Handle("/v1/organizations/roles", m.Chain(handler.GetOrganizationRoles, m.Logger(), m.Authenticate())).Methods("GET")
 
 	r.Handle("/v1/organizations/types", m.Chain(handler.AddOrganizationType, m.Logger(), m.Authenticate())).Methods("POST")
 	r.Handle("/v1/organizations/types/{typeID}", m.Chain(handler.UpdateOrganizationType, m.Logger(), m.Authenticate())).Methods("PATCH")
