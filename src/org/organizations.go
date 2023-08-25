@@ -256,3 +256,14 @@ func AddAdminUsers(organizationID string, admin Admin) (Organization, error) {
 	o, err := Get(organizationID)
 	return o, err
 }
+
+// GetAdminUsers Get admin users of organization
+func GetAdminUsers(organizationID string) (Organization, error) {
+	s := session()
+	defer s.Close()
+
+	var result Organization
+	err := collection(s).FindId(bson.ObjectIdHex(organizationID)).Select(bson.M{"admins": 1}).One(&result)
+
+	return result, err
+}

@@ -448,3 +448,29 @@ func AddOrgAdmin(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
+
+// GetOrgAdmins Get all the special users admin/dpo/dev of this orgs
+func GetOrgAdmins(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+
+	o, err := org.GetAdminUsers(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get admin users of organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	type orgAdmin struct {
+		UserID string
+		Role   string
+	}
+
+	var orgAdmins []orgAdmin
+	for _, admin := range o.Admins {
+		orgAdmins = append(orgAdmins, orgAdmin{admin.UserID, common.GetRole(admin.RoleID).Role})
+	}
+	response, _ := json.Marshal(orgAdmins)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
