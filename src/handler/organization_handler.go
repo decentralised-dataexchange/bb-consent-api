@@ -919,6 +919,28 @@ func AddConsentTemplates(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+type getTemplatesResp struct {
+	OrgID     string
+	Templates []org.Template
+}
+
+// GetTemplates Gets an organization templates
+func GetTemplates(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+
+	o, err := org.Get(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(getTemplatesResp{OrgID: o.ID.Hex(), Templates: o.Templates})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(response)
+}
+
 type globalPolicyConfigurationResp struct {
 	PolicyURL     string
 	DataRetention org.DataRetention
