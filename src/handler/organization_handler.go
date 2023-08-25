@@ -14,6 +14,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/image"
+	"github.com/bb-consent/api/src/notifications"
 	"github.com/bb-consent/api/src/org"
 	"github.com/bb-consent/api/src/orgtype"
 	"github.com/bb-consent/api/src/token"
@@ -272,4 +273,84 @@ func GetOrganizationImage(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Write(image.Data)
+}
+
+type orgEulaUpReq struct {
+	EulaURL string `valid:"required,url"`
+}
+
+// UpdateOrgEula Updates an organization EULA URL
+func UpdateOrgEula(w http.ResponseWriter, r *http.Request) {
+	var orgUpReq orgEulaUpReq
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	json.Unmarshal(b, &orgUpReq)
+
+	// validating request params
+	valid, err := govalidator.ValidateStruct(orgUpReq)
+
+	if !valid {
+		log.Printf("Missing mandatory param for updating EULA for org")
+		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	organizationID := mux.Vars(r)["organizationID"]
+
+	o, err := org.Get(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	o.EulaURL = orgUpReq.EulaURL
+
+	orgResp, err := org.Update(o)
+	if err != nil {
+		m := fmt.Sprintf("Failed to update organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	go handleEulaUpdateNotification(orgResp)
+
+	//response, _ := json.Marshal(organization{orgResp})
+	//w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusAccepted)
+	//w.Write(response)
+}
+
+// TODO: Group these to err, info and introduce global counters
+var consentGetErrCount = 0
+var notificationErrCount = 0
+var notificationSent = 0
+
+func handleEulaUpdateNotification(o org.Organization) {
+	// Get all users subscribed to this organization.
+	orgID := o.ID.Hex()
+
+	iter := user.GetOrgSubscribeIter(orgID)
+
+	var u user.User
+
+	for iter.Next(&u) {
+		if u.Client.Token == "" {
+			continue
+		}
+		err := notifications.SendEulaUpdateNotification(u, o)
+		if err != nil {
+			notificationErrCount++
+			continue
+		}
+		notificationSent++
+	}
+	log.Printf("notification sending for EULA update orgID: %v with err: %v sent: %v", orgID,
+		notificationErrCount, notificationSent)
+
+	err := iter.Close()
+	if err != nil {
+		log.Printf("Failed to close the iterator: %v", iter)
+	}
 }
