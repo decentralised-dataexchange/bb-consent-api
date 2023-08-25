@@ -1,14 +1,17 @@
 package handler
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
+	"github.com/bb-consent/api/src/image"
 	"github.com/bb-consent/api/src/org"
 	ot "github.com/bb-consent/api/src/orgtype"
 	"github.com/bb-consent/api/src/user"
@@ -133,4 +136,48 @@ func GetOrganizationTypes(w http.ResponseWriter, r *http.Request) {
 	response, _ := json.Marshal(results)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
+}
+
+// UpdateOrganizationTypeImage Inserts the image and update the id to user
+func UpdateOrganizationTypeImage(w http.ResponseWriter, r *http.Request) {
+	organizationTypeID := mux.Vars(r)["typeID"]
+
+	file, _, err := r.FormFile("orgtypeicon")
+	if err != nil {
+		m := fmt.Sprintf("Failed to extract image organizationType: %v", organizationTypeID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+	defer file.Close()
+
+	buf := bytes.NewBuffer(nil)
+	_, err = io.Copy(buf, file)
+	if err != nil {
+		m := fmt.Sprintf("Failed to copy image organizationType: %v", organizationTypeID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	imageID, err := image.Add(buf.Bytes())
+	if err != nil {
+		m := fmt.Sprintf("Failed to store image in data store organizationType: %v", organizationTypeID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	imageURL := "https://" + r.Host + "/v1/organizations/types/" + organizationTypeID + "/image"
+	err = ot.UpdateImage(organizationTypeID, imageID, imageURL)
+	if err != nil {
+		m := fmt.Sprintf("Failed to update organizationType: %v with image: %v details", organizationTypeID, imageID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	orgType, err := ot.Get(organizationTypeID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to update organizationType: %v with image: %v details", organizationTypeID, imageID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+	go org.UpdateOrganizationsOrgType(orgType)
 }
