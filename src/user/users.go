@@ -6,6 +6,7 @@ import (
 
 	"github.com/bb-consent/api/src/database"
 	"github.com/bb-consent/api/src/org"
+	"github.com/bb-consent/api/src/orgtype"
 	mgo "github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 )
@@ -215,6 +216,32 @@ func GetOrgSubscribeIter(orgID string) *mgo.Iter {
 	iter := collection(s).Find(bson.M{"orgs.orgid": bson.ObjectIdHex(orgID)}).Iter()
 
 	return iter
+}
+
+// UpdateOrgTypeOfSubscribedUsers Updates the embedded organization type snippet for all users
+func UpdateOrgTypeOfSubscribedUsers(orgType orgtype.OrgType) error {
+	s := session()
+	defer s.Close()
+	c := collection(s)
+
+	var u User
+	iter := c.Find(bson.M{"orgs.typeid": orgType.ID}).Iter()
+	for iter.Next(&u) {
+		for i := range u.Orgs {
+			if u.Orgs[i].TypeID == orgType.ID {
+				u.Orgs[i].Type = orgType.Type
+			}
+			err := c.UpdateId(u.ID, u)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if err := iter.Close(); err != nil {
+		return err
+	}
+	log.Println("successfully updated users for organization type name change")
+	return nil
 }
 
 // UpdateOrganizationsSubscribedUsers Updates the embedded organization snippet for all users

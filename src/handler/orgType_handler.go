@@ -9,7 +9,10 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
+	"github.com/bb-consent/api/src/org"
 	ot "github.com/bb-consent/api/src/orgtype"
+	"github.com/bb-consent/api/src/user"
+	"github.com/gorilla/mux"
 )
 
 type addOrgTypeReq struct {
@@ -43,6 +46,45 @@ func AddOrganizationType(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(o)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(response)
+}
+
+type updateOrgTypeReq struct {
+	Type string `valid:"required"`
+}
+
+// UpdateOrganizationType Updates an organization type
+func UpdateOrganizationType(w http.ResponseWriter, r *http.Request) {
+	organizationTypeID := mux.Vars(r)["typeID"]
+
+	var updateReq updateOrgTypeReq
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	json.Unmarshal(b, &updateReq)
+
+	// validating request payload
+	valid, err := govalidator.ValidateStruct(updateReq)
+	if valid != true {
+		log.Printf("Missing mandatory params for updating organization type")
+		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	orgType, err := ot.Update(organizationTypeID, updateReq.Type)
+	if err != nil {
+		m := fmt.Sprintf("Failed to update organization type: %v", organizationTypeID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	go org.UpdateOrganizationsOrgType(orgType)
+
+	go user.UpdateOrgTypeOfSubscribedUsers(orgType)
+
+	response, _ := json.Marshal(orgType)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
