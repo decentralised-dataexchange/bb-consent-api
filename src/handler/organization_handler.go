@@ -256,3 +256,20 @@ func UpdateOrganizationLogoImage(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
+
+// GetOrganizationImage Retrieves the organization image
+func GetOrganizationImage(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+	imageID := mux.Vars(r)["imageID"]
+
+	image, err := image.Get(imageID)
+
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch image with id: %v for org: %v", imageID, organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Write(image.Data)
+}
