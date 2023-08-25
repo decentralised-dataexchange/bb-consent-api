@@ -1499,3 +1499,29 @@ func EnableOrganizationSubscription(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
+
+// DisableOrganizationSubscription Enables the organization for subscription
+func DisableOrganizationSubscription(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+
+	o, err := org.Get(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	if o.Enabled {
+		o, err = org.SetEnabled(o.ID.Hex(), false)
+		if err != nil {
+			m := fmt.Sprintf("Failed to disable the organization: %v", organizationID)
+			common.HandleError(w, http.StatusInternalServerError, m, err)
+			return
+		}
+	}
+
+	response, _ := json.Marshal(organization{o})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
