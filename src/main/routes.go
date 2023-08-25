@@ -29,6 +29,7 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/organizations/{organizationID}/eulaURL", m.Chain(handler.DeleteOrgEula, m.Logger(), m.Authenticate())).Methods("DELETE")
 
 	r.Handle("/v1/organizations/{organizationID}/admins", m.Chain(handler.AddOrgAdmin, m.Logger(), m.Authenticate())).Methods("POST")
+	r.Handle("/v1/organizations/{organizationID}/admins", m.Chain(handler.GetOrgAdmins, m.Logger(), m.Authenticate())).Methods("GET")
 
 	//Login
 	r.Handle("/v1/users/register", m.Chain(handler.RegisterUser, m.LoggerNoAuth())).Methods("POST")
