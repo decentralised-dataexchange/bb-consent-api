@@ -50,6 +50,11 @@ func GetRole(roleID int) OrgRole {
 	return orgRoles[roleID-1]
 }
 
+// GetRoles Gets list of allowed organization roles
+func GetRoles() []OrgRole {
+	return orgRoles
+}
+
 // GetRoleID Gets RoleID
 func GetRoleID(role string) int {
 	for _, r := range orgRoles {

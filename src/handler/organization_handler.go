@@ -515,3 +515,13 @@ func DeleteOrgAdmin(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
+
+// GetOrganizationRoles Get the list of organization roles
+func GetOrganizationRoles(w http.ResponseWriter, r *http.Request) {
+	roles := common.GetRoles()
+
+	response, _ := json.Marshal(roles)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
