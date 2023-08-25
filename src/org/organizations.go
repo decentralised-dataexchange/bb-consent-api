@@ -363,3 +363,41 @@ func UpdatePurposes(organizationID string, purposes []Purpose) (Organization, er
 	o, err := Get(organizationID)
 	return o, err
 }
+
+// DeletePurposes Delete the given purpose
+func DeletePurposes(organizationID string, purposes Purpose) (Organization, error) {
+	s := session()
+	defer s.Close()
+
+	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(organizationID)}, bson.M{"$pull": bson.M{"purposes": purposes}})
+	if err != nil {
+		return Organization{}, err
+	}
+	o, err := Get(organizationID)
+	return o, err
+}
+
+// AddTemplates Add the organization templates
+func AddTemplates(organizationID string, template Template) error {
+	s := session()
+	defer s.Close()
+
+	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(organizationID)}, bson.M{"$push": bson.M{"templates": template}})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// DeleteTemplates Delete the organization templates
+func DeleteTemplates(organizationID string, templates Template) (Organization, error) {
+	s := session()
+	defer s.Close()
+
+	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(organizationID)}, bson.M{"$pull": bson.M{"templates": templates}})
+	if err != nil {
+		return Organization{}, err
+	}
+	o, err := Get(organizationID)
+	return o, err
+}
