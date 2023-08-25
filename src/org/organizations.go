@@ -1,6 +1,8 @@
 package org
 
 import (
+	"log"
+
 	"github.com/bb-consent/api/src/database"
 	"github.com/bb-consent/api/src/orgtype"
 	"github.com/globalsign/mgo"
@@ -279,4 +281,28 @@ func DeleteAdminUsers(organizationID string, admin Admin) (Organization, error) 
 	}
 	o, err := Get(organizationID)
 	return o, err
+}
+
+// UpdateOrganizationsOrgType Updates the embedded organization type snippet of all Organization
+func UpdateOrganizationsOrgType(oType orgtype.OrgType) error {
+	s := session()
+	defer s.Close()
+	c := collection(s)
+
+	var org Organization
+	iter := c.Find(bson.M{"type._id": oType.ID}).Iter()
+	for iter.Next(&org) {
+		if org.Type.ID == oType.ID {
+			org.Type = oType
+		}
+		err := c.UpdateId(org.ID, org)
+		if err != nil {
+			return err
+		}
+	}
+	if err := iter.Close(); err != nil {
+		return err
+	}
+	log.Println("successfully updated organiztions for type name change")
+	return nil
 }

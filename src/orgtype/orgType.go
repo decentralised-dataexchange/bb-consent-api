@@ -41,3 +41,16 @@ func Get(organizationTypeID string) (OrgType, error) {
 
 	return result, err
 }
+
+// Update Update the organization type
+func Update(organizationTypeID string, typeName string) (OrgType, error) {
+	s := session()
+	defer s.Close()
+
+	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(organizationTypeID)},
+		bson.M{"$set": bson.M{"type": typeName}})
+	if err == nil {
+		return Get(organizationTypeID)
+	}
+	return OrgType{}, err
+}
