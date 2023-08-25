@@ -207,6 +207,16 @@ func AddRole(userID string, role Role) (User, error) {
 	return u, err
 }
 
+// GetOrgSubscribeIter Get Iterator to users subscribed to an organizations
+func GetOrgSubscribeIter(orgID string) *mgo.Iter {
+	s := session()
+	defer s.Close()
+
+	iter := collection(s).Find(bson.M{"orgs.orgid": bson.ObjectIdHex(orgID)}).Iter()
+
+	return iter
+}
+
 // UpdateOrganizationsSubscribedUsers Updates the embedded organization snippet for all users
 func UpdateOrganizationsSubscribedUsers(org org.Organization) error {
 	s := session()
