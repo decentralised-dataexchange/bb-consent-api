@@ -48,6 +48,9 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/organizations/{organizationID}/purposes/{purposeID}", m.Chain(handler.UpdatePurposeByID, m.Logger(), m.Authenticate())).Methods("PUT")
 	r.Handle("/v1/organizations/{organizationID}/purposes/{purposeID}", m.Chain(handler.GetPurposeByID, m.Logger(), m.Authenticate())).Methods("GET")
 
+	// Organization global policy configuration
+	r.Handle("/v1/organizations/{organizationID}/global-policy-configuration", m.Chain(handler.GetGlobalPolicyConfiguration, m.Logger(), m.Authenticate())).Methods("GET")
+
 	//Login
 	r.Handle("/v1/users/register", m.Chain(handler.RegisterUser, m.LoggerNoAuth())).Methods("POST")
 	r.Handle("/v1/users/login", m.Chain(handler.LoginUser, m.LoggerNoAuth())).Methods("POST")
