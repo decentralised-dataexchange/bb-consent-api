@@ -520,6 +520,19 @@ func UpdateIdentityProviderByOrgID(organizationID string, identityProviderRepres
 	return o, err
 }
 
+// DeleteIdentityProviderByOrgID Delete the identity provider config for org
+func DeleteIdentityProviderByOrgID(organizationID string) (Organization, error) {
+	s := session()
+	defer s.Close()
+
+	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(organizationID)}, bson.M{"$set": bson.M{"identityproviderrepresentation": nil}})
+	if err != nil {
+		return Organization{}, err
+	}
+	o, err := Get(organizationID)
+	return o, err
+}
+
 // UpdateExternalIdentityProviderAvailableStatus Update the external identity provider available status for org
 func UpdateExternalIdentityProviderAvailableStatus(organizationID string, availableStatus bool) (Organization, error) {
 	s := session()
@@ -539,6 +552,19 @@ func UpdateOpenIDClientByOrgID(organizationID string, openIDConfig KeycloakOpenI
 	defer s.Close()
 
 	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(organizationID)}, bson.M{"$set": bson.M{"keycloakopenidclient": openIDConfig}})
+	if err != nil {
+		return Organization{}, err
+	}
+	o, err := Get(organizationID)
+	return o, err
+}
+
+// DeleteOpenIDClientByOrgID Delete OpenID config for org
+func DeleteOpenIDClientByOrgID(organizationID string) (Organization, error) {
+	s := session()
+	defer s.Close()
+
+	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(organizationID)}, bson.M{"$set": bson.M{"keycloakopenidclient": nil}})
 	if err != nil {
 		return Organization{}, err
 	}
