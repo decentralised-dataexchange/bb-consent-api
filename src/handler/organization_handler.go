@@ -1630,3 +1630,25 @@ func SetSubscribeMethod(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+type subTokenResp struct {
+	SubscribeKey    string
+	SubscribeMethod string
+}
+
+// GetSubscribeKey Gets existing subscription key
+func GetSubscribeKey(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["organizationID"]
+
+	t, err := org.GetSubscribeKey(orgID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get subscriotion key from organization: %v", orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(subTokenResp{t, getSubscribeMethod(subscribeMethodKeyBased).Method})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
