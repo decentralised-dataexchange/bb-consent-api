@@ -362,3 +362,47 @@ func GetAllUsersConsentedToAttribute(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
 }
+
+// GetPurposeAllConsentStatus Get all consent attributes status of a given purpose
+func GetPurposeAllConsentStatus(w http.ResponseWriter, r *http.Request) {
+	consentID := mux.Vars(r)["consentID"]
+	userID := mux.Vars(r)["userID"]
+	purposeID := mux.Vars(r)["purposeID"]
+
+	c, err := consent.Get(consentID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch consensts by ID: %v for user: %v", consentID, userID)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	var consents []consent.Consent
+	for _, p := range c.Purposes {
+		if p.ID == purposeID {
+			consents = p.Consents
+		}
+	}
+
+	var consentStatus = common.ConsentStatusDisAllow
+	for _, cons := range consents {
+		if cons.Status.Consented == common.ConsentStatusAllow {
+			consentStatus = common.ConsentStatusAllow
+			break
+		}
+		if cons.Status.Days != 0 {
+			remaining := cons.Status.Days - int((time.Now().Sub(cons.Status.TimeStamp).Hours())/24)
+			if remaining <= 0 {
+				consentStatus = common.ConsentStatusAllow
+				break
+			}
+		}
+	}
+
+	type purposeStatus struct {
+		Consented string
+	}
+
+	response, _ := json.Marshal(purposeStatus{consentStatus})
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
+}
