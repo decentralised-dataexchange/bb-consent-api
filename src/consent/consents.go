@@ -60,3 +60,14 @@ func DeleteByUserOrg(userID string, orgID string) error {
 
 	return collection(s).Remove(bson.M{"userid": userID, "orgid": orgID})
 }
+
+// GetByUserOrg Get all consents of a user in organization
+func GetByUserOrg(userID string, orgID string) (Consents, error) {
+	s := session()
+	defer s.Close()
+
+	var consents Consents
+	err := collection(s).Find(bson.M{"userid": userID, "orgid": orgID}).One(&consents)
+
+	return consents, err
+}
