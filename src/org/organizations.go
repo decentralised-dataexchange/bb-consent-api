@@ -476,3 +476,21 @@ func GetSubscribeMethod(orgID string) (int, error) {
 
 	return result.Subs.Method, err
 }
+
+// UpdateSubscribeMethod Update subscription method
+func UpdateSubscribeMethod(orgID string, method int) error {
+	s := session()
+	defer s.Close()
+	c := collection(s)
+
+	return c.UpdateId(bson.ObjectIdHex(orgID), bson.M{"$set": bson.M{"subs.method": method}})
+}
+
+// UpdateSubscribeKey Update subscription key
+func UpdateSubscribeKey(orgID string, key string) error {
+	s := session()
+	defer s.Close()
+	c := collection(s)
+
+	return c.UpdateId(bson.ObjectIdHex(orgID), bson.M{"$set": bson.M{"subs.key": key}})
+}

@@ -1584,3 +1584,49 @@ func GetSubscribeMethods(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
+
+type subMethod struct {
+	SubscribeMethodID int
+}
+
+func createSubscriptionKey() string {
+	return common.GetRandomString(4) + "-" + common.GetRandomString(4) + "-" + common.GetRandomString(4)
+}
+
+// SetSubscribeMethod Sets how users can subscribe to organization
+func SetSubscribeMethod(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["organizationID"]
+	_, err := org.Get(orgID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get organization: %v", orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	var subMethodReq subMethod
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	json.Unmarshal(b, &subMethodReq)
+
+	//TODO: Validation for the method ID range and acceptable values
+	err = org.UpdateSubscribeMethod(orgID, subMethodReq.SubscribeMethodID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to set subscription method to organization: %v", orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	var t = ""
+	if subMethodReq.SubscribeMethodID == subscribeMethodKeyBased {
+		t = createSubscriptionKey()
+	}
+
+	err = org.UpdateSubscribeKey(orgID, t)
+	if err != nil {
+		m := fmt.Sprintf("Failed to set subscription key to organization: %v", orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
