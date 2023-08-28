@@ -82,6 +82,7 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/organizations/{orgID}/users/{userID}/consents", m.Chain(handler.GetConsents, m.Logger(), m.Authenticate())).Methods("GET")
 	r.Handle("/v1/organizations/{orgID}/users/{userID}/consents/{consentID}", m.Chain(handler.GetConsentByID, m.Logger(), m.Authenticate())).Methods("GET")
 	r.Handle("/v1/organizations/{orgID}/users/{userID}/consents/{consentID}/purposes/{purposeID}", m.Chain(handler.GetConsentPurposeByID, m.Logger(), m.Authenticate())).Methods("GET")
+	r.Handle("/v1/organizations/{orgID}/purposes/{purposeID}/attributes/{attributeID}/consented/users", m.Chain(handler.GetAllUsersConsentedToAttribute, m.Logger(), m.Authenticate())).Methods("GET")
 
 	//Login
 	r.Handle("/v1/users/register", m.Chain(handler.RegisterUser, m.LoggerNoAuth())).Methods("POST")

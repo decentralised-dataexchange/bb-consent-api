@@ -7,10 +7,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bb-consent/api/src/actionlog"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/consent"
 	"github.com/bb-consent/api/src/consenthistory"
 	"github.com/bb-consent/api/src/org"
+	"github.com/bb-consent/api/src/token"
+	"github.com/bb-consent/api/src/user"
 	"github.com/gorilla/mux"
 )
 
@@ -291,6 +294,71 @@ func GetConsentPurposeByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(cpResp)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
+}
+
+// GetAllUsersConsentedToAttribute Gets all users who conseted to a given attribute
+func GetAllUsersConsentedToAttribute(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["orgID"]
+	purposeID := mux.Vars(r)["purposeID"]
+	attributeID := mux.Vars(r)["attributeID"]
+
+	aLog := fmt.Sprintf("Organization API: %v called by user: %v", r.URL.Path, token.GetUserName(r))
+	actionlog.LogOrgAPICalls(token.GetUserID(r), token.GetUserName(r), orgID, aLog)
+
+	startID, limit := common.ParsePaginationQueryParameters(r)
+	if limit == 0 {
+		limit = 50
+	}
+
+	purpose, err := org.GetPurpose(orgID, purposeID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to locate purposeID: %v for orgID: %v", orgID, purposeID)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	// If the purpose is lawful usage then we can fetch all the subscribed users right away.
+	if purpose.LawfulUsage == true {
+		users, lastID, err := user.GetOrgSubscribeUsers(orgID, startID, limit)
+		if err != nil {
+			m := fmt.Sprintf("Failed to get user subscribed to organization :%v", orgID)
+			common.HandleError(w, http.StatusNotFound, m, err)
+			return
+		}
+
+		var ou orgUsers
+		for _, u := range users {
+			ou.Users = append(ou.Users, orgUser{ID: u.ID.Hex(), Name: u.Name, Phone: u.Phone, Email: u.Email})
+		}
+
+		ou.Links = common.CreatePaginationLinks(r, startID, lastID, limit)
+		response, _ := json.Marshal(ou)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(response)
+		return
+	}
+	userIDs, nextID, err := consent.GetConsentedUsers(orgID, purposeID, attributeID, startID, limit)
+
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch users constented orgID: %v purposeID: %v attributeID: %v", orgID, purposeID, attributeID)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	var resp orgUsers
+	for _, userID := range userIDs {
+		u, err := user.Get(userID)
+		if err != nil {
+			//TODO: This is unexpected! report error here?
+			continue
+		}
+		resp.Users = append(resp.Users, orgUser{ID: u.ID.Hex(), Name: u.Name, Phone: u.Phone, Email: u.Email})
+	}
+
+	resp.Links = common.CreatePaginationLinks(r, startID, nextID, limit)
+	response, _ := json.Marshal(resp)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
 }
