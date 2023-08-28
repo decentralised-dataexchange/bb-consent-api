@@ -1684,6 +1684,27 @@ func RenewSubscribeKey(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+type subscriptionStatus struct {
+	Enabled bool
+}
+
+// GetOrganizationSubscriptionStatus Get organization enable/disable status for subscription
+func GetOrganizationSubscriptionStatus(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+
+	o, err := org.Get(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch organization: %v", organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(subscriptionStatus{o.Enabled})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
+
 type orgUserCount struct {
 	SubscribeUserCount int
 }
