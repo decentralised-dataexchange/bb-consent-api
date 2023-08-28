@@ -55,6 +55,34 @@ func SendEulaUpdateNotification(u user.User, o org.Organization) error {
 	return Send(u.Client.Token, u.Client.Type, title, body, notification.Type, n.ID.Hex(), count)
 }
 
+// SendDataBreachNotification Send Data breach notification to all users of organization.
+func SendDataBreachNotification(dataBreachID string, u user.User, orgID string, orgName string) error {
+	title := "Data Breach notification"
+	body := "Data breach notification from " + orgName
+
+	var notification Notification
+	notification.UserID = u.ID.Hex()
+	notification.OrgID = orgID
+	notification.Type = DataBreach
+	notification.Title = title
+	notification.DataBreachID = dataBreachID
+
+	n, err := Add(notification)
+	if err != nil {
+		fmt.Printf("db add error")
+		return err
+	}
+
+	count, err := GetUnReadCountByUserID(u.ID.Hex())
+	if err != nil {
+		fmt.Printf("db get count error")
+		return err
+	}
+
+	fmt.Printf("sending Data Breach notification \n")
+	return Send(u.Client.Token, u.Client.Type, title, body, notification.Type, n.ID.Hex(), count)
+}
+
 // Send Sends notification to the user registered mobile device
 func Send(registrationToken string, deviceType int, title string, body string, notificationType int, notificationID string, notificationUnReadCount int) error {
 	// Obtain a messaging.Client from the App.
