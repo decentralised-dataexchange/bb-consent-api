@@ -73,6 +73,9 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/organizations/{organizationID}/subscribe-key/renew", m.Chain(handler.RenewSubscribeKey, m.Logger(), m.Authenticate())).Methods("POST")
 	r.Handle("/v1/organizations/{organizationID}/subscription", m.Chain(handler.GetOrganizationSubscriptionStatus, m.Logger(), m.Authenticate())).Methods("GET")
 
+	// Organisation identity provider related API(s)
+	r.Handle("/v1/organizations/{organizationID}/idp/open-id", m.Chain(handler.AddIdentityProvider, m.Logger(), m.Authenticate())).Methods("POST")
+
 	//Login
 	r.Handle("/v1/users/register", m.Chain(handler.RegisterUser, m.LoggerNoAuth())).Methods("POST")
 	r.Handle("/v1/users/login", m.Chain(handler.LoginUser, m.LoggerNoAuth())).Methods("POST")
