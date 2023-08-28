@@ -464,3 +464,15 @@ func SetEnabled(organizationID string, enabled bool) (Organization, error) {
 	o, err := Get(organizationID)
 	return o, err
 }
+
+// GetSubscribeMethod Get org subscribe method
+func GetSubscribeMethod(orgID string) (int, error) {
+	s := session()
+	defer s.Close()
+	c := collection(s)
+
+	var result Organization
+	err := c.FindId(bson.ObjectIdHex(orgID)).Select(bson.M{"subs.method": 1}).One(&result)
+
+	return result.Subs.Method, err
+}
