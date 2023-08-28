@@ -59,6 +59,7 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/organizations/{organizationID}/users", m.Chain(handler.AddUserToOrganization, m.Logger(), m.Authenticate())).Methods("POST")
 	r.Handle("/v1/organizations/{organizationID}/users/{userID}", m.Chain(handler.DeleteUserFromOrganization, m.Logger(), m.Authenticate())).Methods("DELETE")
 	r.Handle("/v1/organizations/{organizationID}/users", m.Chain(handler.GetOrganizationUsers, m.Logger(), m.Authenticate())).Methods("GET")
+	r.Handle("/v1/organizations/{organizationID}/users/count", m.Chain(handler.GetOrganizationUsersCount, m.Logger(), m.Authenticate())).Methods("GET")
 
 	// Organization global policy configuration
 	r.Handle("/v1/organizations/{organizationID}/global-policy-configuration", m.Chain(handler.GetGlobalPolicyConfiguration, m.Logger(), m.Authenticate())).Methods("GET")

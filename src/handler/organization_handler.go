@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/bb-consent/api/src/actionlog"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/consent"
 	"github.com/bb-consent/api/src/image"
@@ -1680,5 +1681,28 @@ func RenewSubscribeKey(w http.ResponseWriter, r *http.Request) {
 	response, _ := json.Marshal(subTokenResp{t, getSubscribeMethod(subscribeMethodKeyBased).Method})
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
+
+type orgUserCount struct {
+	SubscribeUserCount int
+}
+
+// GetOrganizationUsersCount Gets count of organization users
+func GetOrganizationUsersCount(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+
+	userCount, err := user.GetOrgSubscribeCount(organizationID)
+
+	if err != nil {
+		m := fmt.Sprintf("Failed to get user count subscribed to organization :%v", organizationID)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	aLog := fmt.Sprintf("Organization API: %v called by user: %v", r.URL.Path, token.GetUserName(r))
+	actionlog.LogOrgAPICalls(token.GetUserID(r), token.GetUserName(r), organizationID, aLog)
+	response, _ := json.Marshal(orgUserCount{userCount})
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
 }

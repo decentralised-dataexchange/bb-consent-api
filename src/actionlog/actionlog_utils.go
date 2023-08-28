@@ -39,3 +39,16 @@ func LogOrgWebhookCalls(userID string, uName string, orgID string, aLog string) 
 
 	doActionLog(l)
 }
+
+// LogOrgAPICalls Organization API calls are logged for future reference
+func LogOrgAPICalls(userID string, uName string, orgID string, aLog string) {
+	var l ActionLog
+	l.OrgID = orgID
+	l.UserID = userID
+	l.UserName = uName
+	l.Action = aLog
+	l.Type = LogTypeAPICalls
+	l.TypeStr = GetTypeStr(l.Type)
+
+	doActionLog(l)
+}
