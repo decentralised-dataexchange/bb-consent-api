@@ -71,3 +71,14 @@ func GetByUserOrg(userID string, orgID string) (Consents, error) {
 
 	return consents, err
 }
+
+// Get Get consent by consentID
+func Get(consentID string) (Consents, error) {
+	s := session()
+	defer s.Close()
+
+	var result Consents
+	err := collection(s).FindId(bson.ObjectIdHex(consentID)).One(&result)
+
+	return result, err
+}
