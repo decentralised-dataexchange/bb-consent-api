@@ -82,3 +82,54 @@ func Get(consentID string) (Consents, error) {
 
 	return result, err
 }
+
+// GetConsentedUsers Get list of users who are consented to an attribute
+func GetConsentedUsers(orgID string, purposeID string, attributeID string, startID string, limit int) (userIDs []string, lastID string, err error) {
+	s := session()
+	defer s.Close()
+	c := collection(s)
+
+	limit = 10000
+	var results []Consents
+	if startID == "" {
+		pipeline := []bson.M{
+			{"$match": bson.M{"orgid": orgID}},
+			{"$unwind": "$purposes"},
+			{"$unwind": "$purposes.consents"},
+			{"$match": bson.M{
+				"purposes.id":                        purposeID,
+				"purposes.consents.templateid":       attributeID,
+				"purposes.consents.status.consented": bson.M{"$regex": "^A"}},
+			},
+			{"$limit": limit},
+		}
+		err = c.Pipe(pipeline).All(&results)
+	} else {
+		pipeline := []bson.M{
+			{"$match": bson.M{"orgid": orgID}},
+			{"$unwind": "$purposes"},
+			{"$unwind": "$purposes.consents"},
+			{"$match": bson.M{
+				"purposes.id":                        purposeID,
+				"purposes.consents.templateid":       attributeID,
+				"purposes.consents.status.consented": bson.M{"$regex": "^A"}},
+			},
+			{"$limit": limit},
+			{"$gt": startID},
+		}
+		err = c.Pipe(pipeline).All(&results)
+	}
+	if err != nil {
+		return
+	}
+
+	for _, item := range results {
+		userIDs = append(userIDs, item.UserID)
+	}
+
+	if len(results) != 0 && len(results) == (limit) {
+		lastID = results[len(results)-1].ID.Hex()
+	}
+
+	return
+}
