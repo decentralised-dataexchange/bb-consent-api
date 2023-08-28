@@ -1757,6 +1757,33 @@ func handleDataBreachNotification(dataBreachID string, orgID string, orgName str
 	}
 }
 
+// TODO: Refactor and use common iterator and pass the function
+func handleEventNotification(eventID string, orgID string, orgName string) {
+	// Get all users subscribed to this organization.
+	iter := user.GetOrgSubscribeIter(orgID)
+
+	var u user.User
+
+	for iter.Next(&u) {
+		if u.Client.Token == "" {
+			continue
+		}
+		err := notifications.SendEventNotification(eventID, u, orgID, orgName)
+		if err != nil {
+			notificationErrCount++
+			continue
+		}
+		notificationSent++
+	}
+	log.Printf("notification sending for event orgID: %v with err: %v sent: %v", orgID,
+		notificationErrCount, notificationSent)
+
+	err := iter.Close()
+	if err != nil {
+		log.Printf("Failed to close the iterator: %v", iter)
+	}
+}
+
 type dataBreach struct {
 	HeadLine    string `valid:"required"`
 	UsersCount  int
@@ -1808,6 +1835,53 @@ func NotifyDataBreach(w http.ResponseWriter, r *http.Request) {
 
 	// Start sending notification
 	go handleDataBreachNotification(dataBreachEntry.ID.Hex(), orgID, orgName)
+
+	w.WriteHeader(http.StatusAccepted)
+}
+
+type event struct {
+	Details string `valid:"required"`
+}
+
+// NotifyEvents Notify all subscribed users about the events
+func NotifyEvents(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["orgID"]
+
+	var eventNotificationReq event
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	json.Unmarshal(b, &eventNotificationReq)
+
+	// validating request payload
+	valid, err := govalidator.ValidateStruct(eventNotificationReq)
+	if valid != true {
+		log.Printf("Data breach notification failed")
+		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	orgName, err := org.GetName(orgID)
+	if err != nil {
+		m := fmt.Sprintf("data breach notification failed to get organization: %v", orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	eventEntry := misc.Event{}
+	eventEntry.ID = bson.NewObjectId()
+	eventEntry.OrgID = orgID
+	eventEntry.Details = eventNotificationReq.Details
+
+	//store the event information
+	err = misc.AddEventNotifications(eventEntry)
+	if err != nil {
+		m := fmt.Sprintf("Failed to update data breach notification to organization: %v", orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Start sending notification
+	go handleEventNotification(eventEntry.ID.Hex(), orgID, orgName)
 
 	w.WriteHeader(http.StatusAccepted)
 }

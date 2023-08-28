@@ -26,6 +26,14 @@ type DataBreach struct {
 	Measures    string
 }
 
+// Event stores event related information.
+type Event struct {
+	ID      bson.ObjectId `bson:"_id,omitempty"`
+	Type    int
+	OrgID   string
+	Details string
+}
+
 func session() *mgo.Session {
 	return database.DB.Session.Copy()
 }
@@ -41,6 +49,19 @@ func AddDataBreachNotifications(dataBreach DataBreach) error {
 
 	dataBreach.Type = DocTypeOrgDataBreach
 	err := collection(s).Insert(dataBreach)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// AddEventNotifications Update the data breach info to organization
+func AddEventNotifications(event Event) error {
+	s := session()
+	defer s.Close()
+
+	event.Type = DocTypeOrgEvent
+	err := collection(s).Insert(event)
 	if err != nil {
 		return err
 	}

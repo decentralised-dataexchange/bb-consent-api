@@ -83,6 +83,34 @@ func SendDataBreachNotification(dataBreachID string, u user.User, orgID string, 
 	return Send(u.Client.Token, u.Client.Type, title, body, notification.Type, n.ID.Hex(), count)
 }
 
+// SendEventNotification Send Event notification to all users of organization.
+func SendEventNotification(eventID string, u user.User, orgID string, orgName string) error {
+	title := "General Event notification"
+	body := "Event notification from " + orgName
+
+	var notification Notification
+	notification.UserID = u.ID.Hex()
+	notification.OrgID = orgID
+	notification.Type = Event
+	notification.Title = title
+	notification.EventID = eventID
+
+	n, err := Add(notification)
+	if err != nil {
+		fmt.Printf("db add error")
+		return err
+	}
+
+	count, err := GetUnReadCountByUserID(u.ID.Hex())
+	if err != nil {
+		fmt.Printf("db get count error")
+		return err
+	}
+
+	fmt.Printf("sending Data Breach notification \n")
+	return Send(u.Client.Token, u.Client.Type, title, body, notification.Type, n.ID.Hex(), count)
+}
+
 // Send Sends notification to the user registered mobile device
 func Send(registrationToken string, deviceType int, title string, body string, notificationType int, notificationID string, notificationUnReadCount int) error {
 	// Obtain a messaging.Client from the App.
