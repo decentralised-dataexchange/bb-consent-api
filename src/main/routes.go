@@ -79,6 +79,8 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/organizations/{organizationID}/idp/open-id", m.Chain(handler.DeleteIdentityProvider, m.Logger(), m.Authenticate())).Methods("DELETE")
 	r.Handle("/v1/organizations/{organizationID}/idp/open-id", m.Chain(handler.GetIdentityProvider, m.Logger(), m.Authenticate())).Methods("GET")
 
+	r.Handle("/v1/organizations/{orgID}/users/{userID}/consents", m.Chain(handler.GetConsents, m.Logger(), m.Authenticate())).Methods("GET")
+
 	//Login
 	r.Handle("/v1/users/register", m.Chain(handler.RegisterUser, m.LoggerNoAuth())).Methods("POST")
 	r.Handle("/v1/users/login", m.Chain(handler.LoginUser, m.LoggerNoAuth())).Methods("POST")
