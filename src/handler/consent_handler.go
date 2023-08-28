@@ -186,3 +186,29 @@ func GetConsents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
 }
+
+// GetConsentByID Gets a single consent by given id
+func GetConsentByID(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["orgID"]
+	userID := mux.Vars(r)["userID"]
+	consentID := mux.Vars(r)["consentID"]
+
+	o, err := org.Get(orgID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch organization for user: %v org: %v", userID, orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	consent, err := consent.Get(consentID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch consensts by ID: %v \n", consentID)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	c := createConsentGetResponse(consent, o)
+	response, _ := json.Marshal(c)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
+}
