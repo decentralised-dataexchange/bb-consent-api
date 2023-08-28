@@ -494,3 +494,15 @@ func UpdateSubscribeKey(orgID string, key string) error {
 
 	return c.UpdateId(bson.ObjectIdHex(orgID), bson.M{"$set": bson.M{"subs.key": key}})
 }
+
+// GetSubscribeKey Update subscription token
+func GetSubscribeKey(orgID string) (string, error) {
+	s := session()
+	defer s.Close()
+	c := collection(s)
+
+	var result Organization
+	err := c.FindId(bson.ObjectIdHex(orgID)).Select(bson.M{"subs.key": 1}).One(&result)
+
+	return result.Subs.Key, err
+}
