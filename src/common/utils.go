@@ -3,10 +3,13 @@ package common
 import (
 	"encoding/json"
 	"log"
+	"math/rand"
 	"net/http"
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
+	"time"
 )
 
 const (
@@ -126,4 +129,16 @@ func HandleError(w http.ResponseWriter, code int, message string, err error) {
 	w.WriteHeader(code)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
+}
+
+// GetRandomString Generate a random alpha numeric string of requested length
+func GetRandomString(length int) string {
+	rand.Seed(time.Now().UnixNano())
+	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+		"0123456789")
+	var b strings.Builder
+	for i := 0; i < length; i++ {
+		b.WriteRune(chars[rand.Intn(len(chars))])
+	}
+	return b.String()
 }
