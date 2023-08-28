@@ -87,6 +87,7 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/organizations/{orgID}/purposes/{purposeID}/consented/users", m.Chain(handler.GetAllUsersConsentedToPurpose, m.Logger(), m.Authenticate())).Methods("GET")
 
 	r.Handle("/v1/organizations/{orgID}/notify-data-breach", m.Chain(handler.NotifyDataBreach, m.Logger(), m.Authenticate())).Methods("POST")
+	r.Handle("/v1/organizations/{orgID}/notify-events", m.Chain(handler.NotifyEvents, m.Logger(), m.Authenticate())).Methods("POST")
 
 	//Login
 	r.Handle("/v1/users/register", m.Chain(handler.RegisterUser, m.LoggerNoAuth())).Methods("POST")
