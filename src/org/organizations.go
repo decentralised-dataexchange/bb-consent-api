@@ -571,3 +571,14 @@ func DeleteOpenIDClientByOrgID(organizationID string) (Organization, error) {
 	o, err := Get(organizationID)
 	return o, err
 }
+
+// GetName Get organization name by given id
+func GetName(organizationID string) (string, error) {
+	s := session()
+	defer s.Close()
+
+	var result Organization
+	err := collection(s).FindId(bson.ObjectIdHex(organizationID)).Select(bson.M{"name": 1}).One(&result)
+
+	return result.Name, err
+}

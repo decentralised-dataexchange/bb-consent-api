@@ -16,6 +16,7 @@ import (
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/consent"
 	"github.com/bb-consent/api/src/image"
+	"github.com/bb-consent/api/src/misc"
 	"github.com/bb-consent/api/src/notifications"
 	"github.com/bb-consent/api/src/org"
 	"github.com/bb-consent/api/src/orgtype"
@@ -1726,4 +1727,87 @@ func GetOrganizationUsersCount(w http.ResponseWriter, r *http.Request) {
 	response, _ := json.Marshal(orgUserCount{userCount})
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
+}
+
+// TODO: Refactor and use common iterator and pass the function
+func handleDataBreachNotification(dataBreachID string, orgID string, orgName string) {
+	// Get all users subscribed to this organization.
+
+	iter := user.GetOrgSubscribeIter(orgID)
+
+	var u user.User
+
+	for iter.Next(&u) {
+		if u.Client.Token == "" {
+			continue
+		}
+		err := notifications.SendDataBreachNotification(dataBreachID, u, orgID, orgName)
+		if err != nil {
+			notificationErrCount++
+			continue
+		}
+		notificationSent++
+	}
+	log.Printf("notification sending for DataBreach orgID: %v with err: %v sent: %v", orgID,
+		notificationErrCount, notificationSent)
+
+	err := iter.Close()
+	if err != nil {
+		log.Printf("Failed to close the iterator: %v", iter)
+	}
+}
+
+type dataBreach struct {
+	HeadLine    string `valid:"required"`
+	UsersCount  int
+	DpoEmail    string `valid:"required"`
+	Consequence string `valid:"required"`
+	Measures    string `valid:"required"`
+}
+
+// NotifyDataBreach Notify all subscribed users about the data breach incidents
+func NotifyDataBreach(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["orgID"]
+
+	var dBNotificationReq dataBreach
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	json.Unmarshal(b, &dBNotificationReq)
+
+	// validating request payload
+	valid, err := govalidator.ValidateStruct(dBNotificationReq)
+	if valid != true {
+		log.Printf("Data breach notification failed")
+		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	orgName, err := org.GetName(orgID)
+	if err != nil {
+		m := fmt.Sprintf("data breach notification failed to get organization: %v", orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	dataBreachEntry := misc.DataBreach{}
+	dataBreachEntry.ID = bson.NewObjectId()
+	dataBreachEntry.HeadLine = dBNotificationReq.HeadLine
+	dataBreachEntry.UsersCount = dBNotificationReq.UsersCount
+	dataBreachEntry.DpoEmail = dBNotificationReq.DpoEmail
+	dataBreachEntry.Consequence = dBNotificationReq.Consequence
+	dataBreachEntry.Measures = dBNotificationReq.Measures
+	dataBreachEntry.OrgID = orgID
+
+	//store the data breach information
+	err = misc.AddDataBreachNotifications(dataBreachEntry)
+	if err != nil {
+		m := fmt.Sprintf("Failed to add data breach notification for organization: %v", orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Start sending notification
+	go handleDataBreachNotification(dataBreachEntry.ID.Hex(), orgID, orgName)
+
+	w.WriteHeader(http.StatusAccepted)
 }
