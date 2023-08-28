@@ -406,3 +406,68 @@ func GetPurposeAllConsentStatus(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
 }
+
+// GetAllUsersConsentedToPurpose Gets all users who conseted to a given purpose
+func GetAllUsersConsentedToPurpose(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["orgID"]
+	purposeID := mux.Vars(r)["purposeID"]
+
+	aLog := fmt.Sprintf("Organization API: %v called by user: %v", r.URL.Path, token.GetUserName(r))
+	actionlog.LogOrgAPICalls(token.GetUserID(r), token.GetUserName(r), orgID, aLog)
+
+	startID, limit := common.ParsePaginationQueryParameters(r)
+	if limit == 0 {
+		limit = 50
+	}
+
+	purpose, err := org.GetPurpose(orgID, purposeID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to locate purposeID: %v for orgID: %v", orgID, purposeID)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	// If the purpose is lawful usage then we can fetch all the subscribed users right away.
+	//TODO: Move it as a function
+	if purpose.LawfulUsage == true {
+		users, lastID, err := user.GetOrgSubscribeUsers(orgID, startID, limit)
+		if err != nil {
+			m := fmt.Sprintf("Failed to get user subscribed to organization :%v", orgID)
+			common.HandleError(w, http.StatusNotFound, m, err)
+			return
+		}
+
+		var ou orgUsers
+		for _, u := range users {
+			ou.Users = append(ou.Users, orgUser{ID: u.ID.Hex(), Name: u.Name, Phone: u.Phone, Email: u.Email})
+		}
+
+		ou.Links = common.CreatePaginationLinks(r, startID, lastID, limit)
+		response, _ := json.Marshal(ou)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(response)
+		return
+	}
+	userIDs, nextID, err := consent.GetPurposeConsentedAllUsers(orgID, purposeID, startID, limit)
+
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch users constented orgID: %v purposeID: %v ", orgID, purposeID)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	var resp orgUsers
+	for _, userID := range userIDs {
+		u, err := user.Get(userID)
+		if err != nil {
+			//TODO: This is unexpected! report error here?
+			continue
+		}
+		resp.Users = append(resp.Users, orgUser{ID: u.ID.Hex(), Name: u.Name, Phone: u.Phone, Email: u.Email})
+	}
+
+	resp.Links = common.CreatePaginationLinks(r, startID, nextID, limit)
+	response, _ := json.Marshal(resp)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
+}

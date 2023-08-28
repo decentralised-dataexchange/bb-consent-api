@@ -133,3 +133,56 @@ func GetConsentedUsers(orgID string, purposeID string, attributeID string, start
 
 	return
 }
+
+// GetPurposeConsentedAllUsers Get all users with at-least one attribute consented in purpose.
+func GetPurposeConsentedAllUsers(orgID string, purposeID string, startID string, limit int) (userIDs []string, lastID string, err error) {
+	s := session()
+	defer s.Close()
+	c := collection(s)
+
+	limit = 10000
+	var results []Consents
+	if startID == "" {
+		pipeline := []bson.M{
+			{"$match": bson.M{"orgid": orgID}},
+			{"$unwind": "$purposes"},
+			{"$unwind": "$purposes.consents"},
+			{"$match": bson.M{
+				"purposes.id":                        purposeID,
+				"purposes.consents.status.consented": bson.M{"$regex": "^A"}},
+			},
+			{"$limit": limit},
+		}
+		err = c.Pipe(pipeline).All(&results)
+	} else {
+		pipeline := []bson.M{
+			{"$match": bson.M{"orgid": orgID}},
+			{"$unwind": "$purposes"},
+			{"$unwind": "$purposes.consents"},
+			{"$match": bson.M{
+				"purposes.id":                        purposeID,
+				"purposes.consents.status.consented": bson.M{"$regex": "^A"}},
+			},
+			{"$limit": limit},
+			{"$gt": startID},
+		}
+		err = c.Pipe(pipeline).All(&results)
+	}
+	if err != nil {
+		return
+	}
+
+	keys := make(map[string]bool)
+	for _, item := range results {
+		if _, value := keys[item.UserID]; !value {
+			keys[item.UserID] = true
+			userIDs = append(userIDs, item.UserID)
+		}
+	}
+
+	if len(results) != 0 && len(results) == (limit) {
+		lastID = results[len(results)-1].ID.Hex()
+	}
+
+	return
+}
