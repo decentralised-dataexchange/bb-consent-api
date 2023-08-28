@@ -1570,3 +1570,17 @@ func GetSubscribeMethod(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
+
+type methodsResp struct {
+	Methods []subscribeMethod
+}
+
+// GetSubscribeMethods Gets all possible subscription methods
+func GetSubscribeMethods(w http.ResponseWriter, r *http.Request) {
+	m := methodsResp{getSubscribeMethods()}
+
+	response, _ := json.Marshal(m)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
