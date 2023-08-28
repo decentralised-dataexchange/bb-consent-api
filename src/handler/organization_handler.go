@@ -1652,3 +1652,33 @@ func GetSubscribeKey(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
+
+// RenewSubscribeKey Create an organization subscription token needed for user subscription
+func RenewSubscribeKey(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["organizationID"]
+
+	o, err := org.Get(orgID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get organization: %v", orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+	if o.Subs.Method != subscribeMethodKeyBased {
+		m := fmt.Sprintf("subscribe method is not based on key for organization: %v", orgID)
+		common.HandleError(w, http.StatusBadRequest, m, err)
+		return
+	}
+	t := createSubscriptionKey()
+
+	err = org.UpdateSubscribeKey(orgID, t)
+	if err != nil {
+		m := fmt.Sprintf("Failed to save key to organization: %v", orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(subTokenResp{t, getSubscribeMethod(subscribeMethodKeyBased).Method})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
