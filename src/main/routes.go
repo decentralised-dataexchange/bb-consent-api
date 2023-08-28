@@ -75,6 +75,7 @@ func SetRoutes(r *mux.Router) {
 
 	// Organisation identity provider related API(s)
 	r.Handle("/v1/organizations/{organizationID}/idp/open-id", m.Chain(handler.AddIdentityProvider, m.Logger(), m.Authenticate())).Methods("POST")
+	r.Handle("/v1/organizations/{organizationID}/idp/open-id", m.Chain(handler.UpdateIdentityProvider, m.Logger(), m.Authenticate())).Methods("PUT")
 
 	//Login
 	r.Handle("/v1/users/register", m.Chain(handler.RegisterUser, m.LoggerNoAuth())).Methods("POST")
