@@ -1525,3 +1525,48 @@ func DisableOrganizationSubscription(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
+
+type subscriptionMethodResp struct {
+	ID     int
+	Method string
+}
+
+// subscribeMethod Organization subscribe methods
+type subscribeMethod struct {
+	ID     int
+	Method string
+}
+
+// Note: Dont change the ID(s) if new role needed then add at the end
+var subscribeMethods = []subscribeMethod{
+	{ID: subscribeMethodUndefined, Method: "Undefined"},
+	{ID: subscribeMethodKeyBased, Method: "Key-Based"},
+	{ID: subscribeMethodOpenIDBased, Method: "OpenID-Connect"},
+}
+
+// getSubscribeMethods Gets list of allowed organization roles
+func getSubscribeMethods() []subscribeMethod {
+	return subscribeMethods
+}
+
+// getSubscribeMethod Gets the string represetation
+func getSubscribeMethod(methodID int) subscribeMethod {
+	return subscribeMethods[methodID]
+}
+
+// GetSubscribeMethod Gets existing subscription method
+func GetSubscribeMethod(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["organizationID"]
+
+	m, err := org.GetSubscribeMethod(orgID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get subscription method from organization: %v", orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(subscriptionMethodResp{m, getSubscribeMethod(m).Method})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
