@@ -69,6 +69,7 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/organizations/{organizationID}/subscribe-method", m.Chain(handler.GetSubscribeMethod, m.Logger(), m.Authenticate())).Methods("GET")
 	r.Handle("/v1/organizations/{organizationID}/subscribe-method", m.Chain(handler.SetSubscribeMethod, m.Logger(), m.Authenticate())).Methods("POST")
 	r.Handle("/v1/organizations/{organizationID}/subscribe-key", m.Chain(handler.GetSubscribeKey, m.Logger(), m.Authenticate())).Methods("GET")
+	r.Handle("/v1/organizations/{organizationID}/subscribe-key/renew", m.Chain(handler.RenewSubscribeKey, m.Logger(), m.Authenticate())).Methods("POST")
 
 	//Login
 	r.Handle("/v1/users/register", m.Chain(handler.RegisterUser, m.LoggerNoAuth())).Methods("POST")
