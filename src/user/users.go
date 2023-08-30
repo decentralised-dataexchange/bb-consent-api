@@ -369,3 +369,13 @@ func RemoveRole(userID string, role Role) (User, error) {
 	u, err := Get(userID)
 	return u, err
 }
+
+// UpdateAPIKey update apikey to user
+func UpdateAPIKey(userID string, apiKey string) error {
+	s := session()
+	defer s.Close()
+	c := collection(s)
+
+	err := c.Update(bson.M{"_id": bson.ObjectIdHex(userID)}, bson.M{"$set": bson.M{"apikey": apiKey}})
+	return err
+}

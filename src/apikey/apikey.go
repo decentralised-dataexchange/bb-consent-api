@@ -18,6 +18,25 @@ type Claims struct {
 
 var mySigningKey = []byte("sample")
 
+// Create Create apikey
+func Create(userID string) (string, error) {
+	// Create the Claims
+	claims := Claims{
+		userID,
+		"",
+		"",
+		jwt.StandardClaims{
+			// 1 year life time
+			ExpiresAt: time.Now().Unix() + 60*60*24*30*12,
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	ss, err := token.SignedString(mySigningKey)
+
+	return ss, err
+}
+
 // Decode Decodes the apikey
 func Decode(apiKey string) (claims Claims, err error) {
 	token, err := jwt.ParseWithClaims(apiKey, &claims, func(token *jwt.Token) (interface{}, error) {
