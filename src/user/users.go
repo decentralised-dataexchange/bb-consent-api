@@ -379,3 +379,19 @@ func UpdateAPIKey(userID string, apiKey string) error {
 	err := c.Update(bson.M{"_id": bson.ObjectIdHex(userID)}, bson.M{"$set": bson.M{"apikey": apiKey}})
 	return err
 }
+
+// GetAPIKey Gets the API key of the user
+func GetAPIKey(userID string) (string, error) {
+	s := session()
+	defer s.Close()
+
+	var result User
+	err := collection(s).FindId(bson.ObjectIdHex(userID)).Select(bson.M{"apikey": 1}).One(&result)
+
+	if err != nil {
+		log.Printf("Failed to find user by id:%v err:%v", userID, err)
+		return "", err
+	}
+
+	return result.APIKey, err
+}

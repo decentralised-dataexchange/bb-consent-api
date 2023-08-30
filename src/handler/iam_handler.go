@@ -2070,3 +2070,22 @@ func DeleteAPIKey(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+// GetAPIKey Get the API key from user
+func GetAPIKey(w http.ResponseWriter, r *http.Request) {
+	userID := token.GetUserID(r)
+
+	apiKey, err := user.GetAPIKey(userID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get apiKey for user:%v err:%v", token.GetUserName(r), err)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	apiKeyResp := apiKeyResponse{token.GetUserName(r), apiKey}
+	response, _ := json.Marshal(apiKeyResp)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
