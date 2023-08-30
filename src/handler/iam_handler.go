@@ -2056,3 +2056,17 @@ func CreateAPIKey(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
+
+// DeleteAPIKey User forgot the password, need to reset the password
+func DeleteAPIKey(w http.ResponseWriter, r *http.Request) {
+	userID := token.GetUserID(r)
+
+	err := user.UpdateAPIKey(userID, "")
+	if err != nil {
+		m := fmt.Sprintf("Failed to remove apiKey for user:%v err:%v", token.GetUserName(r), err)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}

@@ -113,5 +113,6 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/user/register/android", m.Chain(handler.UserClientRegister, m.Logger(), m.Authenticate())).Methods("POST")
 
 	r.Handle("/v1/user/apikey", m.Chain(handler.CreateAPIKey, m.Logger(), m.Authenticate())).Methods("POST")
+	r.Handle("/v1/user/apikey/revoke", m.Chain(handler.DeleteAPIKey, m.Logger(), m.Authenticate())).Methods("DELETE")
 
 }
