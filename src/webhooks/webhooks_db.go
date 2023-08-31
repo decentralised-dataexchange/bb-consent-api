@@ -59,6 +59,16 @@ func CreateWebhook(webhook Webhook) (Webhook, error) {
 	return webhook, webhookCollection(s).Insert(&webhook)
 }
 
+// GetByOrgID Gets a webhook by organisation ID and webhook ID
+func GetByOrgID(webhookID, orgID string) (result Webhook, err error) {
+	s := session()
+	defer s.Close()
+
+	err = webhookCollection(s).Find(bson.M{"_id": bson.ObjectIdHex(webhookID), "orgid": orgID}).One(&result)
+
+	return result, err
+}
+
 // GetActiveWebhooksByOrgID Gets all active webhooks for a particular organisation
 func GetActiveWebhooksByOrgID(orgID string) (results []Webhook, err error) {
 	s := session()
