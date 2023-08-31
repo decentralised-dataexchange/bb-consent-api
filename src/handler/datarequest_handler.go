@@ -293,3 +293,20 @@ func DownloadMyData(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+// GetDownloadMyDataStatus Get Downlod my data status from the organization
+func GetDownloadMyDataStatus(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["orgID"]
+	userID := token.GetUserID(r)
+
+	resp, err := getOngoingDataRequest(userID, orgID, dr.DataRequestTypeDownload)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get user: %v data request for organization: %v", userID, orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(resp)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
+}
