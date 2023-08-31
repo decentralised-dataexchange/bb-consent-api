@@ -260,3 +260,36 @@ func GetDownloadMyData(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
 }
+
+// DownloadMyData Download my data from the organization
+func DownloadMyData(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["orgID"]
+	userID := token.GetUserID(r)
+
+	resp, err := getOngoingDataRequest(userID, orgID, dr.DataRequestTypeDownload)
+
+	if err == nil && resp.RequestOngoing {
+		m := fmt.Sprintf("Request (%v) ongoing for user: %v organization: %v", dr.GetRequestTypeStr(dr.DataRequestTypeDownload), userID, orgID)
+		common.HandleError(w, http.StatusBadRequest, m, err)
+		return
+	}
+
+	var dRequest dr.DataRequest
+	dRequest.OrgID = orgID
+	dRequest.UserID = userID
+	dRequest.UserName = token.GetUserName(r)
+	dRequest.Type = dr.DataRequestTypeDownload
+	dRequest.State = dr.DataRequestStatusInitiated
+
+	dRequest, err = dr.Add(dRequest)
+	if err != nil {
+		m := fmt.Sprintf("Failed to add data request: %v logs for user: %v organization: %v", dr.GetRequestTypeStr(dr.DataRequestTypeDownload), token.GetUserName(r), orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Trigger webhooks
+	go webhooks.TriggerDataRequestWebhookEvent(userID, orgID, dRequest.ID.Hex(), webhooks.EventTypes[webhooks.EventTypeDataDownloadInitiated])
+
+	w.WriteHeader(http.StatusOK)
+}
