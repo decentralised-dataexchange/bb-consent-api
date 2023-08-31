@@ -195,3 +195,51 @@ func GetDeleteMyDataStatus(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
 }
+
+// CancelMyDataRequest Cacnel my data request from the organization
+func CancelMyDataRequest(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["orgID"]
+	dataReqID := mux.Vars(r)["dataReqID"]
+	userID := token.GetUserID(r)
+
+	// retrieving the data request and validating whether it belongs to the current user
+	dReq, err := dr.GetDataRequestByID(dataReqID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get data request: %v organization: %v", dataReqID, orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	if dReq.UserID != userID {
+		m := fmt.Sprintf("Permission denied to get data request: %v organization: %v", dataReqID, orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	dReq.State = dr.DataRequestStatusUserCancelled
+
+	err = dr.Update(dReq.ID, dReq.State, dReq.Comments)
+	if err != nil {
+		m := fmt.Sprintf("Failed to update data request: %v organization: %v", dataReqID, orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Triggering webhooks based on data request type
+	if dReq.Type == dr.DataRequestTypeDelete {
+		go webhooks.TriggerDataRequestWebhookEvent(userID, orgID, dReq.ID.Hex(), webhooks.EventTypes[webhooks.EventTypeDataDeleteCancelled])
+	}
+
+	if dReq.Type == dr.DataRequestTypeDownload {
+		go webhooks.TriggerDataRequestWebhookEvent(userID, orgID, dReq.ID.Hex(), webhooks.EventTypes[webhooks.EventTypeDataDownloadCancelled])
+	}
+
+	if dReq.Type == dr.DataRequestTypeUpdate {
+		go webhooks.TriggerDataUpdateRequestWebhookEvent(userID, dReq.AttributeID, dReq.PurposeID, dReq.ConsentID, orgID, dReq.ID.Hex(), webhooks.EventTypes[webhooks.EventTypeDataUpdateCancelled])
+	}
+
+	response, _ := json.Marshal(transformDataReqToResp(dReq))
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
