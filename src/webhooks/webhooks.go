@@ -1,9 +1,11 @@
 package webhooks
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -142,6 +144,29 @@ func PushWebhookEventToKafkaTopic(webhookEventType string, webhookPayload []byte
 
 	return nil
 
+}
+
+// PingWebhook Pings webhook payload URL to check the status
+func PingWebhook(webhook Webhook) (req *http.Request, resp *http.Response, executionStartTimeStamp string, executionEndTimeStamp string, err error) {
+	executionStartTimeStamp = strconv.FormatInt(time.Now().UTC().Unix(), 10)
+
+	// Initializing a http request object and configuring necessary HTTP headers
+	req, _ = http.NewRequest("POST", webhook.PayloadURL, nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "IGrant-Hookshot/1.0")
+	req.Header.Set("Accept", "*/*")
+
+	// Defining a custom HTTP transport to control SSL certificate verification
+	transCfg := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: webhook.SkipSSLVerification},
+	}
+
+	client := &http.Client{Transport: transCfg}
+	resp, err = client.Do(req)
+
+	executionEndTimeStamp = strconv.FormatInt(time.Now().UTC().Unix(), 10)
+
+	return req, resp, executionStartTimeStamp, executionEndTimeStamp, err
 }
 
 // TriggerWebhooks Trigger webhooks based on event type
