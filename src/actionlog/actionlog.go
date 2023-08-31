@@ -66,3 +66,24 @@ func Add(log ActionLog) error {
 	}
 	return nil
 }
+
+// GetAccessLogByOrgID gets all notifications of a given user
+func GetAccessLogByOrgID(orgID string, startID string, limit int) (results []ActionLog, lastID string, err error) {
+	s := session()
+	defer s.Close()
+
+	if startID == "" {
+		err = collection(s).Find(bson.M{"orgid": orgID}).Sort("-_id").Limit(limit).All(&results)
+	} else {
+		err = collection(s).Find(bson.M{"orgid": orgID, "_id": bson.M{"$lt": bson.ObjectIdHex(startID)}}).Sort("-_id").Limit(limit).All(&results)
+	}
+
+	lastID = ""
+	if err == nil {
+		if len(results) != 0 && len(results) == (limit) {
+			lastID = results[len(results)-1].ID.Hex()
+		}
+	}
+
+	return results, lastID, err
+}
