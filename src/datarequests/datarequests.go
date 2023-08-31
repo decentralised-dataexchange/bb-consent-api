@@ -154,3 +154,68 @@ func GetClosedDataRequestsByOrgID(orgID string, startID string, limit int) (resu
 
 	return results, lastID, err
 }
+
+// GetOpenDataRequestsByOrgUserID Get data requests against orgID
+func GetOpenDataRequestsByOrgUserID(orgID string, userID string, startID string, limit int) (results []DataRequest, lastID string, err error) {
+	s := session()
+	defer s.Close()
+
+	if startID == "" {
+		err = collection(s).Find(bson.M{"orgid": orgID, "userid": userID, "state": bson.M{"$lt": DataRequestStatusProcessedWithoutAction}}).Sort("-_id").Limit(limit).All(&results)
+	} else {
+		err = collection(s).Find(bson.M{"orgid": orgID, "userid": userID, "state": bson.M{"$lt": DataRequestStatusProcessedWithoutAction},
+			"_id": bson.M{"$lt": bson.ObjectIdHex(startID)}}).Sort("-_id").Limit(limit).All(&results)
+	}
+
+	lastID = ""
+	if err == nil {
+		if len(results) != 0 && len(results) == (limit) {
+			lastID = results[len(results)-1].ID.Hex()
+		}
+	}
+
+	return results, lastID, err
+}
+
+// GetClosedDataRequestsByOrgUserID Get data requests against orgID
+func GetClosedDataRequestsByOrgUserID(orgID string, userID string, startID string, limit int) (results []DataRequest, lastID string, err error) {
+	s := session()
+	defer s.Close()
+
+	if startID == "" {
+		err = collection(s).Find(bson.M{"orgid": orgID, "userid": userID, "state": bson.M{"$gte": DataRequestStatusProcessedWithoutAction}}).Sort("-_id").Limit(limit).All(&results)
+	} else {
+		err = collection(s).Find(bson.M{"orgid": orgID, "userid": userID, "state": bson.M{"$gte": DataRequestStatusProcessedWithoutAction},
+			"_id": bson.M{"$lt": bson.ObjectIdHex(startID)}}).Sort("-_id").Limit(limit).All(&results)
+	}
+
+	lastID = ""
+	if err == nil {
+		if len(results) != 0 && len(results) == (limit) {
+			lastID = results[len(results)-1].ID.Hex()
+		}
+	}
+
+	return results, lastID, err
+}
+
+// GetDataRequestsByOrgUserID Get data requests against userID
+func GetDataRequestsByOrgUserID(orgID string, userID string, startID string, limit int) (results []DataRequest, lastID string, err error) {
+	s := session()
+	defer s.Close()
+
+	if startID == "" {
+		err = collection(s).Find(bson.M{"orgid": orgID, "userid": userID}).Sort("-_id").Limit(limit).All(&results)
+	} else {
+		err = collection(s).Find(bson.M{"orgid": orgID, "userid": userID, "_id": bson.M{"$lt": bson.ObjectIdHex(startID)}}).Sort("-_id").Limit(limit).All(&results)
+	}
+
+	lastID = ""
+	if err == nil {
+		if len(results) != 0 && len(results) == (limit) {
+			lastID = results[len(results)-1].ID.Hex()
+		}
+	}
+
+	return results, lastID, err
+}
