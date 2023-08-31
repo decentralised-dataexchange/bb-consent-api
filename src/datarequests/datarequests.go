@@ -84,6 +84,22 @@ func GetRequestTypeStr(requestType int) string {
 	return RequestTypes[requestType-1].Str
 }
 
+// Update Update the req entry
+func Update(reqID bson.ObjectId, state int, comments [DataRequestMaxComments]string) (err error) {
+	s := session()
+	defer s.Close()
+
+	if state >= DataRequestStatusProcessedWithoutAction {
+		err = collection(s).Update(bson.M{"_id": reqID}, bson.M{"$set": bson.M{"comments": comments, "state": state, "closeddate": time.Now()}})
+	} else {
+		err = collection(s).Update(bson.M{"_id": reqID}, bson.M{"$set": bson.M{"comments": comments, "state": state}})
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetDataRequestByID Returns the data requests record by ID
 func GetDataRequestByID(reqID string) (DataRequest, error) {
 	s := session()
