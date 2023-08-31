@@ -654,3 +654,200 @@ func UpdatePurposeAllConsentsv2(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
 }
+
+func getPurposeTemplates(purposeID string, purposes []org.Purpose, templates []org.Template) []string {
+	var pt []string
+	for _, t := range templates {
+		for _, pID := range t.PurposeIDs {
+			if pID == purposeID {
+				pt = append(pt, t.ID)
+			}
+		}
+	}
+	return pt
+}
+
+func getPurposeConsentStatus(pt []string, cp consent.Purpose) bool {
+	if len(pt) != len(cp.Consents) {
+		return false
+	}
+	for _, c := range cp.Consents {
+		if c.Status.Consented == common.ConsentStatusDisAllow {
+			return false
+		}
+		if c.Status.Consented == common.ConsentStatusAskMe {
+			if c.Status.Days != 0 {
+				remainingDays := c.Status.Days - int((time.Now().Sub(c.Status.TimeStamp).Hours())/24)
+				if remainingDays <= 0 {
+					return false
+				}
+			}
+		}
+	}
+	return true
+}
+
+func updatePurposeStatus(purposeID string, purposes []org.Purpose, templates []org.Template, consents *consent.Consents) {
+	for i := range consents.Purposes {
+		if consents.Purposes[i].ID != purposeID {
+			continue
+		}
+		pt := getPurposeTemplates(purposeID, purposes, templates)
+		consents.Purposes[i].AllowAll = getPurposeConsentStatus(pt, consents.Purposes[i])
+	}
+}
+
+type consentUpdateReq struct {
+	Consented string `valid:"required"`
+	Days      int
+}
+
+// UpdatePurposeAttribute Updated one single consent attribute in a purpose
+func UpdatePurposeAttribute(w http.ResponseWriter, r *http.Request) {
+
+	var consentUp consentUpdateReq
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	json.Unmarshal(b, &consentUp)
+
+	// validating request payload
+	valid, err := govalidator.ValidateStruct(consentUp)
+	if !valid {
+		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	consentID := mux.Vars(r)["consentID"]
+	attributeID := mux.Vars(r)["attributeID"]
+
+	log.Printf("req: %v", consentUp)
+	orgID := mux.Vars(r)["orgID"]
+	userID := mux.Vars(r)["userID"]
+
+	c, err := consent.Get(consentID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get consent by ID: %v", consentID)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	if c.OrgID != orgID || c.UserID != userID {
+		m := fmt.Sprintf("Consent: %v does not belong to org: %v user: %v ", consentID, orgID, userID)
+		common.HandleError(w, http.StatusForbidden, m, err)
+		return
+	}
+
+	o, err := org.Get(orgID)
+	if err != nil {
+		m := fmt.Sprintf("Faile to get org: %v", consentID)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	purposeID := mux.Vars(r)["purposeID"]
+
+	// Validating the consent value
+	consentUp.Consented = strings.ToLower(consentUp.Consented)
+	switch consentUp.Consented {
+
+	case strings.ToLower(common.ConsentStatusAskMe):
+		consentUp.Consented = common.ConsentStatusAskMe
+	case strings.ToLower(common.ConsentStatusAllow):
+		consentUp.Consented = common.ConsentStatusAllow
+	case strings.ToLower(common.ConsentStatusDisAllow):
+		consentUp.Consented = common.ConsentStatusDisAllow
+	default:
+		m := fmt.Sprintf("Please provide a valid value for consent; Failed to update consent: %v for org: %v user: %v", consentID, orgID, userID)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	var p consent.Purpose
+	p.ID = purposeID
+
+	var con consent.Consent
+	con.TemplateID = attributeID
+	con.Status.Consented = consentUp.Consented
+	if consentUp.Days > 0 {
+		con.Status.TimeStamp = time.Now()
+		con.Status.Days = consentUp.Days
+	}
+
+	/*
+		1. Purpose is not in DB
+		2. Purpose found, Attribute not in DB
+		3. Purpose and Attribute in DB
+	*/
+	var found = 0
+	for i := range c.Purposes {
+		if c.Purposes[i].ID == purposeID {
+			for j := range c.Purposes[i].Consents {
+				if c.Purposes[i].Consents[j].TemplateID == attributeID {
+					c.Purposes[i].Consents[j] = con
+					found = 1
+					break
+				}
+			}
+			if found == 0 {
+				c.Purposes[i].Consents = append(c.Purposes[i].Consents, con)
+				found = 1
+				break
+			}
+			break
+		}
+	}
+	if found == 0 {
+		p.Consents = append(p.Consents, con)
+		c.Purposes = append(c.Purposes, p)
+	}
+
+	updatePurposeStatus(purposeID, o.Purposes, o.Templates, &c)
+
+	c, err = consent.UpdatePurposes(c)
+	if err != nil {
+		m := fmt.Sprintf("Failed to update consent: %v for org: %v user: %v ", consentID, orgID, userID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	var ch consentHistory
+	ch.UserID = userID
+	ch.OrgID = orgID
+	ch.OrgName = o.Name
+	ch.PurposeID = purposeID
+	ch.PurposeName = getPurposeFromID(o.Purposes, purposeID).Name
+	ch.ConsentID = c.ID.Hex()
+	ch.AttributeID = attributeID
+	ch.AttributeDescription = getTemplateFromOrg(o, attributeID).Consent
+
+	ch.AttributeConsentStatus = consentUp.Consented
+	if consentUp.Days > 0 {
+		ch.AttributeConsentStatus = common.ConsentStatusAskMe
+	}
+	err = consentHistoryAttributeAdd(ch)
+	if err != nil {
+		m := fmt.Sprintf("Failed to update log for consent: %v for org: %v user: %v ", consentID, orgID, userID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Trigger webhooks
+	var consentedAttributes []string
+	consentedAttributes = append(consentedAttributes, attributeID)
+	webhookEventTypeID := webhooks.EventTypeConsentDisAllowed
+	if consentUp.Consented == common.ConsentStatusAllow || consentUp.Consented == common.ConsentStatusAskMe {
+		webhookEventTypeID = webhooks.EventTypeConsentAllowed
+	}
+	go webhooks.TriggerConsentWebhookEvent(userID, purposeID, consentID, orgID, webhooks.EventTypes[webhookEventTypeID], strconv.FormatInt(con.Status.TimeStamp.UTC().Unix(), 10), consentUp.Days, consentedAttributes)
+
+	type consentUpdateresp struct {
+		Msg    string
+		Status int
+	}
+
+	updateResp := consentUpdateresp{"Consent updated successfully", http.StatusOK}
+	response, _ := json.Marshal(updateResp)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
+}
