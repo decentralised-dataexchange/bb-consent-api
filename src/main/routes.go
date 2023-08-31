@@ -106,6 +106,7 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/organizations/{orgID}/webhooks/{webhookID}", m.Chain(handler.DeleteWebhook, m.Logger(), m.Authenticate())).Methods("DELETE")
 	r.Handle("/v1/organizations/{orgID}/webhooks/{webhookID}", m.Chain(handler.UpdateWebhook, m.Logger(), m.Authenticate())).Methods("PUT")
 	r.Handle("/v1/organizations/{orgID}/webhooks/{webhookID}/ping", m.Chain(handler.PingWebhook, m.Logger(), m.Authenticate())).Methods("POST")
+	r.Handle("/v1/organizations/{orgID}/webhooks/{webhookID}/delivery", m.Chain(handler.GetRecentWebhookDeliveries, m.Logger(), m.Authenticate())).Methods("GET")
 
 	//Login
 	r.Handle("/v1/users/register", m.Chain(handler.RegisterUser, m.LoggerNoAuth())).Methods("POST")
