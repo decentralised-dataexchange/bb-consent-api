@@ -154,6 +154,26 @@ func (e DataRequestWebhookEvent) GetUserID() string {
 	return e.UserID
 }
 
+// DataUpdateRequestWebhookEvent Details of user data update request event
+type DataUpdateRequestWebhookEvent struct {
+	OrganisationID string `json:"organisationID"`
+	UserID         string `json:"userID"`
+	DataRequestID  string `json:"dataRequestID"`
+	ConsentID      string `json:"consentID"`
+	PurposeID      string `json:"purposeID"`
+	AttributeID    string `json:"attributeID"`
+}
+
+// GetOrganisationID Returns organisation ID
+func (e DataUpdateRequestWebhookEvent) GetOrganisationID() string {
+	return e.OrganisationID
+}
+
+// GetUserID Returns user ID
+func (e DataUpdateRequestWebhookEvent) GetUserID() string {
+	return e.UserID
+}
+
 func PushWebhookEventToKafkaTopic(webhookEventType string, webhookPayload []byte, kafkaTopicName string) error {
 
 	// Creating a delivery report channel
@@ -311,4 +331,22 @@ func TriggerDataRequestWebhookEvent(userID string, orgID string, dataRequestID s
 
 	// triggering the webhook
 	TriggerWebhooks(dataRequestWebhookEvent, eventType)
+}
+
+// TriggerDataUpdateRequestWebhookEvent Trigger webhook for user data update request events
+func TriggerDataUpdateRequestWebhookEvent(userID, attributeID, purposeID, consentID, orgID, dataRequestID string, eventType string) {
+
+	// Constructing webhook event data attribute
+	var dataUpdateRequestWebhookEvent DataUpdateRequestWebhookEvent
+	dataUpdateRequestWebhookEvent = DataUpdateRequestWebhookEvent{
+		OrganisationID: orgID,
+		UserID:         userID,
+		DataRequestID:  dataRequestID,
+		ConsentID:      consentID,
+		PurposeID:      purposeID,
+		AttributeID:    attributeID,
+	}
+
+	// triggering the webhook
+	TriggerWebhooks(dataUpdateRequestWebhookEvent, eventType)
 }

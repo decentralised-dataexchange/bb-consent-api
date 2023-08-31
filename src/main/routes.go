@@ -150,5 +150,6 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/user/organizations/{orgID}/data-delete", m.Chain(handler.GetDeleteMyData, m.Logger(), m.Authenticate())).Methods("GET")
 	r.Handle("/v1/user/organizations/{orgID}/data-delete", m.Chain(handler.DeleteMyData, m.Logger(), m.Authenticate())).Methods("POST")
 	r.Handle("/v1/user/organizations/{orgID}/data-delete/status", m.Chain(handler.GetDeleteMyDataStatus, m.Logger(), m.Authenticate())).Methods("GET")
+	r.Handle("/v1/user/organizations/{orgID}/data-delete/{dataReqID}/cancel", m.Chain(handler.CancelMyDataRequest, m.Logger(), m.Authenticate())).Methods("POST")
 
 }
