@@ -87,6 +87,21 @@ type WebhookEvent struct {
 	Type      string      `json:"type"`      // Event type for e.g. data.delete.initiated
 }
 
+// Payload content type const
+const (
+	// Payload will be posted as json body
+	PayloadContentTypeJSON = 112
+
+	// Payload will be stringified and posted as form under `payload` key
+	PayloadContentTypeFormURLEncoded = 113
+)
+
+// PayloadContentTypes Available data format for payload to be posted to webhook
+var PayloadContentTypes = map[int]string{
+	PayloadContentTypeJSON:           "application/json",
+	PayloadContentTypeFormURLEncoded: "application/x-www-form-urlencoded",
+}
+
 func PushWebhookEventToKafkaTopic(webhookEventType string, webhookPayload []byte, kafkaTopicName string) error {
 
 	// Creating a delivery report channel
