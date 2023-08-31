@@ -177,3 +177,21 @@ func DeleteMyData(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+// GetDeleteMyDataStatus Get my data requests from the organization
+func GetDeleteMyDataStatus(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["orgID"]
+	userID := token.GetUserID(r)
+
+	resp, err := getOngoingDataRequest(userID, orgID, dr.DataRequestTypeDelete)
+
+	if err != nil {
+		m := fmt.Sprintf("Failed to get user: %v data request for organization: %v", userID, orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(resp)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
+}
