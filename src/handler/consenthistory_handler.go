@@ -178,3 +178,23 @@ func consentHistoryPurposeAdd(ch consentHistory) error {
 
 	return nil
 }
+
+func consentHistoryAttributeAdd(ch consentHistory) error {
+	var c consenthistory.ConsentHistory
+
+	c.ConsentID = ch.ConsentID
+	c.UserID = ch.UserID
+	c.OrgID = ch.OrgID
+	c.PurposeID = ch.PurposeID
+
+	c.Log = fmt.Sprintf("Updated consent value to <%s> for attribute <%s> in organization <%s> for the purpose <%s>",
+		ch.AttributeConsentStatus, ch.AttributeDescription, ch.OrgName, ch.PurposeName)
+
+	log.Printf("The log is: %s", c.Log)
+	_, err := consenthistory.Add(c)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -90,6 +90,7 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/organizations/{orgID}/purposes/{purposeID}/attributes/{attributeID}/consented/users", m.Chain(handler.GetAllUsersConsentedToAttribute, m.Logger(), m.Authenticate())).Methods("GET")
 	r.Handle("/v1/organizations/{orgID}/users/{userID}/consents/{consentID}/purposes/{purposeID}/status", m.Chain(handler.GetPurposeAllConsentStatus, m.Logger(), m.Authenticate())).Methods("GET")
 	r.Handle("/v1/organizations/{orgID}/users/{userID}/consents/{consentID}/purposes/{purposeID}/status", m.Chain(handler.UpdatePurposeAllConsentsv2, m.Logger(), m.Authenticate())).Methods("POST")
+	r.Handle("/v1/organizations/{orgID}/users/{userID}/consents/{consentID}/purposes/{purposeID}/attributes/{attributeID}", m.Chain(handler.UpdatePurposeAttribute, m.Logger(), m.Authenticate())).Methods("PATCH")
 	r.Handle("/v1/organizations/{orgID}/purposes/{purposeID}/consented/users", m.Chain(handler.GetAllUsersConsentedToPurpose, m.Logger(), m.Authenticate())).Methods("GET")
 
 	r.Handle("/v1/organizations/{orgID}/notify-data-breach", m.Chain(handler.NotifyDataBreach, m.Logger(), m.Authenticate())).Methods("POST")
