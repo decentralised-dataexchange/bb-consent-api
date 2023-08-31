@@ -1963,3 +1963,21 @@ func GetDataRequests(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
 }
+
+// GetDataRequest Get data request
+func GetDataRequest(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["orgID"]
+	dataReqID := mux.Vars(r)["dataReqID"]
+
+	dReq, err := dr.GetDataRequestByID(dataReqID)
+
+	if err != nil {
+		m := fmt.Sprintf("Failed to get data request: %v for organization: %v", dataReqID, orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(transformDataReqToResp(dReq))
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
+}
