@@ -32,6 +32,9 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/organizations/types/{typeID}/image", m.Chain(handler.UpdateOrganizationTypeImage, m.Logger(), m.Authenticate())).Methods("POST")
 	r.Handle("/v1/organizations/types/{typeID}/image", m.Chain(handler.GetOrganizationTypeImage, m.Logger(), m.Authenticate())).Methods("GET")
 
+	// Organization webhook event types
+	r.Handle("/v1/organizations/webhooks/event-types", m.Chain(handler.GetWebhookEventTypes, m.Logger(), m.Authenticate())).Methods("GET")
+
 	r.Handle("/v1/organizations/{organizationID}", m.Chain(handler.GetOrganizationByID, m.Logger(), m.Authenticate())).Methods("GET")
 	r.Handle("/v1/organizations/{organizationID}", m.Chain(handler.UpdateOrganization, m.Logger(), m.Authenticate())).Methods("PATCH")
 	r.Handle("/v1/organizations/{organizationID}/coverimage", m.Chain(handler.UpdateOrganizationCoverImage, m.Logger(), m.Authenticate())).Methods("POST")
