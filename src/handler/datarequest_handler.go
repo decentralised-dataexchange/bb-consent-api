@@ -243,3 +243,20 @@ func CancelMyDataRequest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
+
+// GetDownloadMyData Downlod my data from the organization
+func GetDownloadMyData(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["orgID"]
+	userID := token.GetUserID(r)
+
+	drs, err := getDataReqWithUserOrgTypeID(userID, orgID, dr.DataRequestTypeDownload)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get user: %v data request for organization: %v", userID, orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(drs)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
+}
