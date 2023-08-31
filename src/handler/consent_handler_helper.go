@@ -110,3 +110,12 @@ func getTemplateswithPurpose(purposeID string, templates []org.Template) []org.T
 	}
 	return t
 }
+
+func getPurposeFromID(p []org.Purpose, purposeID string) org.Purpose {
+	for _, e := range p {
+		if e.ID == purposeID {
+			return e
+		}
+	}
+	return org.Purpose{}
+}

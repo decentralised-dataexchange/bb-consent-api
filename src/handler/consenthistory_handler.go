@@ -12,6 +12,19 @@ import (
 	"github.com/bb-consent/api/src/token"
 )
 
+type consentHistory struct {
+	UserID                 string
+	ConsentID              string
+	OrgID                  string
+	OrgName                string
+	PurposeID              string
+	PurposeAllowAll        bool
+	PurposeName            string
+	AttributeID            string
+	AttributeDescription   string
+	AttributeConsentStatus string
+}
+
 type consentHistoryShort struct {
 	ID        string
 	OrgID     string
@@ -140,4 +153,28 @@ func formPaginationLinks(r *http.Request, startID string, lastID string, limit i
 		}
 	}
 	return
+}
+
+func consentHistoryPurposeAdd(ch consentHistory) error {
+	var c consenthistory.ConsentHistory
+
+	c.ConsentID = ch.ConsentID
+	c.UserID = ch.UserID
+	c.OrgID = ch.OrgID
+	c.PurposeID = ch.PurposeID
+
+	var val = "DisAllow"
+	if ch.PurposeAllowAll == true {
+		val = "Allow"
+	}
+	c.Log = fmt.Sprintf("Updated consent value to <%s> for the purpose <%s> in organization <%s>",
+		val, ch.PurposeName, ch.OrgName)
+
+	log.Printf("The log is: %s", c.Log)
+	_, err := consenthistory.Add(c)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
