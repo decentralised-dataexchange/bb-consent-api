@@ -102,6 +102,18 @@ var PayloadContentTypes = map[int]string{
 	PayloadContentTypeFormURLEncoded: "application/x-www-form-urlencoded",
 }
 
+// Delivery status const
+const (
+	DeliveryStatusCompleted = 212
+	DeliveryStatusFailed    = 213
+)
+
+// DeliveryStatus Indicating the payload delivery status to webhook
+var DeliveryStatus = map[int]string{
+	DeliveryStatusCompleted: "completed",
+	DeliveryStatusFailed:    "failed",
+}
+
 func PushWebhookEventToKafkaTopic(webhookEventType string, webhookPayload []byte, kafkaTopicName string) error {
 
 	// Creating a delivery report channel
