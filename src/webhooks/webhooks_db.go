@@ -136,6 +136,16 @@ func GetWebhookByPayloadURL(orgID string, payloadURL string) (result Webhook, er
 	return result, err
 }
 
+// GetWebhookDeliveryByID Gets payload delivery details by ID
+func GetWebhookDeliveryByID(webhookID string, webhookDeliveryID string) (result WebhookDelivery, err error) {
+	s := session()
+	defer s.Close()
+
+	err = webhookDeliveryCollection(s).Find(bson.M{"webhookid": webhookID, "_id": bson.ObjectIdHex(webhookDeliveryID)}).One(&result)
+
+	return result, err
+}
+
 // GetAllDeliveryByWebhookID Gets all webhook deliveries for a webhook
 func GetAllDeliveryByWebhookID(webhookID string, startID string, limit int) (results []WebhookDelivery, lastID string, err error) {
 	s := session()
