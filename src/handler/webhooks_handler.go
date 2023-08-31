@@ -269,3 +269,31 @@ func GetAllWebhooks(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
+
+// GetWebhook Gets a webhook for an organisation by ID
+func GetWebhook(w http.ResponseWriter, r *http.Request) {
+	// Reading URL parameters
+	organizationID := mux.Vars(r)["orgID"]
+	webhookID := mux.Vars(r)["webhookID"]
+
+	// Validating the given organisation ID
+	_, err := org.Get(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get organization: %v", organizationID)
+		common.HandleError(w, http.StatusBadRequest, m, err)
+		return
+	}
+
+	// Fetching webhook by ID for an organisation
+	webhook, err := wh.GetByOrgID(webhookID, organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get webhook:%v for organisation: %v", webhookID, organizationID)
+		common.HandleError(w, http.StatusNotFound, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(webhook)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
