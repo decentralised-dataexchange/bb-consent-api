@@ -1981,3 +1981,48 @@ func GetDataRequest(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
 }
+
+type updateDataReq struct {
+	State   int `valid:"required"`
+	Comment string
+}
+
+// UpdateDataRequests Update the user requests status
+func UpdateDataRequests(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["orgID"]
+	dataReqID := mux.Vars(r)["dataReqID"]
+
+	var updateReq updateDataReq
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	json.Unmarshal(b, &updateReq)
+	//TODO: Check if this is org admin or not.
+
+	dReq, err := dr.GetDataRequestByID(dataReqID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get data request: %v organization: %v", dataReqID, orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	if dReq.State > updateReq.State {
+		m := fmt.Sprintf("Invalid state change from: %v to %v for ReqID: %v organization: %v", dReq.State, updateReq.State, dataReqID, orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	dReq.State = updateReq.State
+	dReq.Comments[updateReq.State] = updateReq.Comment
+
+	err = dr.Update(dReq.ID, dReq.State, dReq.Comments)
+	if err != nil {
+		m := fmt.Sprintf("Failed to update data request: %v organization: %v", dataReqID, orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(transformDataReqToResp(dReq))
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
