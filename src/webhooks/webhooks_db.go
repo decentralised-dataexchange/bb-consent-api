@@ -77,6 +77,15 @@ func DeleteWebhook(webhookID string) error {
 	return webhookCollection(s).RemoveId(bson.ObjectIdHex(webhookID))
 }
 
+// UpdateWebhook Updates a webhook for an organization
+func UpdateWebhook(webhook Webhook) (Webhook, error) {
+	s := session()
+	defer s.Close()
+
+	err := webhookCollection(s).UpdateId(webhook.ID, webhook)
+	return webhook, err
+}
+
 // GetActiveWebhooksByOrgID Gets all active webhooks for a particular organisation
 func GetActiveWebhooksByOrgID(orgID string) (results []Webhook, err error) {
 	s := session()
@@ -113,6 +122,16 @@ func GetLastWebhookDelivery(webhookID string) (result WebhookDelivery, err error
 	defer s.Close()
 
 	err = webhookDeliveryCollection(s).Find(bson.M{"webhookid": webhookID}).Sort("-executionstarttimestamp").One(&result)
+
+	return result, err
+}
+
+// GetWebhookByPayloadURL Get the webhook for an organisation by payload URL
+func GetWebhookByPayloadURL(orgID string, payloadURL string) (result Webhook, err error) {
+	s := session()
+	defer s.Close()
+
+	err = webhookCollection(s).Find(bson.M{"orgid": orgID, "payloadurl": payloadURL}).One(&result)
 
 	return result, err
 }
