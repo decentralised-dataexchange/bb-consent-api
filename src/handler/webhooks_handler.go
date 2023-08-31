@@ -26,3 +26,22 @@ func GetWebhookEventTypes(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 
 }
+
+// WebhookPayloadContentTypesResp Defines response structure for webhook payload content types
+type WebhookPayloadContentTypesResp struct {
+	ContentTypes []string
+}
+
+// GetWebhookPayloadContentTypes List available webhook payload content types
+func GetWebhookPayloadContentTypes(w http.ResponseWriter, r *http.Request) {
+	var webhookPayloadContentTypesResp WebhookPayloadContentTypesResp
+
+	for _, payloadContentTypes := range wh.PayloadContentTypes {
+		webhookPayloadContentTypesResp.ContentTypes = append(webhookPayloadContentTypesResp.ContentTypes, payloadContentTypes)
+	}
+
+	response, _ := json.Marshal(webhookPayloadContentTypesResp)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}

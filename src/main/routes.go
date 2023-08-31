@@ -98,6 +98,9 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/organizations/{orgID}/data-requests/{dataReqID}", m.Chain(handler.GetDataRequest, m.Logger(), m.Authenticate())).Methods("GET")
 	r.Handle("/v1/organizations/{orgID}/data-requests/{dataReqID}", m.Chain(handler.UpdateDataRequests, m.Logger(), m.Authenticate())).Methods("PATCH")
 
+	// Organisation webhooks related api(s)
+	r.Handle("/v1/organizations/webhooks/payload/content-types", m.Chain(handler.GetWebhookPayloadContentTypes, m.Logger(), m.Authenticate())).Methods("GET")
+
 	//Login
 	r.Handle("/v1/users/register", m.Chain(handler.RegisterUser, m.LoggerNoAuth())).Methods("POST")
 	r.Handle("/v1/users/login", m.Chain(handler.LoginUser, m.LoggerNoAuth())).Methods("POST")
