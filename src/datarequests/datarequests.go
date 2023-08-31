@@ -84,6 +84,17 @@ func GetRequestTypeStr(requestType int) string {
 	return RequestTypes[requestType-1].Str
 }
 
+// GetDataRequestByID Returns the data requests record by ID
+func GetDataRequestByID(reqID string) (DataRequest, error) {
+	s := session()
+	defer s.Close()
+
+	var dataReqest DataRequest
+	err := collection(s).FindId(bson.ObjectIdHex(reqID)).One(&dataReqest)
+
+	return dataReqest, err
+}
+
 // GetOpenDataRequestsByOrgID Get data requests against orgID
 func GetOpenDataRequestsByOrgID(orgID string, startID string, limit int) (results []DataRequest, lastID string, err error) {
 	s := session()
