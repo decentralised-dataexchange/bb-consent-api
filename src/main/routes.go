@@ -147,4 +147,6 @@ func SetRoutes(r *mux.Router) {
 
 	r.Handle("/v1/user/organizations/{organizationID}/data-status", m.Chain(handler.GetMyOrgDataRequestStatus, m.Logger(), m.Authenticate())).Methods("GET")
 
+	r.Handle("/v1/user/organizations/{orgID}/data-delete", m.Chain(handler.GetDeleteMyData, m.Logger(), m.Authenticate())).Methods("GET")
+
 }

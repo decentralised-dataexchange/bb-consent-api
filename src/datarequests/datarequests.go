@@ -219,3 +219,13 @@ func GetDataRequestsByOrgUserID(orgID string, userID string, startID string, lim
 
 	return results, lastID, err
 }
+
+// GetDataRequestsByUserOrgTypeID Get data requests against orgID
+func GetDataRequestsByUserOrgTypeID(orgID string, userID string, drType int) (results []DataRequest, err error) {
+	s := session()
+	defer s.Close()
+
+	err = collection(s).Find(bson.M{"orgid": orgID, "userid": userID, "type": drType}).All(&results)
+
+	return results, err
+}

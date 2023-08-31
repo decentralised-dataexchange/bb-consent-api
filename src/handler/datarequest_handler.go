@@ -11,6 +11,24 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// GetDeleteMyData Get my data requests from the organization
+func GetDeleteMyData(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["orgID"]
+	userID := token.GetUserID(r)
+
+	drs, err := getDataReqWithUserOrgTypeID(userID, orgID, dr.DataRequestTypeDelete)
+
+	if err != nil {
+		m := fmt.Sprintf("Failed to get user: %v data request for organization: %v", userID, orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	response, _ := json.Marshal(drs)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
+}
+
 func transformDataReqToResp(dReq dr.DataRequest) dataReqResp {
 	return dataReqResp{ID: dReq.ID, UserID: dReq.UserID, UserName: dReq.UserName, OrgID: dReq.OrgID, Type: dReq.Type,
 		State: dReq.State, StateStr: dr.GetStatusTypeStr(dReq.State), Comment: dReq.Comments[dReq.State], TypeStr: dr.GetRequestTypeStr(dReq.Type),
@@ -78,4 +96,21 @@ func GetMyOrgDataRequestStatus(w http.ResponseWriter, r *http.Request) {
 	response, _ := json.Marshal(drs)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
+}
+
+func getDataReqWithUserOrgTypeID(userID string, orgID string, typeID int) ([]dataReqResp, error) {
+	var err error
+	var dReqs []dr.DataRequest
+	var drs []dataReqResp
+
+	dReqs, err = dr.GetDataRequestsByUserOrgTypeID(orgID, userID, typeID)
+	if err != nil {
+		return drs, err
+	}
+
+	for _, d := range dReqs {
+		drs = append(drs, transformDataReqToResp(d))
+	}
+
+	return drs, err
 }
