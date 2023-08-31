@@ -1887,10 +1887,79 @@ func NotifyEvents(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
+type dataReqResp struct {
+	ID            bson.ObjectId `bson:"_id,omitempty"`
+	UserID        string
+	UserName      string
+	OrgID         string
+	Type          int
+	TypeStr       string
+	State         int
+	RequestedDate string
+	ClosedDate    string
+	StateStr      string
+	Comment       string
+}
+
+type dataReqResps struct {
+	DataRequests                 []dataReqResp
+	IsRequestsOngoing            bool
+	IsDataDeleteRequestOngoing   bool
+	IsDataDownloadRequestOngoing bool
+	Links                        common.PaginationLinks
+}
+
 // GetDataRequestStatus Get data request states
 func GetDataRequestStatus(w http.ResponseWriter, r *http.Request) {
 
 	response, _ := json.Marshal(dr.StatusTypes)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
+}
+
+// GetDataRequests Get data requests
+func GetDataRequests(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["orgID"]
+
+	startID, limit := common.ParsePaginationQueryParameters(r)
+	if limit == 0 {
+		limit = 50
+	}
+
+	var requestStatus = ""
+	requestStatuses, ok := r.URL.Query()["status"]
+
+	if ok {
+		requestStatus = requestStatuses[0]
+	}
+
+	var err error
+	var dReqs []dr.DataRequest
+	var lastID string
+
+	if requestStatus == "open" {
+		dReqs, lastID, err = dr.GetOpenDataRequestsByOrgID(orgID, startID, limit)
+	} else if requestStatus == "closed" {
+		dReqs, lastID, err = dr.GetClosedDataRequestsByOrgID(orgID, startID, limit)
+	} else {
+		m := fmt.Sprintf("Incorrect query parameter: %v to get data requests for organization: %v", requestStatus, orgID)
+		common.HandleError(w, http.StatusBadRequest, m, nil)
+		return
+	}
+
+	if err != nil {
+		m := fmt.Sprintf("Failed to get data requests for organization: %v", orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	var drs dataReqResps
+	for _, d := range dReqs {
+		drs.DataRequests = append(drs.DataRequests, transformDataReqToResp(d))
+	}
+
+	drs.Links = common.CreatePaginationLinks(r, startID, lastID, limit)
+	response, _ := json.Marshal(drs)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
 }
