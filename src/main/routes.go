@@ -140,4 +140,7 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/user/apikey/revoke", m.Chain(handler.DeleteAPIKey, m.Logger(), m.Authenticate())).Methods("DELETE")
 	r.Handle("/v1/user/apikey", m.Chain(handler.GetAPIKey, m.Logger(), m.Authenticate())).Methods("GET")
 
+	//Consent History
+	r.Handle("/v1/users/{userID}/consenthistory", m.Chain(handler.GetUserConsentHistory, m.Logger(), m.Authenticate())).Methods("GET")
+
 }
