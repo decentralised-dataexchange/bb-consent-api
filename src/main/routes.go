@@ -91,6 +91,8 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/organizations/{orgID}/notify-data-breach", m.Chain(handler.NotifyDataBreach, m.Logger(), m.Authenticate())).Methods("POST")
 	r.Handle("/v1/organizations/{orgID}/notify-events", m.Chain(handler.NotifyEvents, m.Logger(), m.Authenticate())).Methods("POST")
 
+	r.Handle("/v1/organizations/{orgID}/data-requests", m.Chain(handler.GetDataRequests, m.Logger(), m.Authenticate())).Methods("GET")
+
 	//Login
 	r.Handle("/v1/users/register", m.Chain(handler.RegisterUser, m.LoggerNoAuth())).Methods("POST")
 	r.Handle("/v1/users/login", m.Chain(handler.LoginUser, m.LoggerNoAuth())).Methods("POST")
