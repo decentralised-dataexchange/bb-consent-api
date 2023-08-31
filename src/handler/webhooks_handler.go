@@ -297,3 +297,38 @@ func GetWebhook(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
+
+// DeleteWebhook Deletes a webhook for an organisation
+func DeleteWebhook(w http.ResponseWriter, r *http.Request) {
+	// Reading URL parameters
+	organizationID := mux.Vars(r)["orgID"]
+	webhookID := mux.Vars(r)["webhookID"]
+
+	// Validating the given organisation ID
+	_, err := org.Get(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get organization: %v", organizationID)
+		common.HandleError(w, http.StatusBadRequest, m, err)
+		return
+	}
+
+	// Validating the given webhook ID for an organisation
+	_, err = wh.GetByOrgID(webhookID, organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get webhook:%v for organisation: %v", webhookID, organizationID)
+		common.HandleError(w, http.StatusBadRequest, m, err)
+		return
+	}
+
+	// Deleting webhook
+	err = wh.DeleteWebhook(webhookID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to delete webhook:%v for organisation: %v", webhookID, organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNoContent)
+
+}
