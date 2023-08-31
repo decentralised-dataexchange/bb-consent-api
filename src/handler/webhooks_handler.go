@@ -466,3 +466,76 @@ func UpdateWebhook(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 
 }
+
+// PingWebhookResp Defines the response structure for webhook status check using ping
+type PingWebhookResp struct {
+	ResponseStatusCode      int    // HTTP response status code
+	ResponseStatusStr       string // HTTP response status string
+	ExecutionStartTimeStamp string // UTC timestamp when webhook execution started
+	ExecutionEndTimeStamp   string // UTC timestamp when webhook execution ended
+	Status                  string // Status of webhook delivery for e.g. failed or completed
+	StatusDescription       string // Describe the status for e.g. Reason for failure
+}
+
+// PingWebhook Pings webhook payload URL to check the response status code is 200 OK or not
+func PingWebhook(w http.ResponseWriter, r *http.Request) {
+
+	// Reading the URL parameters
+	organizationID := mux.Vars(r)["orgID"]
+	webhookID := mux.Vars(r)["webhookID"]
+
+	// Validating the given organisation ID
+	_, err := org.Get(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get organization: %v", organizationID)
+		common.HandleError(w, http.StatusBadRequest, m, err)
+		return
+	}
+
+	// Validating the given webhook ID for an organisation
+	webhook, err := wh.GetByOrgID(webhookID, organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get webhook:%v for organisation: %v", webhookID, organizationID)
+		common.HandleError(w, http.StatusBadRequest, m, err)
+		return
+	}
+
+	// Pinging webhook payload URL
+	_, resp, executionStartTimeStamp, executionEndTimeStamp, err := wh.PingWebhook(webhook)
+
+	if err != nil {
+
+		log.Printf("Error: %v; Failed to ping webhook:%v for organisation: %v", err, webhookID, organizationID)
+
+		// Constructing webhook ping response
+		pingWebhookResp := PingWebhookResp{
+			ExecutionStartTimeStamp: executionStartTimeStamp,
+			ExecutionEndTimeStamp:   executionEndTimeStamp,
+			Status:                  wh.DeliveryStatus[wh.DeliveryStatusFailed],
+			StatusDescription:       err.Error(),
+		}
+
+		response, _ := json.Marshal(pingWebhookResp)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(response)
+		return
+	}
+
+	defer resp.Body.Close()
+
+	// Constructing webhook ping response
+	pingWebhookResp := PingWebhookResp{
+		ResponseStatusCode:      resp.StatusCode,
+		ResponseStatusStr:       resp.Status,
+		ExecutionStartTimeStamp: executionStartTimeStamp,
+		ExecutionEndTimeStamp:   executionEndTimeStamp,
+		Status:                  wh.DeliveryStatus[wh.DeliveryStatusCompleted],
+	}
+
+	response, _ := json.Marshal(pingWebhookResp)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+
+}
