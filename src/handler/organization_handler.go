@@ -15,6 +15,7 @@ import (
 	"github.com/bb-consent/api/src/actionlog"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/consent"
+	dr "github.com/bb-consent/api/src/datarequests"
 	"github.com/bb-consent/api/src/image"
 	"github.com/bb-consent/api/src/misc"
 	"github.com/bb-consent/api/src/notifications"
@@ -1884,4 +1885,12 @@ func NotifyEvents(w http.ResponseWriter, r *http.Request) {
 	go handleEventNotification(eventEntry.ID.Hex(), orgID, orgName)
 
 	w.WriteHeader(http.StatusAccepted)
+}
+
+// GetDataRequestStatus Get data request states
+func GetDataRequestStatus(w http.ResponseWriter, r *http.Request) {
+
+	response, _ := json.Marshal(dr.StatusTypes)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
 }
