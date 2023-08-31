@@ -145,4 +145,6 @@ func SetRoutes(r *mux.Router) {
 	//Consent History
 	r.Handle("/v1/users/{userID}/consenthistory", m.Chain(handler.GetUserConsentHistory, m.Logger(), m.Authenticate())).Methods("GET")
 
+	r.Handle("/v1/user/organizations/{organizationID}/data-status", m.Chain(handler.GetMyOrgDataRequestStatus, m.Logger(), m.Authenticate())).Methods("GET")
+
 }
