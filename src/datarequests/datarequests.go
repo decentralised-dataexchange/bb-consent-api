@@ -84,6 +84,16 @@ func GetRequestTypeStr(requestType int) string {
 	return RequestTypes[requestType-1].Str
 }
 
+// Add Adds access log
+func Add(req DataRequest) (DataRequest, error) {
+	s := session()
+	defer s.Close()
+
+	req.ID = bson.NewObjectId()
+
+	return req, collection(s).Insert(req)
+}
+
 // Update Update the req entry
 func Update(reqID bson.ObjectId, state int, comments [DataRequestMaxComments]string) (err error) {
 	s := session()
