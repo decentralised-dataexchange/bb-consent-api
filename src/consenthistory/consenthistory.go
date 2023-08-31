@@ -26,6 +26,16 @@ func collection(s *mgo.Session) *mgo.Collection {
 	return s.DB(database.DB.Name).C("consentHistory")
 }
 
+// Add Adds a consent history to the collection
+func Add(ch ConsentHistory) (ConsentHistory, error) {
+	s := session()
+	defer s.Close()
+
+	ch.ID = bson.NewObjectId()
+
+	return ch, collection(s).Insert(&ch)
+}
+
 // GetByUserID Gets all history of a given userID
 func GetByUserID(userID string, startID string, limit int) ([]ConsentHistory, string, error) {
 	s := session()

@@ -116,6 +116,27 @@ var DeliveryStatus = map[int]string{
 	DeliveryStatusFailed:    "failed",
 }
 
+// ConsentWebhookEvent Details of consent events
+type ConsentWebhookEvent struct {
+	OrganisationID string   `json:"organisationID"`
+	UserID         string   `json:"userID"`
+	ConsentID      string   `json:"consentID"`
+	PurposeID      string   `json:"purposeID"`
+	Attributes     []string `json:"attribute"`
+	Days           int      `json:"days"`
+	TimeStamp      string   `json:"timestamp"`
+}
+
+// GetOrganisationID Returns organisation ID
+func (e ConsentWebhookEvent) GetOrganisationID() string {
+	return e.OrganisationID
+}
+
+// GetUserID Returns user ID
+func (e ConsentWebhookEvent) GetUserID() string {
+	return e.UserID
+}
+
 func PushWebhookEventToKafkaTopic(webhookEventType string, webhookPayload []byte, kafkaTopicName string) error {
 
 	// Creating a delivery report channel
@@ -239,4 +260,23 @@ func TriggerOrgSubscriptionWebhookEvent(userID, orgID string, eventType string) 
 
 	// triggering the webhook
 	TriggerWebhooks(orgSubscriptionWebhookEvent, eventType)
+}
+
+// TriggerConsentWebhookEvent Trigger webhook for consent related events
+func TriggerConsentWebhookEvent(userID, purposeID, consentID, orgID, eventType, timeStamp string, days int, attributes []string) {
+
+	// Constructing webhook event data attribute
+	var consentWebhookEvent ConsentWebhookEvent
+	consentWebhookEvent = ConsentWebhookEvent{
+		OrganisationID: orgID,
+		UserID:         userID,
+		ConsentID:      consentID,
+		PurposeID:      purposeID,
+		Attributes:     attributes,
+		Days:           days,
+		TimeStamp:      timeStamp,
+	}
+
+	// triggering the webhook
+	TriggerWebhooks(consentWebhookEvent, eventType)
 }

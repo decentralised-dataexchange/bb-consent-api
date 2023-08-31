@@ -186,3 +186,12 @@ func GetPurposeConsentedAllUsers(orgID string, purposeID string, startID string,
 
 	return
 }
+
+// UpdatePurposes Update consents purposes
+func UpdatePurposes(consents Consents) (Consents, error) {
+	s := session()
+	defer s.Close()
+	c := collection(s)
+
+	return consents, c.Update(bson.M{"_id": consents.ID}, bson.M{"$set": bson.M{"purposes": consents.Purposes}})
+}
