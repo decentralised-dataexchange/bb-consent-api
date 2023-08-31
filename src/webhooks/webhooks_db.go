@@ -69,6 +69,14 @@ func GetByOrgID(webhookID, orgID string) (result Webhook, err error) {
 	return result, err
 }
 
+// DeleteWebhook Deletes a webhook for an organisation
+func DeleteWebhook(webhookID string) error {
+	s := session()
+	defer s.Close()
+
+	return webhookCollection(s).RemoveId(bson.ObjectIdHex(webhookID))
+}
+
 // GetActiveWebhooksByOrgID Gets all active webhooks for a particular organisation
 func GetActiveWebhooksByOrgID(orgID string) (results []Webhook, err error) {
 	s := session()
