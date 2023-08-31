@@ -8,6 +8,7 @@ import (
 	"github.com/bb-consent/api/src/common"
 	dr "github.com/bb-consent/api/src/datarequests"
 	"github.com/bb-consent/api/src/token"
+	"github.com/bb-consent/api/src/webhooks"
 	"github.com/gorilla/mux"
 )
 
@@ -113,4 +114,66 @@ func getDataReqWithUserOrgTypeID(userID string, orgID string, typeID int) ([]dat
 	}
 
 	return drs, err
+}
+
+type myDataRequestStatus struct {
+	RequestOngoing bool
+	ID             string
+	State          int
+	StateStr       string
+	RequestedDate  string
+}
+
+func getOngoingDataRequest(userID string, orgID string, drType int) (resp myDataRequestStatus, err error) {
+	drs, err := getDataReqWithUserOrgTypeID(userID, orgID, drType)
+
+	if err != nil {
+		return resp, err
+	}
+
+	resp.RequestOngoing = false
+	for _, d := range drs {
+		if d.State < dr.DataRequestStatusProcessedWithoutAction {
+			resp.RequestOngoing = true
+			resp.ID = d.ID.Hex()
+			resp.State = d.State
+			resp.StateStr = d.StateStr
+			resp.RequestedDate = d.ID.Time().String()
+		}
+	}
+
+	return resp, err
+}
+
+// DeleteMyData Delete my data from the organization
+func DeleteMyData(w http.ResponseWriter, r *http.Request) {
+	orgID := mux.Vars(r)["orgID"]
+	userID := token.GetUserID(r)
+
+	resp, err := getOngoingDataRequest(userID, orgID, dr.DataRequestTypeDelete)
+
+	if err == nil && resp.RequestOngoing == true {
+		m := fmt.Sprintf("Request (%v) ongoing for user: %v organization: %v", dr.GetRequestTypeStr(dr.DataRequestTypeDelete), userID, orgID)
+		common.HandleError(w, http.StatusBadRequest, m, err)
+		return
+	}
+
+	var dRequest dr.DataRequest
+	dRequest.OrgID = orgID
+	dRequest.UserID = userID
+	dRequest.UserName = token.GetUserName(r)
+	dRequest.Type = dr.DataRequestTypeDelete
+	dRequest.State = dr.DataRequestStatusInitiated
+
+	dRequest, err = dr.Add(dRequest)
+	if err != nil {
+		m := fmt.Sprintf("Failed to add data request: %v logs for user: %v organization: %v", dr.GetRequestTypeStr(dr.DataRequestTypeDelete), token.GetUserName(r), orgID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Trigger webhooks
+	go webhooks.TriggerDataRequestWebhookEvent(userID, orgID, dRequest.ID.Hex(), webhooks.EventTypes[webhooks.EventTypeDataDeleteInitiated])
+
+	w.WriteHeader(http.StatusOK)
 }
