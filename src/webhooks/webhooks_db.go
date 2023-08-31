@@ -19,12 +19,34 @@ type Webhook struct {
 	TimeStamp           string        // UTC timestamp
 }
 
+// WebhookDelivery Details of payload delivery to webhook endpoint
+type WebhookDelivery struct {
+	ID                      bson.ObjectId       `bson:"_id,omitempty"` // Webhook delivery ID
+	WebhookID               string              // Webhook ID
+	UserID                  string              // ID of user who triggered the webhook event
+	WebhookEventType        string              // Webhook event type for e.g. data.delete.initiated
+	RequestHeaders          map[string][]string // HTTP headers posted to webhook endpoint
+	RequestPayload          interface{}         // JSON payload posted to webhook endpoint
+	ResponseHeaders         map[string][]string // HTTP response headers received from webhook endpoint
+	ResponseBody            string              // HTTP response body received from webhook endpoint in bytes
+	ResponseStatusCode      int                 // HTTP response status code
+	ResponseStatusStr       string              // HTTP response status string
+	ExecutionStartTimeStamp string              // UTC timestamp when webhook execution started
+	ExecutionEndTimeStamp   string              // UTC timestamp when webhook execution ended
+	Status                  string              // Status of webhook delivery for e.g. failed or completed
+	StatusDescription       string              // Describe the status for e.g. Reason for failure
+}
+
 func session() *mgo.Session {
 	return database.DB.Session.Copy()
 }
 
 func webhookCollection(s *mgo.Session) *mgo.Collection {
 	return s.DB(database.DB.Name).C("webhooks")
+}
+
+func webhookDeliveryCollection(s *mgo.Session) *mgo.Collection {
+	return s.DB(database.DB.Name).C("webhookDeliveries")
 }
 
 // CreateWebhook Adds a webhook for an organisation
@@ -55,4 +77,24 @@ func GetWebhookCountByPayloadURL(orgID string, payloadURL string) (count int, er
 	count, err = webhookCollection(s).Find(bson.M{"orgid": orgID, "payloadurl": payloadURL}).Count()
 
 	return count, err
+}
+
+// GetAllWebhooksByOrgID Gets all webhooks for a given organisation
+func GetAllWebhooksByOrgID(orgID string) (results []Webhook, err error) {
+	s := session()
+	defer s.Close()
+
+	err = webhookCollection(s).Find(bson.M{"orgid": orgID}).Sort("-timestamp").All(&results)
+
+	return results, err
+}
+
+// GetLastWebhookDelivery Gets the last delivery for a webhook
+func GetLastWebhookDelivery(webhookID string) (result WebhookDelivery, err error) {
+	s := session()
+	defer s.Close()
+
+	err = webhookDeliveryCollection(s).Find(bson.M{"webhookid": webhookID}).Sort("-executionstarttimestamp").One(&result)
+
+	return result, err
 }
