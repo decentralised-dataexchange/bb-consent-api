@@ -547,6 +547,14 @@ func UpdatePurposeAllConsentsv2(w http.ResponseWriter, r *http.Request) {
 		//TODO: Handle the case where the purpose ID is non existent
 	}
 
+	validBasis := cp.Purpose.LawfulBasisOfProcessing == org.ConsentBasis || cp.Purpose.LawfulBasisOfProcessing == org.LegitimateInterestBasis
+
+	if !validBasis {
+		errorMsg := fmt.Sprintf("Invalid lawfull basis for purpose: %v, org: %v, user: %v", purposeID, orgID, userID)
+		common.HandleError(w, http.StatusBadRequest, errorMsg, err)
+		return
+	}
+
 	//TODO: HAckish, not optimized at all
 	var cnew consent.Consents
 	cnew.ID = c.ID
