@@ -281,6 +281,23 @@ func GetOrganizationImage(w http.ResponseWriter, r *http.Request) {
 	w.Write(image.Data)
 }
 
+// GetOrganizationImageWeb Retrieves the organization image
+func GetOrganizationImageWeb(w http.ResponseWriter, r *http.Request) {
+	organizationID := mux.Vars(r)["organizationID"]
+	imageID := mux.Vars(r)["imageID"]
+
+	image, err := image.Get(imageID)
+
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch image with id: %v for org: %v", imageID, organizationID)
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Write(image.Data)
+}
+
 type orgEulaUpReq struct {
 	EulaURL string `valid:"required,url"`
 }

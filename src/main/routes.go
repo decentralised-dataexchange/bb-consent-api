@@ -40,6 +40,7 @@ func SetRoutes(r *mux.Router) {
 	r.Handle("/v1/organizations/{organizationID}/coverimage", m.Chain(handler.UpdateOrganizationCoverImage, m.Logger(), m.Authenticate())).Methods("POST")
 	r.Handle("/v1/organizations/{organizationID}/logoimage", m.Chain(handler.UpdateOrganizationLogoImage, m.Logger(), m.Authenticate())).Methods("POST")
 	r.Handle("/v1/organizations/{organizationID}/image/{imageID}", m.Chain(handler.GetOrganizationImage, m.Logger(), m.Authenticate())).Methods("GET")
+	r.Handle("/v1/organizations/{organizationID}/image/{imageID}/web", m.Chain(handler.GetOrganizationImageWeb, m.LoggerNoAuth())).Methods("GET")
 
 	r.Handle("/v1/organizations/{organizationID}/eulaURL", m.Chain(handler.UpdateOrgEula, m.Logger(), m.Authenticate())).Methods("POST")
 	r.Handle("/v1/organizations/{organizationID}/eulaURL", m.Chain(handler.DeleteOrgEula, m.Logger(), m.Authenticate())).Methods("DELETE")
