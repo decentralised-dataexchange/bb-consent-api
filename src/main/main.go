@@ -14,6 +14,7 @@ import (
 	"github.com/bb-consent/api/src/notifications"
 	"github.com/bb-consent/api/src/token"
 	"github.com/bb-consent/api/src/webhooks"
+	casbin "github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
 )
 
@@ -70,8 +71,14 @@ func main() {
 	firebaseUtils.Init(config)
 	log.Println("Firebase initialized")
 
+	// setup casbin auth rules
+	authEnforcer, err := casbin.NewEnforcer("/opt/bb-consent/api/config/auth_model.conf", "/opt/bb-consent/api/config/rbac_policy.csv")
+	if err != nil {
+		panic(err)
+	}
+
 	router := mux.NewRouter()
-	SetRoutes(router)
+	SetRoutes(router, authEnforcer)
 
 	log.Println("Listening port 80")
 	http.ListenAndServe(":80", router)

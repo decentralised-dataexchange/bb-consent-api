@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/bb-consent/api/src/apikey"
+	"github.com/bb-consent/api/src/rbac"
+	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
 
 	"github.com/bb-consent/api/src/common"
@@ -151,4 +153,61 @@ func Chain(f http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
 		f = m(f)
 	}
 	return f
+}
+
+func Authorize(e *casbin.Enforcer) Middleware {
+
+	// Create a new Middleware
+	return func(f http.HandlerFunc) http.HandlerFunc {
+
+		// Define the http.HandlerFunc
+		return func(w http.ResponseWriter, r *http.Request) {
+
+			userID := token.GetUserID(r)
+
+			user, err := user.Get(userID)
+			if err != nil {
+				m := fmt.Sprintf("Failed to locate user with ID: %v", userID)
+				common.HandleError(w, http.StatusBadRequest, m, err)
+				return
+			}
+			roles := user.Roles
+
+			var role string
+
+			orgID, ok := mux.Vars(r)["organizationID"]
+			if !ok {
+				orgID, ok = mux.Vars(r)["orgID"]
+			}
+			if !ok && len(roles) > 0 {
+				orgID = user.Orgs[0].OrgID.Hex()
+			}
+
+			if rbac.IsUser(roles) {
+				role = rbac.ROLE_USER
+			}
+
+			if rbac.IsOrgAdmin(roles, orgID) {
+				role = rbac.ROLE_ADMIN
+			}
+
+			// casbin enforce
+			res, err := e.Enforce(role, r.URL.Path, r.Method)
+			if err != nil {
+				m := "Failed to enforce casbin authentication;"
+				common.HandleError(w, http.StatusInternalServerError, m, err)
+				return
+			}
+
+			if !res {
+				log.Printf("User does not have enough permissions")
+				m := "Unauthorized access;User doesn't have enough permissions;"
+				common.HandleError(w, http.StatusForbidden, m, nil)
+				return
+			}
+
+			// Call the next middleware/handler in chain
+			f(w, r)
+		}
+	}
 }
