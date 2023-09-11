@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/bb-consent/api/src/common"
+	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/consenthistory"
 	"github.com/bb-consent/api/src/token"
 )
@@ -133,7 +134,7 @@ func GetUserConsentHistory(w http.ResponseWriter, r *http.Request) {
 
 	response, _ := json.Marshal(chsResp)
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 

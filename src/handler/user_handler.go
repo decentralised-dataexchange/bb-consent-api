@@ -10,6 +10,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
+	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/token"
 	"github.com/bb-consent/api/src/user"
 )
@@ -58,7 +59,7 @@ func GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(userResp{u})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -109,7 +110,7 @@ func UpdateCurrentUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(userResp{u})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -155,6 +156,6 @@ func UserClientRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(appRegsiterResp{u})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }

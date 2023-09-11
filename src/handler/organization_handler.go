@@ -14,6 +14,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/actionlog"
 	"github.com/bb-consent/api/src/common"
+	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/consent"
 	dr "github.com/bb-consent/api/src/datarequests"
 	"github.com/bb-consent/api/src/image"
@@ -111,7 +112,7 @@ func AddOrganization(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(organization{orgResp})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 }
@@ -127,7 +128,7 @@ func GetOrganizationByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	response, _ := json.Marshal(organization{o})
 	w.Write(response)
 }
@@ -177,7 +178,7 @@ func UpdateOrganization(w http.ResponseWriter, r *http.Request) {
 	}
 	go user.UpdateOrganizationsSubscribedUsers(orgResp)
 	//response, _ := json.Marshal(organization{orgResp})
-	//w.Header().Set("Content-Type", "application/json")
+	//w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusAccepted)
 	//w.Write(response)
 }
@@ -218,7 +219,7 @@ func UpdateOrganizationCoverImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(organization{o})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -259,7 +260,7 @@ func UpdateOrganizationLogoImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(organization{o})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -277,7 +278,7 @@ func GetOrganizationImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "image/jpeg")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeImage)
 	w.Write(image.Data)
 }
 
@@ -294,7 +295,7 @@ func GetOrganizationImageWeb(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "image/jpeg")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeImage)
 	w.Write(image.Data)
 }
 
@@ -340,7 +341,7 @@ func UpdateOrgEula(w http.ResponseWriter, r *http.Request) {
 	go handleEulaUpdateNotification(orgResp)
 
 	//response, _ := json.Marshal(organization{orgResp})
-	//w.Header().Set("Content-Type", "application/json")
+	//w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusAccepted)
 	//w.Write(response)
 }
@@ -368,7 +369,7 @@ func DeleteOrgEula(w http.ResponseWriter, r *http.Request) {
 	go handleEulaUpdateNotification(orgResp)
 
 	//response, _ := json.Marshal(organization{orgResp})
-	//w.Header().Set("Content-Type", "application/json")
+	//w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusAccepted)
 	//w.Write(response)
 }
@@ -467,7 +468,7 @@ func AddOrgAdmin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(organization{o})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -493,7 +494,7 @@ func GetOrgAdmins(w http.ResponseWriter, r *http.Request) {
 		orgAdmins = append(orgAdmins, orgAdmin{admin.UserID, common.GetRole(admin.RoleID).Role})
 	}
 	response, _ := json.Marshal(orgAdmins)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -534,7 +535,7 @@ func DeleteOrgAdmin(w http.ResponseWriter, r *http.Request) {
 	_, err = user.RemoveRole(aReq.UserID, user.Role{RoleID: aReq.RoleID, OrgID: o.ID.Hex()})
 
 	response, _ := json.Marshal(organization{o})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -544,7 +545,7 @@ func GetOrganizationRoles(w http.ResponseWriter, r *http.Request) {
 	roles := common.GetRoles()
 
 	response, _ := json.Marshal(roles)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -635,7 +636,7 @@ func AddConsentPurposes(w http.ResponseWriter, r *http.Request) {
 	*/
 
 	response, _ := json.Marshal(organization{orgResp})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 }
@@ -657,7 +658,7 @@ func GetPurposes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(getPurposesResp{OrgID: o.ID.Hex(), Purposes: o.Purposes})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 }
@@ -703,7 +704,7 @@ func DeleteConsentPurposeByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(organization{orgResp})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 }
@@ -774,7 +775,7 @@ func UpdatePurposeByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(organization{o})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 }
@@ -816,7 +817,7 @@ func GetPurposeByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(pDetails)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -936,7 +937,7 @@ func AddConsentTemplates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(organization{orgResp})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 }
@@ -958,7 +959,7 @@ func GetTemplates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(getTemplatesResp{OrgID: o.ID.Hex(), Templates: o.Templates})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 }
@@ -996,7 +997,7 @@ func DeleteConsentTemplateByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(organization{orgResp})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 }
@@ -1079,7 +1080,7 @@ func DeleteConsentTemplatesByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(organization{o})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -1102,7 +1103,7 @@ func GetTemplateByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(getTemplateResp{OrgID: organizationID, Template: t})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 }
@@ -1170,7 +1171,7 @@ func UpdateTemplateByID(w http.ResponseWriter, r *http.Request) {
 
 	response, _ := json.Marshal(organization{o})
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 }
@@ -1242,7 +1243,7 @@ func GetGlobalPolicyConfiguration(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(resp)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 
@@ -1332,7 +1333,7 @@ func UpdateGlobalPolicyConfiguration(w http.ResponseWriter, r *http.Request) {
 	resp.Shared3PP = o.Shared3PP
 
 	response, _ := json.Marshal(resp)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 
@@ -1416,7 +1417,7 @@ func AddUserToOrganization(w http.ResponseWriter, r *http.Request) {
 	go webhooks.TriggerOrgSubscriptionWebhookEvent(u.UserID, organizationID, webhooks.EventTypes[webhooks.EventTypeOrgSubscribed])
 
 	response, _ := json.Marshal(userResp{updatedUser})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -1451,7 +1452,7 @@ func DeleteUserFromOrganization(w http.ResponseWriter, r *http.Request) {
 	go webhooks.TriggerOrgSubscriptionWebhookEvent(userID, organizationID, webhooks.EventTypes[webhooks.EventTypeOrgUnSubscribed])
 
 	response, _ := json.Marshal(userResp{user})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -1490,7 +1491,7 @@ func GetOrganizationUsers(w http.ResponseWriter, r *http.Request) {
 
 	ou.Links = common.CreatePaginationLinks(r, startID, lastID, limit)
 	response, _ := json.Marshal(ou)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -1515,7 +1516,7 @@ func EnableOrganizationSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(organization{o})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -1541,7 +1542,7 @@ func DisableOrganizationSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(organization{o})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -1586,7 +1587,7 @@ func GetSubscribeMethod(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(subscriptionMethodResp{m, getSubscribeMethod(m).Method})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -1600,7 +1601,7 @@ func GetSubscribeMethods(w http.ResponseWriter, r *http.Request) {
 	m := methodsResp{getSubscribeMethods()}
 
 	response, _ := json.Marshal(m)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -1668,7 +1669,7 @@ func GetSubscribeKey(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(subTokenResp{t, getSubscribeMethod(subscribeMethodKeyBased).Method})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -1698,7 +1699,7 @@ func RenewSubscribeKey(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(subTokenResp{t, getSubscribeMethod(subscribeMethodKeyBased).Method})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -1719,7 +1720,7 @@ func GetOrganizationSubscriptionStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(subscriptionStatus{o.Enabled})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -1743,7 +1744,7 @@ func GetOrganizationUsersCount(w http.ResponseWriter, r *http.Request) {
 	aLog := fmt.Sprintf("Organization API: %v called by user: %v", r.URL.Path, token.GetUserName(r))
 	actionlog.LogOrgAPICalls(token.GetUserID(r), token.GetUserName(r), organizationID, aLog)
 	response, _ := json.Marshal(orgUserCount{userCount})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -1930,7 +1931,7 @@ type dataReqResps struct {
 func GetDataRequestStatus(w http.ResponseWriter, r *http.Request) {
 
 	response, _ := json.Marshal(dr.StatusTypes)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -1977,7 +1978,7 @@ func GetDataRequests(w http.ResponseWriter, r *http.Request) {
 
 	drs.Links = common.CreatePaginationLinks(r, startID, lastID, limit)
 	response, _ := json.Marshal(drs)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -1995,7 +1996,7 @@ func GetDataRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(transformDataReqToResp(dReq))
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -2039,7 +2040,7 @@ func UpdateDataRequests(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(transformDataReqToResp(dReq))
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
