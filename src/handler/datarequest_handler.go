@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/bb-consent/api/src/common"
+	"github.com/bb-consent/api/src/config"
 	dr "github.com/bb-consent/api/src/datarequests"
 	"github.com/bb-consent/api/src/token"
 	"github.com/bb-consent/api/src/webhooks"
@@ -26,7 +27,7 @@ func GetDeleteMyData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(drs)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -95,7 +96,7 @@ func GetMyOrgDataRequestStatus(w http.ResponseWriter, r *http.Request) {
 
 	drs.Links = common.CreatePaginationLinks(r, startID, lastID, limit)
 	response, _ := json.Marshal(drs)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -192,7 +193,7 @@ func GetDeleteMyDataStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(resp)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -239,7 +240,7 @@ func CancelMyDataRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(transformDataReqToResp(dReq))
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -257,7 +258,7 @@ func GetDownloadMyData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(drs)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -307,6 +308,6 @@ func GetDownloadMyDataStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(resp)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/bb-consent/api/src/actionlog"
 	"github.com/bb-consent/api/src/common"
+	"github.com/bb-consent/api/src/config"
 	"github.com/gorilla/mux"
 )
 
@@ -48,6 +49,6 @@ func GetOrgLogs(w http.ResponseWriter, r *http.Request) {
 
 	ls.Links = common.CreatePaginationLinks(r, startID, lastID, limit)
 	response, _ := json.Marshal(ls)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }

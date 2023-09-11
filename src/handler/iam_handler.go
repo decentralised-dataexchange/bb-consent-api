@@ -164,7 +164,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 	resp := createResponse{"User created successfully"}
 	response, _ := json.Marshal(resp)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 }
@@ -208,7 +208,7 @@ func UnregisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 	resp := unregisterResponse{"User removed successfully"}
 	response, _ := json.Marshal(resp)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -218,7 +218,7 @@ func handleError(w http.ResponseWriter, userName string, status int, iamErr iamE
 		log.Printf("Failed to register err:%v", err)
 		resp, _ := json.Marshal(iamErr)
 		w.WriteHeader(status)
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 		w.Write(resp)
 		return
 	}
@@ -243,7 +243,7 @@ func registerUser(iamRegReq iamUserRegisterReq, adminToken string) (int, iamErro
 	}
 
 	req.Header.Add("Authorization", "Bearer "+adminToken)
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add(config.ContentTypeHeader, config.ContentTypeJSON)
 
 	//dump, err := httputil.DumpRequest(req, true)
 	//dump, err := httputil.DumpRequestOut(req, true)
@@ -284,7 +284,7 @@ func unregisterUser(iamUserID string, adminToken string) (int, iamError, error) 
 	}
 
 	req.Header.Add("Authorization", "Bearer "+adminToken)
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add(config.ContentTypeHeader, config.ContentTypeJSON)
 
 	//dump, err := httputil.DumpRequest(req, true)
 	//dump, err := httputil.DumpRequestOut(req, true)
@@ -337,7 +337,7 @@ func UpdateIamUser(Name string, iamID string) error {
 	}
 
 	req.Header.Add("Authorization", "Bearer "+t.AccessToken)
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add(config.ContentTypeHeader, config.ContentTypeJSON)
 
 	client := http.Client{
 		Timeout: timeout,
@@ -365,7 +365,7 @@ func getUserIamID(userName string, adminToken string) (string, int, iamError, er
 	}
 	//log.Printf("token: %v", t)
 	req.Header.Add("Authorization", "Bearer "+adminToken)
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add(config.ContentTypeHeader, config.ContentTypeJSON)
 
 	//dump, err := httputil.DumpRequest(req, true)
 	//dump, err := httputil.DumpRequestOut(req, true)
@@ -421,7 +421,7 @@ func setAdminRole(userID string, adminToken string) (int, iamError, error) {
 	}
 
 	req.Header.Add("Authorization", "Bearer "+adminToken)
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add(config.ContentTypeHeader, config.ContentTypeJSON)
 
 	//dump, err := httputil.DumpRequest(req, true)
 	//dump, err := httputil.DumpRequestOut(req, true)
@@ -510,7 +510,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		if (iamError{}) != iamErr {
 			resp, _ := json.Marshal(iamErr)
 			w.WriteHeader(status)
-			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 			w.Write(resp)
 			return
 		}
@@ -534,7 +534,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	resp, _ := json.Marshal(t)
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(resp)
 }
 
@@ -565,7 +565,7 @@ func LoginUserV11(w http.ResponseWriter, r *http.Request) {
 		if (iamError{}) != iamErr {
 			resp, _ := json.Marshal(iamErr)
 			w.WriteHeader(status)
-			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 			w.Write(resp)
 			return
 		}
@@ -590,7 +590,7 @@ func LoginUserV11(w http.ResponseWriter, r *http.Request) {
 	lResp := loginResp{u, t}
 	resp, _ := json.Marshal(lResp)
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(resp)
 }
 
@@ -617,7 +617,7 @@ func LoginAdminUser(w http.ResponseWriter, r *http.Request) {
 		if (iamError{}) != iamErr {
 			resp, _ := json.Marshal(iamErr)
 			w.WriteHeader(status)
-			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 			w.Write(resp)
 			return
 		}
@@ -651,7 +651,7 @@ func LoginAdminUser(w http.ResponseWriter, r *http.Request) {
 	lResp := loginResp{u, t}
 	resp, _ := json.Marshal(lResp)
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(resp)
 }
 
@@ -678,7 +678,7 @@ func ValidateUserEmail(w http.ResponseWriter, r *http.Request) {
 		valResp.Message = err.Error()
 
 		response, _ := json.Marshal(valResp)
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 		w.WriteHeader(http.StatusOK)
 		w.Write(response)
 		return
@@ -701,7 +701,7 @@ func ValidateUserEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(valResp)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -741,7 +741,7 @@ func ValidatePhoneNumber(w http.ResponseWriter, r *http.Request) {
 		valResp.Result = false
 		valResp.Message = "Phone number is in use"
 		response, _ := json.Marshal(valResp)
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 		w.WriteHeader(http.StatusOK)
 		w.Write(response)
 		return
@@ -770,7 +770,7 @@ func ValidatePhoneNumber(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(valResp)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -866,7 +866,7 @@ func VerifyOtp(w http.ResponseWriter, r *http.Request) {
 		valResp.Result = false
 		valResp.Message = "Unregistered phone number: " + otpReq.Phone
 		response, _ := json.Marshal(valResp)
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 		w.WriteHeader(http.StatusOK)
 		w.Write(response)
 		return
@@ -891,7 +891,7 @@ func VerifyOtp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(valResp)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 	return
@@ -942,7 +942,7 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req.Header.Add("Authorization", "Bearer "+t.AccessToken)
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add(config.ContentTypeHeader, config.ContentTypeJSON)
 
 	//dump, err := httputil.DumpRequest(req, true)
 	//dump, err := httputil.DumpRequestOut(req, true)
@@ -969,7 +969,7 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 		e.Error = errMsg.ErrorMessage
 		e.ErrorType = "Reset password failed"
 		response, _ := json.Marshal(e)
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 		w.WriteHeader(resp.StatusCode)
 		w.Write(response)
 	}
@@ -979,7 +979,7 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(resetPasswordResp{"User password resetted successfully"})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -1036,7 +1036,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req.Header.Add("Authorization", "Bearer "+t.AccessToken)
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add(config.ContentTypeHeader, config.ContentTypeJSON)
 
 	//dump, err := httputil.DumpRequest(req, true)
 	//dump, err := httputil.DumpRequestOut(req, true)
@@ -1063,7 +1063,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		e.Error = errMsg.ErrorMessage
 		e.ErrorType = "Forgot password handling failed"
 		response, _ := json.Marshal(e)
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 		w.WriteHeader(resp.StatusCode)
 		w.Write(response)
 		return
@@ -1074,7 +1074,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(resetPasswordResp{"User forgot password action handled successfully"})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -1123,7 +1123,7 @@ func LogoutUser(w http.ResponseWriter, r *http.Request) {
 		json.Unmarshal(body, &e)
 		response, _ := json.Marshal(e)
 		w.WriteHeader(resp.StatusCode)
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 		w.Write(response)
 		return
 	}
@@ -1187,7 +1187,7 @@ func GetToken(w http.ResponseWriter, r *http.Request) {
 		json.Unmarshal(body, &e)
 		response, _ := json.Marshal(e)
 		w.WriteHeader(resp.StatusCode)
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 		w.Write(response)
 		return
 	}
@@ -1196,7 +1196,7 @@ func GetToken(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(body, &tok)
 	response, _ := json.Marshal(tok)
 	w.WriteHeader(resp.StatusCode)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -1240,8 +1240,8 @@ func sendPhoneVerificationMessage(msgTo string, name string, message string) err
 	client := &http.Client{}
 	req, _ := http.NewRequest("POST", urlStr, &msgDataReader)
 	req.SetBasicAuth(twilioConfig.AccountSid, twilioConfig.AuthToken)
-	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("Accept", config.ContentTypeJSON)
+	req.Header.Add(config.ContentTypeHeader, config.ContentTypeFormURLEncoded)
 
 	// Make HTTP POST request and return message SID
 	resp, _ := client.Do(req)
@@ -1270,7 +1270,7 @@ func getClientsInRealm(clientID string, adminToken string) (string, int, iamErro
 	}
 
 	req.Header.Add("Authorization", "Bearer "+adminToken)
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add(config.ContentTypeHeader, config.ContentTypeJSON)
 
 	client := http.Client{
 		Timeout: timeout,
@@ -1319,7 +1319,7 @@ func addIdentityProvider(identityProviderRepresentation org.IdentityProviderRepr
 	}
 
 	req.Header.Add("Authorization", "Bearer "+adminToken)
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add(config.ContentTypeHeader, config.ContentTypeJSON)
 
 	client := http.Client{
 		Timeout: timeout,
@@ -1359,7 +1359,7 @@ func updateIdentityProvider(identityProviderAlias string, identityProviderRepres
 	}
 
 	req.Header.Add("Authorization", "Bearer "+adminToken)
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add(config.ContentTypeHeader, config.ContentTypeJSON)
 
 	client := http.Client{
 		Timeout: timeout,
@@ -1398,7 +1398,7 @@ func deleteIdentityProvider(identityProviderAlias string, adminToken string) (in
 	}
 
 	req.Header.Add("Authorization", "Bearer "+adminToken)
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add(config.ContentTypeHeader, config.ContentTypeJSON)
 
 	client := http.Client{
 		Timeout: timeout,
@@ -1439,7 +1439,7 @@ func addOpenIDClient(keycloakOpenIDClient org.KeycloakOpenIDClient, adminToken s
 	}
 
 	req.Header.Add("Authorization", "Bearer "+adminToken)
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add(config.ContentTypeHeader, config.ContentTypeJSON)
 
 	client := http.Client{
 		Timeout: timeout,
@@ -1484,7 +1484,7 @@ func updateOpenIDClient(clientUUID string, keycloakOpenIDClient org.KeycloakOpen
 	}
 
 	req.Header.Add("Authorization", "Bearer "+adminToken)
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add(config.ContentTypeHeader, config.ContentTypeJSON)
 
 	client := http.Client{
 		Timeout: timeout,
@@ -1528,7 +1528,7 @@ func deleteOpenIDClient(clientUUID string, adminToken string) (int, iamError, er
 	}
 
 	req.Header.Add("Authorization", "Bearer "+adminToken)
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add(config.ContentTypeHeader, config.ContentTypeJSON)
 
 	client := http.Client{
 		Timeout: timeout,
@@ -1782,7 +1782,7 @@ func AddIdentityProvider(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	response, _ := json.Marshal(o.IdentityProviderRepresentation.Config)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 
@@ -1912,7 +1912,7 @@ func UpdateIdentityProvider(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	response, _ := json.Marshal(o.IdentityProviderRepresentation.Config)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -2021,7 +2021,7 @@ func GetIdentityProvider(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(o.IdentityProviderRepresentation.Config)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -2052,7 +2052,7 @@ func CreateAPIKey(w http.ResponseWriter, r *http.Request) {
 	apiKeyResp := apiKeyResponse{token.GetUserName(r), key}
 	response, _ := json.Marshal(apiKeyResp)
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -2085,7 +2085,7 @@ func GetAPIKey(w http.ResponseWriter, r *http.Request) {
 	apiKeyResp := apiKeyResponse{token.GetUserName(r), apiKey}
 	response, _ := json.Marshal(apiKeyResp)
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }

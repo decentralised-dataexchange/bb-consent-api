@@ -13,6 +13,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/actionlog"
 	"github.com/bb-consent/api/src/common"
+	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/consent"
 	"github.com/bb-consent/api/src/consenthistory"
 	"github.com/bb-consent/api/src/org"
@@ -191,7 +192,7 @@ func GetConsents(w http.ResponseWriter, r *http.Request) {
 	//fmt.Printf("c:%v", c)
 	response, _ := json.Marshal(RespData)
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -217,7 +218,7 @@ func GetConsentByID(w http.ResponseWriter, r *http.Request) {
 
 	c := createConsentGetResponse(consent, o)
 	response, _ := json.Marshal(c)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -289,7 +290,7 @@ func GetConsentPurposeByID(w http.ResponseWriter, r *http.Request) {
 			latestConsentHistory, err := consenthistory.GetLatestByUserOrgPurposeID(userID, orgID, purposeID)
 			if err != nil {
 				response, _ := json.Marshal(cpResp)
-				w.Header().Set("Content-Type", "application/json")
+				w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 				w.Write(response)
 				return
 			}
@@ -299,7 +300,7 @@ func GetConsentPurposeByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(cpResp)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -340,7 +341,7 @@ func GetAllUsersConsentedToAttribute(w http.ResponseWriter, r *http.Request) {
 
 		ou.Links = common.CreatePaginationLinks(r, startID, lastID, limit)
 		response, _ := json.Marshal(ou)
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 		w.Write(response)
 		return
 	}
@@ -364,7 +365,7 @@ func GetAllUsersConsentedToAttribute(w http.ResponseWriter, r *http.Request) {
 
 	resp.Links = common.CreatePaginationLinks(r, startID, nextID, limit)
 	response, _ := json.Marshal(resp)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -408,7 +409,7 @@ func GetPurposeAllConsentStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(purposeStatus{consentStatus})
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -449,7 +450,7 @@ func GetAllUsersConsentedToPurpose(w http.ResponseWriter, r *http.Request) {
 
 		ou.Links = common.CreatePaginationLinks(r, startID, lastID, limit)
 		response, _ := json.Marshal(ou)
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 		w.Write(response)
 		return
 	}
@@ -473,7 +474,7 @@ func GetAllUsersConsentedToPurpose(w http.ResponseWriter, r *http.Request) {
 
 	resp.Links = common.CreatePaginationLinks(r, startID, nextID, limit)
 	response, _ := json.Marshal(resp)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -659,7 +660,7 @@ func UpdatePurposeAllConsentsv2(w http.ResponseWriter, r *http.Request) {
 	go webhooks.TriggerConsentWebhookEvent(userID, purposeID, consentID, orgID, webhooks.EventTypes[webhookEventTypeID], strconv.FormatInt(time.Now().UTC().Unix(), 10), 0, consentedAttributes)
 
 	response, _ := json.Marshal(cRespWithDataRetention)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -856,6 +857,6 @@ func UpdatePurposeAttribute(w http.ResponseWriter, r *http.Request) {
 
 	updateResp := consentUpdateresp{"Consent updated successfully", http.StatusOK}
 	response, _ := json.Marshal(updateResp)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }

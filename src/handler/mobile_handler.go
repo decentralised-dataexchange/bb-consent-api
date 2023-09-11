@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/bb-consent/api/src/common"
+	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/org"
 	"github.com/bb-consent/api/src/token"
 )
@@ -92,6 +93,6 @@ func GetUserOrgsAndConsents(w http.ResponseWriter, r *http.Request) {
 	c := orgConsents{convertToUserOrg(org), consents.ID, transformConsentResponse(consents)}
 
 	response, _ := json.Marshal(c)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }

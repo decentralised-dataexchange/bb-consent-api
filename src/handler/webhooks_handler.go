@@ -13,6 +13,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/actionlog"
 	"github.com/bb-consent/api/src/common"
+	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/org"
 	"github.com/bb-consent/api/src/user"
 	wh "github.com/bb-consent/api/src/webhooks"
@@ -34,7 +35,7 @@ func GetWebhookEventTypes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(webhookEventTypesResp)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 
@@ -54,7 +55,7 @@ func GetWebhookPayloadContentTypes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(webhookPayloadContentTypesResp)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -197,7 +198,7 @@ func CreateWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(webhook)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 
@@ -267,7 +268,7 @@ func GetAllWebhooks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(updatedWebhooks)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -295,7 +296,7 @@ func GetWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(webhook)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -330,7 +331,7 @@ func DeleteWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusNoContent)
 
 }
@@ -463,7 +464,7 @@ func UpdateWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(webhook)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 
@@ -518,7 +519,7 @@ func PingWebhook(w http.ResponseWriter, r *http.Request) {
 		}
 
 		response, _ := json.Marshal(pingWebhookResp)
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 		w.WriteHeader(http.StatusOK)
 		w.Write(response)
 		return
@@ -536,7 +537,7 @@ func PingWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(pingWebhookResp)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 
@@ -616,7 +617,7 @@ func GetRecentWebhookDeliveries(w http.ResponseWriter, r *http.Request) {
 	resp.Links = common.CreatePaginationLinks(r, startID, lastID, limit)
 
 	response, _ := json.Marshal(resp)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 
@@ -682,7 +683,7 @@ func GetWebhookDeliveryByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(resp)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -740,7 +741,7 @@ func ReDeliverWebhook(w http.ResponseWriter, r *http.Request) {
 	aLog := fmt.Sprintf("Organization webhook: %v triggered by user: %v by event: %v", webhook.PayloadURL, u.Email, webhookDelivery.WebhookEventType)
 	actionlog.LogOrgWebhookCalls(u.ID.Hex(), u.Email, organizationID, aLog)
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 
 }

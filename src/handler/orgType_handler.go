@@ -11,6 +11,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
+	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/image"
 	"github.com/bb-consent/api/src/org"
 	ot "github.com/bb-consent/api/src/orgtype"
@@ -49,7 +50,7 @@ func AddOrganizationType(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(o)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 }
@@ -88,7 +89,7 @@ func UpdateOrganizationType(w http.ResponseWriter, r *http.Request) {
 	go user.UpdateOrgTypeOfSubscribedUsers(orgType)
 
 	response, _ := json.Marshal(orgType)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 }
@@ -120,7 +121,7 @@ func GetOrganizationTypeByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(orgType)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -134,7 +135,7 @@ func GetOrganizationTypes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, _ := json.Marshal(results)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)
 }
 
@@ -202,6 +203,6 @@ func GetOrganizationTypeImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "image/jpeg")
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeImage)
 	w.Write(image.Data)
 }
