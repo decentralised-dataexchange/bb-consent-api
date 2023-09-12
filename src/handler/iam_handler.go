@@ -237,7 +237,7 @@ func registerUser(iamRegReq iamUserRegisterReq, adminToken string) (int, iamErro
 	var e iamError
 	var status = http.StatusInternalServerError
 	jsonReq, _ := json.Marshal(iamRegReq)
-	req, err := http.NewRequest("POST", iamConfig.URL+"/auth/admin/realms/"+iamConfig.Realm+"/users", bytes.NewBuffer(jsonReq))
+	req, err := http.NewRequest("POST", iamConfig.URL+"/admin/realms/"+iamConfig.Realm+"/users", bytes.NewBuffer(jsonReq))
 	if err != nil {
 		return status, e, err
 	}
@@ -278,7 +278,7 @@ func registerUser(iamRegReq iamUserRegisterReq, adminToken string) (int, iamErro
 func unregisterUser(iamUserID string, adminToken string) (int, iamError, error) {
 	var e iamError
 	var status = http.StatusInternalServerError
-	req, err := http.NewRequest("DELETE", iamConfig.URL+"/auth/admin/realms/"+iamConfig.Realm+"/users/"+iamUserID, nil)
+	req, err := http.NewRequest("DELETE", iamConfig.URL+"/admin/realms/"+iamConfig.Realm+"/users/"+iamUserID, nil)
 	if err != nil {
 		return status, e, err
 	}
@@ -330,7 +330,7 @@ func UpdateIamUser(Name string, iamID string) error {
 	}
 
 	jsonReq, _ := json.Marshal(userUp)
-	req, err := http.NewRequest("PUT", iamConfig.URL+"/auth/admin/realms/"+iamConfig.Realm+"/users/"+iamID, bytes.NewBuffer(jsonReq))
+	req, err := http.NewRequest("PUT", iamConfig.URL+"/admin/realms/"+iamConfig.Realm+"/users/"+iamID, bytes.NewBuffer(jsonReq))
 	if err != nil {
 		log.Printf("Failed to form update user request err:%v", err)
 		return err
@@ -359,7 +359,7 @@ func getUserIamID(userName string, adminToken string) (string, int, iamError, er
 	var userID = ""
 	var status = http.StatusInternalServerError
 	var e iamError
-	req, err := http.NewRequest("GET", iamConfig.URL+"/auth/admin/realms/"+iamConfig.Realm+"/users"+"?username="+userName, nil)
+	req, err := http.NewRequest("GET", iamConfig.URL+"/admin/realms/"+iamConfig.Realm+"/users"+"?username="+userName, nil)
 	if err != nil {
 		return userID, status, e, err
 	}
@@ -415,7 +415,7 @@ func setAdminRole(userID string, adminToken string) (int, iamError, error) {
 	var iReq []rReq
 	iReq = append(iReq, rReq{false, false, iamConfig.Realm, "${organization.admin}", realmRoleOrgAdmin, "organization-admin", false})
 	jsonReq, _ := json.Marshal(iReq)
-	req, err := http.NewRequest("POST", iamConfig.URL+"/auth/admin/realms/"+iamConfig.Realm+"/users/"+userID+"/role-mappings/realm", bytes.NewBuffer(jsonReq))
+	req, err := http.NewRequest("POST", iamConfig.URL+"/admin/realms/"+iamConfig.Realm+"/users/"+userID+"/role-mappings/realm", bytes.NewBuffer(jsonReq))
 	if err != nil {
 		return status, e, err
 	}
@@ -454,7 +454,7 @@ func getToken(username string, password string, clientID string, realm string) (
 	data.Add("client_id", clientID)
 	data.Add("grant_type", "password")
 
-	resp, err := http.PostForm(iamConfig.URL+"/auth/realms/"+realm+"/protocol/openid-connect/token", data)
+	resp, err := http.PostForm(iamConfig.URL+"/realms/"+realm+"/protocol/openid-connect/token", data)
 	if err != nil {
 		return tok, status, e, err
 	}
@@ -934,7 +934,7 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 	var e iamError
 	iamReq := iamPasswordResetReq{"password", resetReq.Password, false}
 	jsonReq, _ := json.Marshal(iamReq)
-	req, err := http.NewRequest("PUT", iamConfig.URL+"/auth/admin/realms/"+iamConfig.Realm+"/users/"+userIamID+"/reset-password", bytes.NewBuffer(jsonReq))
+	req, err := http.NewRequest("PUT", iamConfig.URL+"/admin/realms/"+iamConfig.Realm+"/users/"+userIamID+"/reset-password", bytes.NewBuffer(jsonReq))
 	if err != nil {
 		log.Printf("Failed to reset user:%v password ", userName)
 		handleError(w, userName, status, iamErr, err)
@@ -1013,7 +1013,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//curl  https://iam.igrant.io/auth/admin/realms/igrant-users/users/8b906c86-1ab2-4b32-becc-ba0349cb29ee/execute-actions-email -d '["UPDATE_PASSWORD"]' -X PUT -v
+	//curl  https://iam.igrant.io/admin/realms/igrant-users/users/8b906c86-1ab2-4b32-becc-ba0349cb29ee/execute-actions-email -d '["UPDATE_PASSWORD"]' -X PUT -v
 	var status = http.StatusInternalServerError
 	t, status, iamErr, err := getAdminToken()
 	if err != nil {
@@ -1028,7 +1028,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	iamReq = append(iamReq, "UPDATE_PASSWORD")
 	jsonReq, _ := json.Marshal(iamReq)
 
-	req, err := http.NewRequest("PUT", iamConfig.URL+"/auth/admin/realms/"+iamConfig.Realm+"/users/"+u.IamID+"/execute-actions-email", bytes.NewBuffer(jsonReq))
+	req, err := http.NewRequest("PUT", iamConfig.URL+"/admin/realms/"+iamConfig.Realm+"/users/"+u.IamID+"/execute-actions-email", bytes.NewBuffer(jsonReq))
 	if err != nil {
 		log.Printf("Failed to trigger forgot password action for user:%v", fp.Username)
 		handleError(w, fp.Username, status, iamErr, err)
@@ -1104,7 +1104,7 @@ func LogoutUser(w http.ResponseWriter, r *http.Request) {
 	data.Set("refresh_token", lReq.RefreshToken)
 	data.Add("client_id", lReq.ClientID)
 
-	resp, err := http.PostForm(iamConfig.URL+"/auth/realms/"+iamConfig.Realm+"/protocol/openid-connect/logout", data)
+	resp, err := http.PostForm(iamConfig.URL+"/realms/"+iamConfig.Realm+"/protocol/openid-connect/logout", data)
 	if err != nil {
 		m := fmt.Sprintf("Failed to logout user:%v", token.GetUserName(r))
 		common.HandleError(w, http.StatusInternalServerError, m, err)
@@ -1166,7 +1166,7 @@ func GetToken(w http.ResponseWriter, r *http.Request) {
 	data.Add("client_id", tReq.ClientID)
 	data.Add("grant_type", "refresh_token")
 
-	resp, err := http.PostForm(iamConfig.URL+"/auth/realms/"+iamConfig.Realm+"/protocol/openid-connect/token", data)
+	resp, err := http.PostForm(iamConfig.URL+"/realms/"+iamConfig.Realm+"/protocol/openid-connect/token", data)
 	if err != nil {
 		//m := fmt.Sprintf("Failed to get token from refresh token for user:%v", token.GetUserName(r))
 		m := fmt.Sprintf("Failed to get token from refresh token")
@@ -1264,7 +1264,7 @@ func getClientsInRealm(clientID string, adminToken string) (string, int, iamErro
 	var e iamError
 	var status = http.StatusInternalServerError
 
-	req, err := http.NewRequest("GET", iamConfig.URL+"/auth/admin/realms/"+iamConfig.Realm+"/clients?clientId="+clientID, nil)
+	req, err := http.NewRequest("GET", iamConfig.URL+"/admin/realms/"+iamConfig.Realm+"/clients?clientId="+clientID, nil)
 	if err != nil {
 		return "", status, e, err
 	}
@@ -1313,7 +1313,7 @@ func addIdentityProvider(identityProviderRepresentation org.IdentityProviderRepr
 	var e iamError
 	var status = http.StatusInternalServerError
 	jsonReq, _ := json.Marshal(identityProviderRepresentation)
-	req, err := http.NewRequest("POST", iamConfig.URL+"/auth/admin/realms/"+iamConfig.Realm+"/identity-provider/instances", bytes.NewBuffer(jsonReq))
+	req, err := http.NewRequest("POST", iamConfig.URL+"/admin/realms/"+iamConfig.Realm+"/identity-provider/instances", bytes.NewBuffer(jsonReq))
 	if err != nil {
 		return status, e, err
 	}
@@ -1353,7 +1353,7 @@ func updateIdentityProvider(identityProviderAlias string, identityProviderRepres
 	var e iamError
 	var status = http.StatusInternalServerError
 	jsonReq, _ := json.Marshal(identityProviderRepresentation)
-	req, err := http.NewRequest("PUT", iamConfig.URL+"/auth/admin/realms/"+iamConfig.Realm+"/identity-provider/instances/"+identityProviderAlias, bytes.NewBuffer(jsonReq))
+	req, err := http.NewRequest("PUT", iamConfig.URL+"/admin/realms/"+iamConfig.Realm+"/identity-provider/instances/"+identityProviderAlias, bytes.NewBuffer(jsonReq))
 	if err != nil {
 		return status, e, err
 	}
@@ -1392,7 +1392,7 @@ func updateIdentityProvider(identityProviderAlias string, identityProviderRepres
 func deleteIdentityProvider(identityProviderAlias string, adminToken string) (int, iamError, error) {
 	var e iamError
 	var status = http.StatusInternalServerError
-	req, err := http.NewRequest("DELETE", iamConfig.URL+"/auth/admin/realms/"+iamConfig.Realm+"/identity-provider/instances/"+identityProviderAlias, nil)
+	req, err := http.NewRequest("DELETE", iamConfig.URL+"/admin/realms/"+iamConfig.Realm+"/identity-provider/instances/"+identityProviderAlias, nil)
 	if err != nil {
 		return status, e, err
 	}
@@ -1433,7 +1433,7 @@ func addOpenIDClient(keycloakOpenIDClient org.KeycloakOpenIDClient, adminToken s
 	var e iamError
 	var status = http.StatusInternalServerError
 	jsonReq, _ := json.Marshal(keycloakOpenIDClient)
-	req, err := http.NewRequest("POST", iamConfig.URL+"/auth/admin/realms/"+iamConfig.Realm+"/clients", bytes.NewBuffer(jsonReq))
+	req, err := http.NewRequest("POST", iamConfig.URL+"/admin/realms/"+iamConfig.Realm+"/clients", bytes.NewBuffer(jsonReq))
 	if err != nil {
 		return status, e, err
 	}
@@ -1478,7 +1478,7 @@ func updateOpenIDClient(clientUUID string, keycloakOpenIDClient org.KeycloakOpen
 	var e iamError
 	var status = http.StatusInternalServerError
 	jsonReq, _ := json.Marshal(keycloakOpenIDClient)
-	req, err := http.NewRequest("PUT", iamConfig.URL+"/auth/admin/realms/"+iamConfig.Realm+"/clients/"+clientUUID, bytes.NewBuffer(jsonReq))
+	req, err := http.NewRequest("PUT", iamConfig.URL+"/admin/realms/"+iamConfig.Realm+"/clients/"+clientUUID, bytes.NewBuffer(jsonReq))
 	if err != nil {
 		return status, e, err
 	}
@@ -1522,7 +1522,7 @@ func deleteOpenIDClient(clientUUID string, adminToken string) (int, iamError, er
 
 	var e iamError
 	var status = http.StatusInternalServerError
-	req, err := http.NewRequest("DELETE", iamConfig.URL+"/auth/admin/realms/"+iamConfig.Realm+"/clients/"+clientUUID, nil)
+	req, err := http.NewRequest("DELETE", iamConfig.URL+"/admin/realms/"+iamConfig.Realm+"/clients/"+clientUUID, nil)
 	if err != nil {
 		return status, e, err
 	}
