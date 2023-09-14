@@ -17,6 +17,10 @@ CANDIDATE ?= "dev"
 CONTAINER_API ?= "bb-consent_api_dev"
 DB_CONTAINER_NAME = "mongo"
 KAFKA_BROKER_CONTAINER_NAME = "broker"
+ZOOKEEPER_CONTAINER_NAME = "zookeeper"
+
+# kafka configuration
+KAFKA_TOPIC_NAME = "example_topic"
 
 CONTAINER_DEFAULT_RUN_FLAGS := \
 	--rm $(TERM_FLAGS) \
@@ -62,6 +66,40 @@ bootstrap: resources/ssl/development ## Boostraps development environment
 
 setup: bootstrap build/docker/builder ## Sets up development environment
 	@$(CURDIR)/resources/scripts/setup-development-environment.sh
+
+#create-kafka-topic: @ Creating a kafka topic for WebHook events
+create-kafka-topic:
+		docker exec ${KAFKA_BROKER_CONTAINER_NAME}  \
+        kafka-topics --create --topic ${KAFKA_TOPIC_NAME} --partitions 1 --replication-factor 1 \
+        --if-not-exists --zookeeper zookeeper:2181
+
+#zookeeper: @ Runs apache zookeeper container
+zookeeper:
+		docker run -d -h ${ZOOKEEPER_CONTAINER_NAME} \
+					-p "2181:2181" \
+					-e ZOOKEEPER_CLIENT_PORT=2181 \
+					-e ZOOKEEPER_TICK_TIME=2000 \
+					-v zk-data:/var/lib/zookeeper/data \
+					-v zk-txn-logs:/var/lib/zookeeper/log \
+					--name ${ZOOKEEPER_CONTAINER_NAME} \
+					confluentinc/cp-zookeeper:5.3.1
+
+#kafka-broker: @ Runs apache kafka broker, Prequisite : Running zookeeper container
+kafka-broker:
+		docker run -d -h ${KAFKA_BROKER_CONTAINER_NAME} \
+					--net-alias ${KAFKA_BROKER_CONTAINER_NAME} \
+					-p "9092:9092" \
+					-p "29092:29092" \
+					-e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 \
+					-e KAFKA_ZOOKEEPER_CONNECT=${ZOOKEEPER_CONTAINER_NAME}:2181 \
+					-e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
+					-e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://${KAFKA_BROKER_CONTAINER_NAME}:29092,PLAINTEXT_HOST://localhost:9092 \
+					-e KAFKA_BROKER_CONTAINER_NAME=1 \
+					-e KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0 \
+					-v kafka-data:/var/lib/kafka/data \
+					--name ${KAFKA_BROKER_CONTAINER_NAME} \
+					--link=${ZOOKEEPER_CONTAINER_NAME} \
+					confluentinc/cp-kafka:5.3.1
 
 console: ## Runs bash shell, i.e. builder/console
 	@bash
@@ -111,7 +149,7 @@ api/run: ## Run API locally for development purposes
 		-e VIRTUAL_HOST=$(APP).$(PROJECT).dev \
 		--name "${CONTAINER_API}" \
 		$(DOCKER_IMAGE):builder \
-		$(BEFORE_ARGS) ./bin/$(NAME) -config config-development.json
+		$(BEFORE_ARGS) ./bin/$(NAME) start-api --config=config-development.json
 
 api/run_with_kafka: ## Run API locally for development purposes connected to a kafka broker container
 	docker run \
@@ -124,6 +162,16 @@ api/run_with_kafka: ## Run API locally for development purposes connected to a k
 		--name "${CONTAINER_API}" \
 		$(DOCKER_IMAGE):builder \
 		$(BEFORE_ARGS) ./bin/$(NAME) -config config-development.json
+
+#webhook-dispatcher/run: @ Run webhook dispatcher locally for development purposes
+webhook-dispatcher/run:
+	docker run \
+		$(CONTAINER_DEFAULT_RUN_FLAGS) \
+		--link=${KAFKA_BROKER_CONTAINER_NAME} \
+		--link=${DB_CONTAINER_NAME} \
+		--name ${CONTAINER_API} \
+		$(DOCKER_IMAGE):builder \
+		$(BEFORE_ARGS) ./bin/$(NAME) start-webhook-dispatcher --config=config-development.json
 
 # go-stack causes SIGSEGV intentionally, so let's hide it, see
 # https://github.com/go-stack/stack/issues/4

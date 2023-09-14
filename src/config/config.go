@@ -56,7 +56,8 @@ type SmtpConfig struct {
 
 // KafkaBrokerConfig Kafka broker configuration
 type KafkaBrokerConfig struct {
-	URL string
+	URL     string
+	GroupID string
 }
 
 // KafkaConfig Kafka cluster configuration
