@@ -2,10 +2,12 @@ package email
 
 import (
 	"fmt"
+	"html/template"
 	"log"
 	"net/smtp"
 
 	"github.com/bb-consent/api/src/config"
+	"github.com/microcosm-cc/bluemonday"
 )
 
 // SMTPConfig Smtp configuration
@@ -23,6 +25,7 @@ func SendWelcomeEmail(username string, firstname string, subject string, body st
 	auth = smtp.PlainAuth("", SMTPConfig.Username, SMTPConfig.Password, SMTPConfig.Host)
 
 	r := NewRequest([]string{username}, subject, body, from)
+	escapedFirstName := template.HTMLEscapeString(firstname)
 
 	emailTemplateString := `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -63,7 +66,7 @@ func SendWelcomeEmail(username string, firstname string, subject string, body st
                 <tr>
                     <td></td>
                     <td width="600" style="font-size: 16px;">
-                        <p style="font-weight: bold;font-size: 16px;color: #000;">Hi ` + firstname + `,</p>
+                        <p style="font-weight: bold;font-size: 16px;color: #000;">Hi ` + escapedFirstName + `,</p>
                         <div style="color:#8c8a8a">
                             <p>
                                 We are delighted that you are now registered to iGrant.io. Please check
@@ -150,12 +153,25 @@ func NewRequest(to []string, subject, body string, from string) *Request {
 
 // SendEmail For sending email
 func (r *Request) SendEmail(body string) (bool, error) {
+
+	p := bluemonday.UGCPolicy()
+
+	p = p.AllowAttrs("border", "cellspacing", "cellpadding", "style").OnElements("table")
+	p = p.AllowAttrs("align", "style").OnElements("td")
+	p = p.AllowAttrs("style").Globally()
+	p = p.AllowAttrs("class", "style", "id", "src").OnElements("img")
+	p = p.AllowStyles("color", "width", "background-color", "height", "border-radius", "padding", "font-size", "font-weight", "line-height").Globally()
+
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	subject := "Subject: " + r.subject + "!\n"
 	msg := []byte(subject + mime + "\n" + body)
+
+	// Sanitize the msg
+	sanitizedMsg := p.Sanitize(string(msg))
+
 	addr := fmt.Sprintf("%s:%d", SMTPConfig.Host, SMTPConfig.Port)
 
-	if err := smtp.SendMail(addr, auth, r.from, r.to, msg); err != nil {
+	if err := smtp.SendMail(addr, auth, r.from, r.to, []byte(sanitizedMsg)); err != nil {
 		return false, err
 	}
 	return true, nil
