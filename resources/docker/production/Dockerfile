@@ -10,4 +10,4 @@ COPY resources/config/rbac_policy.csv /opt/bb-consent/api/config/
 
 # start API
 EXPOSE 80
-ENTRYPOINT ["./app/bin/bb-consent-api", "-config", "config-production.json"]
+ENTRYPOINT ["./app/bin/bb-consent-api", "start-api", "--config", "config-production.json"]
