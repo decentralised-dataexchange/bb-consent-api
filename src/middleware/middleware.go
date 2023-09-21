@@ -175,20 +175,10 @@ func Authorize(e *casbin.Enforcer) Middleware {
 
 			var role string
 
-			orgID, ok := mux.Vars(r)["organizationID"]
-			if !ok {
-				orgID, ok = mux.Vars(r)["orgID"]
-			}
-			if !ok && len(roles) > 0 {
-				orgID = user.Orgs[0].OrgID.Hex()
-			}
-
-			if rbac.IsUser(roles) {
-				role = rbac.ROLE_USER
-			}
-
-			if rbac.IsOrgAdmin(roles, orgID) {
+			if len(roles) > 0 {
 				role = rbac.ROLE_ADMIN
+			} else {
+				role = rbac.ROLE_USER
 			}
 
 			// casbin enforce
