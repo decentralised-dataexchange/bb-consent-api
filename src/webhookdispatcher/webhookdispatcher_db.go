@@ -1,41 +1,42 @@
 package webhookdispatcher
 
 import (
+	"context"
+
 	"github.com/bb-consent/api/src/database"
-	"github.com/globalsign/mgo"
-	"github.com/globalsign/mgo/bson"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func session() *mgo.Session {
-	return database.DB.Session.Copy()
+func webhookCollection() *mongo.Collection {
+	return database.DB.Client.Database(database.DB.Name).Collection("webhooks")
 }
 
-func webhookCollection(s *mgo.Session) *mgo.Collection {
-	return s.DB(database.DB.Name).C("webhooks")
-}
-
-func webhookDeliveryCollection(s *mgo.Session) *mgo.Collection {
-	return s.DB(database.DB.Name).C("webhookDeliveries")
+func webhookDeliveryCollection() *mongo.Collection {
+	return database.DB.Client.Database(database.DB.Name).Collection("webhookDeliveries")
 }
 
 // GetWebhookByOrgID Gets a webhook by organisation ID and webhook ID
 func GetWebhookByOrgID(webhookID, orgID string) (result Webhook, err error) {
-	s := session()
-	defer s.Close()
+	webhookId, err := primitive.ObjectIDFromHex(webhookID)
+	if err != nil {
+		return result, err
+	}
 
-	err = webhookCollection(s).Find(bson.M{"_id": bson.ObjectIdHex(webhookID), "orgid": orgID}).One(&result)
+	err = webhookCollection().FindOne(context.TODO(), bson.M{"_id": webhookId, "orgid": orgID}).Decode(&result)
 
 	return result, err
 }
 
 // AddWebhookDelivery Adds payload delivery details to database for a webhook event
 func AddWebhookDelivery(webhookDelivery WebhookDelivery) (WebhookDelivery, error) {
-	s := session()
-	defer s.Close()
 
-	if webhookDelivery.ID == "" {
-		webhookDelivery.ID = bson.NewObjectId()
+	if webhookDelivery.ID == primitive.NilObjectID {
+		webhookDelivery.ID = primitive.NewObjectID()
 	}
 
-	return webhookDelivery, webhookDeliveryCollection(s).Insert(&webhookDelivery)
+	_, err := webhookDeliveryCollection().InsertOne(context.TODO(), &webhookDelivery)
+
+	return webhookDelivery, err
 }

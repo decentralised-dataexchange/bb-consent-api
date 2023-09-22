@@ -126,7 +126,7 @@ func GetUserConsentHistory(w http.ResponseWriter, r *http.Request) {
 
 	var chsResp consentHistoryResp
 	for _, ch := range chs {
-		chsResp.ConsentHistory = append(chsResp.ConsentHistory, consentHistoryShort{ID: ch.ID.Hex(), OrgID: ch.OrgID, PurposeID: ch.PurposeID, Log: ch.Log, TimeStamp: ch.ID.Time().Format(time.RFC3339)})
+		chsResp.ConsentHistory = append(chsResp.ConsentHistory, consentHistoryShort{ID: ch.ID.Hex(), OrgID: ch.OrgID, PurposeID: ch.PurposeID, Log: ch.Log, TimeStamp: ch.ID.Timestamp().Format(time.RFC3339)})
 	}
 
 	//chsResp.Links = common.CreatePaginationLinks(r, startID, lastID, limit)

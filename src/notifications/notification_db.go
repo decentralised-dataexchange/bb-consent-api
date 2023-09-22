@@ -1,11 +1,13 @@
 package notifications
 
 import (
+	"context"
 	"time"
 
 	"github.com/bb-consent/api/src/database"
-	mgo "github.com/globalsign/mgo"
-	"github.com/globalsign/mgo/bson"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Notification Types
@@ -19,7 +21,7 @@ const (
 
 // Notification data type
 type Notification struct {
-	ID           bson.ObjectId `bson:"_id,omitempty"`
+	ID           primitive.ObjectID `bson:"_id,omitempty"`
 	Type         int
 	Title        string
 	UserID       string
@@ -33,31 +35,25 @@ type Notification struct {
 	AttributeIDs []string
 }
 
-func session() *mgo.Session {
-	return database.DB.Session.Copy()
-}
-
-func collection(s *mgo.Session) *mgo.Collection {
-	return s.DB(database.DB.Name).C("notifications")
+func collection() *mongo.Collection {
+	return database.DB.Client.Database(database.DB.Name).Collection("notifications")
 }
 
 // Add Adds a notification to the collection
 func Add(notification Notification) (Notification, error) {
-	s := session()
-	defer s.Close()
 
-	notification.ID = bson.NewObjectId()
+	notification.ID = primitive.NewObjectID()
 	notification.Timestamp = time.Now().Format(time.RFC3339)
 
-	return notification, collection(s).Insert(&notification)
+	_, err := collection().InsertOne(context.TODO(), &notification)
+
+	return notification, err
 }
 
 // GetUnReadCountByUserID gets count of un-read notifications of a given user
-func GetUnReadCountByUserID(userID string) (count int, err error) {
-	s := session()
-	defer s.Close()
+func GetUnReadCountByUserID(userID string) (int, error) {
 
-	count, err = collection(s).Find(bson.M{"userid": userID, "readstatus": false}).Count()
+	count, err := collection().CountDocuments(context.TODO(), bson.M{"userid": userID, "readstatus": false})
 
-	return count, err
+	return int(count), err
 }

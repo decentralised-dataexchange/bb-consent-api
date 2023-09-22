@@ -178,7 +178,7 @@ func GetConsents(w http.ResponseWriter, r *http.Request) {
 							continue
 						}
 
-						RespData.ConsentsAndPurposes[i].DataRetention.Expiry = latestConsentHistory.ID.Time().Add(time.Second * time.Duration(o.DataRetention.RetentionPeriod)).UTC().String()
+						RespData.ConsentsAndPurposes[i].DataRetention.Expiry = latestConsentHistory.ID.Timestamp().Add(time.Second * time.Duration(o.DataRetention.RetentionPeriod)).UTC().String()
 						log.Printf("Expiry for purpose:%v is %v", RespData.ConsentsAndPurposes[i].Purpose.ID, RespData.ConsentsAndPurposes[i].DataRetention.Expiry)
 					}
 
@@ -295,7 +295,7 @@ func GetConsentPurposeByID(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			cpResp.DataRetention.Expiry = latestConsentHistory.ID.Time().Add(time.Second * time.Duration(o.DataRetention.RetentionPeriod)).UTC().String()
+			cpResp.DataRetention.Expiry = latestConsentHistory.ID.Timestamp().Add(time.Second * time.Duration(o.DataRetention.RetentionPeriod)).UTC().String()
 		}
 	}
 
@@ -638,7 +638,7 @@ func UpdatePurposeAllConsentsv2(w http.ResponseWriter, r *http.Request) {
 					continue
 				}
 
-				tempConsentsAndPurposeWithDataRetention.DataRetention.Expiry = latestConsentHistory.ID.Time().Add(time.Second * time.Duration(o.DataRetention.RetentionPeriod)).UTC().String()
+				tempConsentsAndPurposeWithDataRetention.DataRetention.Expiry = latestConsentHistory.ID.Timestamp().Add(time.Second * time.Duration(o.DataRetention.RetentionPeriod)).UTC().String()
 			}
 		}
 

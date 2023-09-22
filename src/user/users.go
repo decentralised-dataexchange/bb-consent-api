@@ -1,23 +1,26 @@
 package user
 
 import (
+	"context"
 	"log"
 	"time"
 
 	"github.com/bb-consent/api/src/database"
 	"github.com/bb-consent/api/src/org"
 	"github.com/bb-consent/api/src/orgtype"
-	mgo "github.com/globalsign/mgo"
-	"github.com/globalsign/mgo/bson"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Org Organization snippet stored as part of user
 type Org struct {
-	OrgID        bson.ObjectId `bson:"orgid,omitempty"`
+	OrgID        primitive.ObjectID `bson:"orgid,omitempty"`
 	Name         string
 	Location     string
 	Type         string
-	TypeID       bson.ObjectId `bson:"typeid,omitempty"`
+	TypeID       primitive.ObjectID `bson:"typeid,omitempty"`
 	EulaAccepted bool
 }
 
@@ -35,7 +38,7 @@ type Role struct {
 
 // User data type
 type User struct {
-	ID                bson.ObjectId `bson:"_id,omitempty"`
+	ID                primitive.ObjectID `bson:"_id,omitempty"`
 	Name              string
 	IamID             string
 	Email             string
@@ -50,54 +53,55 @@ type User struct {
 	IncompleteProfile bool
 }
 
-func session() *mgo.Session {
-	return database.DB.Session.Copy()
-}
-
-func collection(s *mgo.Session) *mgo.Collection {
-	return s.DB(database.DB.Name).C("users")
+func collection() *mongo.Collection {
+	return database.DB.Client.Database(database.DB.Name).Collection("users")
 }
 
 // Add Adds an user to the collection
 func Add(user User) (User, error) {
-	s := session()
-	defer s.Close()
 
-	user.ID = bson.NewObjectId()
+	user.ID = primitive.NewObjectID()
 	user.LastVisit = time.Now().Format(time.RFC3339)
 
-	return user, collection(s).Insert(&user)
+	_, err := collection().InsertOne(context.TODO(), &user)
+
+	return user, err
 }
 
 // Update Update the user details
 func Update(userID string, u User) (User, error) {
-	s := session()
-	defer s.Close()
-
-	err := collection(s).UpdateId(bson.ObjectIdHex(userID), u)
+	userId, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		return User{}, err
 	}
+
+	_, err = collection().UpdateOne(context.TODO(), bson.M{"_id": userId}, bson.M{"$set": u})
+	if err != nil {
+		return User{}, err
+	}
+
 	u, err = Get(userID)
 	return u, err
 }
 
 // Delete Deletes the user by ID
 func Delete(userID string) error {
-	s := session()
-	defer s.Close()
+	userId, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return err
+	}
+	filter := bson.M{"_id": userId}
 
-	return collection(s).RemoveId(bson.ObjectIdHex(userID))
+	_, err = collection().DeleteOne(context.TODO(), filter)
+
+	return err
 }
 
 // GetByIamID Get the user by IamID
 func GetByIamID(iamID string) (User, error) {
 	var result User
-	s := session()
-	defer s.Close()
 
-	err := collection(s).Find(bson.M{"iamid": iamID}).One(&result)
-
+	err := collection().FindOne(context.TODO(), bson.M{"iamid": iamID}).Decode(&result)
 	if err != nil {
 		log.Printf("Failed to find user id:%v err:%v", iamID, err)
 		return result, err
@@ -108,21 +112,28 @@ func GetByIamID(iamID string) (User, error) {
 
 // Get Gets a single user by given id
 func Get(userID string) (User, error) {
-	s := session()
-	defer s.Close()
-	c := collection(s)
+	c := collection()
+
+	userId, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return User{}, err
+	}
 
 	var result User
-	err := c.FindId(bson.ObjectIdHex(userID)).One(&result)
 
+	// Find the user by ID
+	filter := bson.M{"_id": userId}
+	err = c.FindOne(context.TODO(), filter).Decode(&result)
 	if err != nil {
-		log.Printf("Failed to find user id:%v err:%v", userID, err)
+		log.Printf("Failed to find user ID: %v, error: %v", userID, err)
 		return result, err
 	}
 
-	//Update the last visited field
+	// Update the last visited field
 	t := time.Now().Format(time.RFC3339)
-	err = c.Update(bson.M{"_id": bson.ObjectIdHex(userID)}, bson.M{"$set": bson.M{"lastvisit": t}})
+	update := bson.M{"$set": bson.M{"lastvisit": t}}
+	updateOptions := options.Update().SetUpsert(false)
+	_, err = c.UpdateOne(context.TODO(), filter, update, updateOptions)
 	if err != nil {
 		log.Printf("Failed to update LastVisit field for id:%v \n", userID)
 	}
@@ -132,64 +143,62 @@ func Get(userID string) (User, error) {
 
 // GetByEmail Get user details by email
 func GetByEmail(email string) (User, error) {
-	s := session()
-	defer s.Close()
-
 	var u User
 
-	err := collection(s).Find(bson.M{"email": email}).Select(bson.M{"iamid": 1, "name": 1, "roles": 1}).One(&u)
+	filter := bson.M{"email": email}
+
+	projection := bson.M{"iamid": 1, "name": 1, "roles": 1}
+
+	findOptions := options.FindOne().SetProjection(projection)
+
+	err := collection().FindOne(context.TODO(), filter, findOptions).Decode(&u)
 
 	return u, err
 }
 
 // EmailExist Check if email id is already in the collection
 func EmailExist(email string) (bool, error) {
-	s := session()
-	defer s.Close()
+	filter := bson.M{"email": email}
 
-	q := collection(s).Find(bson.M{"email": email}).Limit(1)
+	countOptions := options.Count().SetLimit(1)
 
-	c, err := q.Count()
+	count, err := collection().CountDocuments(context.TODO(), filter, countOptions)
 	if err != nil {
 		return false, err
 	}
 
-	if c == 0 {
-		return false, err
-	}
-
-	return true, err
+	return count > 0, nil
 }
 
 // PhoneNumberExist Check if phone number is already in the collection
 func PhoneNumberExist(phone string) (bool, error) {
-	s := session()
-	defer s.Close()
+	filter := bson.M{"phone": phone}
 
-	q := collection(s).Find(bson.M{"phone": phone}).Limit(1)
+	countOptions := options.Count().SetLimit(1)
 
-	c, err := q.Count()
+	count, err := collection().CountDocuments(context.TODO(), filter, countOptions)
 	if err != nil {
 		return false, err
 	}
 
-	if c == 0 {
-		return false, err
-	}
-
-	return true, err
+	return count > 0, nil
 }
 
 // UpdateClientDeviceInfo Update the client device info
 func UpdateClientDeviceInfo(userID string, client ClientInfo) (User, error) {
-	s := session()
-	defer s.Close()
-	c := collection(s)
-
-	err := c.Update(bson.M{"_id": bson.ObjectIdHex(userID)}, bson.M{"$set": bson.M{"client": client}})
+	userId, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		return User{}, err
 	}
+
+	filter := bson.M{"_id": userId}
+	update := bson.M{"$set": bson.M{"client": client}}
+
+	_, err = collection().UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return User{}, err
+	}
+
 	//TODO: Is this DB get necessary?
 	u, err := Get(userID)
 	return u, err
@@ -197,10 +206,12 @@ func UpdateClientDeviceInfo(userID string, client ClientInfo) (User, error) {
 
 // AddRole Add roles to users
 func AddRole(userID string, role Role) (User, error) {
-	s := session()
-	defer s.Close()
+	userId, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return User{}, err
+	}
 
-	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(userID)}, bson.M{"$push": bson.M{"roles": role}})
+	_, err = collection().UpdateOne(context.TODO(), bson.M{"_id": userId}, bson.M{"$push": bson.M{"roles": role}})
 	if err != nil {
 		return User{}, err
 	}
@@ -210,45 +221,73 @@ func AddRole(userID string, role Role) (User, error) {
 
 // GetOrgSubscribeUsers Get list of users subscribed to an organizations
 func GetOrgSubscribeUsers(orgID string, startID string, limit int) ([]User, string, error) {
-	s := session()
-	defer s.Close()
-
 	var results []User
 	var err error
 	limit = 10000
-	if startID == "" {
-		err = collection(s).Find(bson.M{"orgs.orgid": bson.ObjectIdHex(orgID)}).Select(bson.M{"name": 1, "phone": 1, "email": 1}).Sort("-_id").Limit(limit).All(&results)
-	} else {
-		err = collection(s).Find(bson.M{"orgs.orgid": bson.ObjectIdHex(orgID), "_id": bson.M{"$lt": bson.ObjectIdHex(startID)}}).Select(bson.M{"name": 1, "phone": 1, "email": 1}).Sort("-_id").Limit(limit).All(&results)
+
+	findOptions := options.Find()
+	findOptions.SetSort(bson.D{{Key: "_id", Value: -1}})
+	findOptions.SetLimit(int64(limit))
+
+	orgId, err := primitive.ObjectIDFromHex(orgID)
+	if err != nil {
+		return results, "", err
 	}
 
-	var lastID = ""
+	filter := bson.M{"orgs.orgid": orgId}
+	if startID != "" {
+		startId, err := primitive.ObjectIDFromHex(startID)
+		if err != nil {
+			return results, "", err
+		}
+
+		filter["_id"] = bson.M{"$lt": startId}
+	}
+
+	cursor, err := collection().Find(context.TODO(), filter, findOptions)
+	if err != nil {
+		return results, "", err
+	}
+	defer cursor.Close(context.TODO())
+
+	err = cursor.All(context.TODO(), &results)
+
+	lastID := ""
 	if err == nil {
 		if len(results) != 0 && len(results) == (limit) {
 			lastID = results[len(results)-1].ID.Hex()
 		}
 	}
 
-	return results, lastID, err
+	return results, lastID, nil
+
 }
 
 // GetOrgSubscribeIter Get Iterator to users subscribed to an organizations
-func GetOrgSubscribeIter(orgID string) *mgo.Iter {
-	s := session()
-	defer s.Close()
+func GetOrgSubscribeIter(orgID string) (*mongo.Cursor, error) {
+	orgId, err := primitive.ObjectIDFromHex(orgID)
+	if err != nil {
+		return nil, err
+	}
 
-	iter := collection(s).Find(bson.M{"orgs.orgid": bson.ObjectIdHex(orgID)}).Iter()
+	filter := bson.M{"orgs.orgid": orgId}
+	cursor, err := collection().Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
 
-	return iter
+	return cursor, nil
 }
 
 // GetOrgSubscribeCount Get count of users subscribed to an organizations
-func GetOrgSubscribeCount(orgID string) (int, error) {
-	s := session()
-	defer s.Close()
+func GetOrgSubscribeCount(orgID string) (int64, error) {
+	orgId, err := primitive.ObjectIDFromHex(orgID)
+	if err != nil {
+		return 0, err
+	}
+	filter := bson.M{"orgs.orgid": orgId}
 
-	count, err := collection(s).Find(bson.M{"orgs.orgid": bson.ObjectIdHex(orgID)}).Count()
-
+	count, err := collection().CountDocuments(context.TODO(), filter)
 	if err != nil {
 		log.Printf("Failed to find user count by org id:%v err:%v", orgID, err)
 		return 0, err
@@ -259,69 +298,92 @@ func GetOrgSubscribeCount(orgID string) (int, error) {
 
 // UpdateOrgTypeOfSubscribedUsers Updates the embedded organization type snippet for all users
 func UpdateOrgTypeOfSubscribedUsers(orgType orgtype.OrgType) error {
-	s := session()
-	defer s.Close()
-	c := collection(s)
+	filter := bson.M{"orgs.typeid": orgType.ID}
 
-	var u User
-	iter := c.Find(bson.M{"orgs.typeid": orgType.ID}).Iter()
-	for iter.Next(&u) {
+	cursor, err := collection().Find(context.TODO(), filter)
+	if err != nil {
+		return err
+	}
+	defer cursor.Close(context.TODO())
+
+	for cursor.Next(context.TODO()) {
+		var u User
+		err := cursor.Decode(&u)
+		if err != nil {
+			return err
+		}
+
 		for i := range u.Orgs {
 			if u.Orgs[i].TypeID == orgType.ID {
 				u.Orgs[i].Type = orgType.Type
 			}
-			err := c.UpdateId(u.ID, u)
-			if err != nil {
-				return err
-			}
+		}
+
+		_, err = collection().ReplaceOne(context.TODO(), bson.M{"_id": u.ID}, u)
+		if err != nil {
+			return err
 		}
 	}
-	if err := iter.Close(); err != nil {
-		return err
-	}
-	log.Println("successfully updated users for organization type name change")
+
+	log.Println("Successfully updated users for organization type name change")
 	return nil
 }
 
 // UpdateOrganizationsSubscribedUsers Updates the embedded organization snippet for all users
 func UpdateOrganizationsSubscribedUsers(org org.Organization) error {
-	s := session()
-	defer s.Close()
-	c := collection(s)
+	filter := bson.M{"orgs.orgid": org.ID}
+	cursor, err := collection().Find(context.TODO(), filter)
+	if err != nil {
+		return err
+	}
+	defer cursor.Close(context.TODO())
 
-	var result User
-	iter := c.Find(bson.M{"orgs.orgid": org.ID}).Iter()
-	for iter.Next(&result) {
+	for cursor.Next(context.TODO()) {
+		var result User
+		err := cursor.Decode(&result)
+		if err != nil {
+			return err
+		}
+
 		for i := range result.Orgs {
 			if result.Orgs[i].OrgID == org.ID {
 				result.Orgs[i].Name = org.Name
 				result.Orgs[i].Location = org.Location
 			}
-			err := c.UpdateId(result.ID, result)
-			if err != nil {
-				return err
-			}
+		}
+
+		_, err = collection().ReplaceOne(context.TODO(), bson.M{"_id": result.ID}, result)
+		if err != nil {
+			return err
 		}
 	}
-	if err := iter.Close(); err != nil {
-		return err
-	}
+
 	return nil
 }
 
 // UpdateOrganization Updates organization to user collection
 func UpdateOrganization(userID string, org Org) (User, error) {
-	s := session()
-	defer s.Close()
-	c := collection(s)
-
 	var result User
-	err := c.Update(bson.M{"_id": bson.ObjectIdHex(userID)}, bson.M{"$push": bson.M{"orgs": org}})
+
+	userId, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return User{}, err
+	}
+
+	filter := bson.M{"_id": userId}
+
+	update := bson.M{"$push": bson.M{"orgs": org}}
+
+	_, err = collection().UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return result, err
 	}
 
-	err = c.FindId(bson.ObjectIdHex(userID)).One(&result)
+	err = collection().FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		return result, err
+	}
+
 	return result, err
 }
 
@@ -336,9 +398,6 @@ func GetUserOrgDetails(u User, oID string) (org Org, found bool) {
 
 // DeleteOrganization Remove user from an organization
 func DeleteOrganization(userID string, orgID string) (User, error) {
-	s := session()
-	defer s.Close()
-	c := collection(s)
 
 	u, err := Get(userID)
 	if err != nil {
@@ -347,47 +406,69 @@ func DeleteOrganization(userID string, orgID string) (User, error) {
 	org, _ := GetUserOrgDetails(u, orgID)
 	//Check found == true
 
+	userId, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return User{}, err
+	}
+
+	filter := bson.M{"_id": userId}
+	update := bson.M{"$pull": bson.M{"orgs": org}}
+
 	var result User
-	err = c.Update(bson.M{"_id": bson.ObjectIdHex(userID)}, bson.M{"$pull": bson.M{"orgs": org}})
+
+	_, err = collection().UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return result, err
 	}
 
-	err = c.FindId(bson.ObjectIdHex(userID)).One(&result)
+	err = collection().FindOne(context.TODO(), filter).Decode(&result)
+
 	return result, err
 }
 
 // RemoveRole Remove role of an user
 func RemoveRole(userID string, role Role) (User, error) {
-	s := session()
-	defer s.Close()
-
-	err := collection(s).Update(bson.M{"_id": bson.ObjectIdHex(userID)}, bson.M{"$pull": bson.M{"roles": role}})
+	userId, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		return User{}, err
 	}
+	filter := bson.M{"_id": userId}
+	update := bson.M{"$pull": bson.M{"roles": role}}
+
+	_, err = collection().UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return User{}, err
+	}
+
 	u, err := Get(userID)
 	return u, err
 }
 
 // UpdateAPIKey update apikey to user
 func UpdateAPIKey(userID string, apiKey string) error {
-	s := session()
-	defer s.Close()
-	c := collection(s)
+	userId, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return err
+	}
+	filter := bson.M{"_id": userId}
+	update := bson.M{"$set": bson.M{"apikey": apiKey}}
 
-	err := c.Update(bson.M{"_id": bson.ObjectIdHex(userID)}, bson.M{"$set": bson.M{"apikey": apiKey}})
+	_, err = collection().UpdateOne(context.TODO(), filter, update)
 	return err
 }
 
 // GetAPIKey Gets the API key of the user
 func GetAPIKey(userID string) (string, error) {
-	s := session()
-	defer s.Close()
+	userId, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return "", err
+	}
+
+	projection := bson.M{"apikey": 1}
+	opts := options.FindOne().SetProjection(projection)
 
 	var result User
-	err := collection(s).FindId(bson.ObjectIdHex(userID)).Select(bson.M{"apikey": 1}).One(&result)
-
+	err = collection().FindOne(context.TODO(), bson.M{"_id": userId}, opts).Decode(&result)
 	if err != nil {
 		log.Printf("Failed to find user by id:%v err:%v", userID, err)
 		return "", err

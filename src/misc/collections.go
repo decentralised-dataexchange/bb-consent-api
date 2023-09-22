@@ -1,9 +1,11 @@
 package misc
 
 import (
+	"context"
+
 	"github.com/bb-consent/api/src/database"
-	"github.com/globalsign/mgo"
-	"github.com/globalsign/mgo/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const (
@@ -16,7 +18,7 @@ const (
 
 // DataBreach stores the Data breach informations
 type DataBreach struct {
-	ID          bson.ObjectId `bson:"_id,omitempty"`
+	ID          primitive.ObjectID `bson:"_id,omitempty"`
 	Type        int
 	OrgID       string
 	HeadLine    string
@@ -28,27 +30,21 @@ type DataBreach struct {
 
 // Event stores event related information.
 type Event struct {
-	ID      bson.ObjectId `bson:"_id,omitempty"`
+	ID      primitive.ObjectID `bson:"_id,omitempty"`
 	Type    int
 	OrgID   string
 	Details string
 }
 
-func session() *mgo.Session {
-	return database.DB.Session.Copy()
-}
-
-func collection(s *mgo.Session) *mgo.Collection {
-	return s.DB(database.DB.Name).C("misc")
+func collection() *mongo.Collection {
+	return database.DB.Client.Database(database.DB.Name).Collection("misc")
 }
 
 // AddDataBreachNotifications Update the data breach info to organization
 func AddDataBreachNotifications(dataBreach DataBreach) error {
-	s := session()
-	defer s.Close()
 
 	dataBreach.Type = DocTypeOrgDataBreach
-	err := collection(s).Insert(dataBreach)
+	_, err := collection().InsertOne(context.TODO(), dataBreach)
 	if err != nil {
 		return err
 	}
@@ -57,11 +53,9 @@ func AddDataBreachNotifications(dataBreach DataBreach) error {
 
 // AddEventNotifications Update the data breach info to organization
 func AddEventNotifications(event Event) error {
-	s := session()
-	defer s.Close()
 
 	event.Type = DocTypeOrgEvent
-	err := collection(s).Insert(event)
+	_, err := collection().InsertOne(context.TODO(), event)
 	if err != nil {
 		return err
 	}

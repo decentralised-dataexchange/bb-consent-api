@@ -1,11 +1,14 @@
 package datarequests
 
 import (
+	"context"
 	"time"
 
 	"github.com/bb-consent/api/src/database"
-	"github.com/globalsign/mgo"
-	"github.com/globalsign/mgo/bson"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Data Request type and status const
@@ -48,7 +51,7 @@ var RequestTypes = []iDString{
 
 // DataRequest Data request information
 type DataRequest struct {
-	ID          bson.ObjectId `bson:"_id,omitempty"`
+	ID          primitive.ObjectID `bson:"_id,omitempty"`
 	UserID      string
 	OrgID       string
 	UserName    string
@@ -61,12 +64,8 @@ type DataRequest struct {
 	Comments    [DataRequestMaxComments]string
 }
 
-func session() *mgo.Session {
-	return database.DB.Session.Copy()
-}
-
-func collection(s *mgo.Session) *mgo.Collection {
-	return s.DB(database.DB.Name).C("userDataRequests")
+func collection() *mongo.Collection {
+	return database.DB.Client.Database(database.DB.Name).Collection("userDataRequests")
 }
 
 // GetStatusTypeStr Get status type string from ID
@@ -86,23 +85,21 @@ func GetRequestTypeStr(requestType int) string {
 
 // Add Adds access log
 func Add(req DataRequest) (DataRequest, error) {
-	s := session()
-	defer s.Close()
 
-	req.ID = bson.NewObjectId()
+	req.ID = primitive.NewObjectID()
 
-	return req, collection(s).Insert(req)
+	_, err := collection().InsertOne(context.TODO(), req)
+
+	return req, err
 }
 
 // Update Update the req entry
-func Update(reqID bson.ObjectId, state int, comments [DataRequestMaxComments]string) (err error) {
-	s := session()
-	defer s.Close()
+func Update(reqID primitive.ObjectID, state int, comments [DataRequestMaxComments]string) (err error) {
 
 	if state >= DataRequestStatusProcessedWithoutAction {
-		err = collection(s).Update(bson.M{"_id": reqID}, bson.M{"$set": bson.M{"comments": comments, "state": state, "closeddate": time.Now()}})
+		_, err = collection().UpdateOne(context.TODO(), bson.M{"_id": reqID}, bson.M{"$set": bson.M{"comments": comments, "state": state, "closeddate": time.Now()}})
 	} else {
-		err = collection(s).Update(bson.M{"_id": reqID}, bson.M{"$set": bson.M{"comments": comments, "state": state}})
+		_, err = collection().UpdateOne(context.TODO(), bson.M{"_id": reqID}, bson.M{"$set": bson.M{"comments": comments, "state": state}})
 	}
 	if err != nil {
 		return err
@@ -112,25 +109,48 @@ func Update(reqID bson.ObjectId, state int, comments [DataRequestMaxComments]str
 
 // GetDataRequestByID Returns the data requests record by ID
 func GetDataRequestByID(reqID string) (DataRequest, error) {
-	s := session()
-	defer s.Close()
-
 	var dataReqest DataRequest
-	err := collection(s).FindId(bson.ObjectIdHex(reqID)).One(&dataReqest)
+
+	reqId, err := primitive.ObjectIDFromHex(reqID)
+	if err != nil {
+		return dataReqest, err
+	}
+
+	err = collection().FindOne(context.TODO(), bson.M{"_id": reqId}).Decode(&dataReqest)
 
 	return dataReqest, err
 }
 
 // GetOpenDataRequestsByOrgID Get data requests against orgID
 func GetOpenDataRequestsByOrgID(orgID string, startID string, limit int) (results []DataRequest, lastID string, err error) {
-	s := session()
-	defer s.Close()
 
-	if startID == "" {
-		err = collection(s).Find(bson.M{"orgid": orgID, "state": bson.M{"$lt": DataRequestStatusProcessedWithoutAction}}).Sort("-_id").Limit(limit).All(&results)
-	} else {
-		err = collection(s).Find(bson.M{"orgid": orgID, "state": bson.M{"$lt": DataRequestStatusProcessedWithoutAction},
-			"_id": bson.M{"$lt": bson.ObjectIdHex(startID)}}).Sort("-_id").Limit(limit).All(&results)
+	filter := bson.M{
+		"orgid": orgID,
+		"state": bson.M{"$lt": DataRequestStatusProcessedWithoutAction},
+	}
+
+	findOptions := options.Find()
+	findOptions.SetSort(bson.D{{Key: "_id", Value: -1}})
+	findOptions.SetLimit(int64(limit))
+
+	if startID != "" {
+		startId, err := primitive.ObjectIDFromHex(startID)
+		if err != nil {
+			return nil, "", err
+		}
+
+		filter["_id"] = bson.M{"$lt": startId}
+	}
+
+	cur, err := collection().Find(context.TODO(), filter, findOptions)
+	if err != nil {
+		return nil, "", err
+	}
+
+	defer cur.Close(context.TODO())
+
+	if err := cur.All(context.TODO(), &results); err != nil {
+		return nil, "", err
 	}
 
 	lastID = ""
@@ -145,14 +165,33 @@ func GetOpenDataRequestsByOrgID(orgID string, startID string, limit int) (result
 
 // GetClosedDataRequestsByOrgID Get data requests against orgID
 func GetClosedDataRequestsByOrgID(orgID string, startID string, limit int) (results []DataRequest, lastID string, err error) {
-	s := session()
-	defer s.Close()
+	filter := bson.M{
+		"orgid": orgID,
+		"state": bson.M{"$gte": DataRequestStatusProcessedWithoutAction},
+	}
 
-	if startID == "" {
-		err = collection(s).Find(bson.M{"orgid": orgID, "state": bson.M{"$gte": DataRequestStatusProcessedWithoutAction}}).Sort("-_id").Limit(limit).All(&results)
-	} else {
-		err = collection(s).Find(bson.M{"orgid": orgID, "state": bson.M{"$gte": DataRequestStatusProcessedWithoutAction},
-			"_id": bson.M{"$lt": bson.ObjectIdHex(startID)}}).Sort("-_id").Limit(limit).All(&results)
+	findOptions := options.Find()
+	findOptions.SetSort(bson.D{{Key: "_id", Value: -1}})
+	findOptions.SetLimit(int64(limit))
+
+	if startID != "" {
+		startId, err := primitive.ObjectIDFromHex(startID)
+		if err != nil {
+			return nil, "", err
+		}
+
+		filter["_id"] = bson.M{"$lt": startId}
+	}
+
+	cur, err := collection().Find(context.TODO(), filter, findOptions)
+	if err != nil {
+		return nil, "", err
+	}
+
+	defer cur.Close(context.TODO())
+
+	if err := cur.All(context.TODO(), &results); err != nil {
+		return nil, "", err
 	}
 
 	lastID = ""
@@ -167,14 +206,34 @@ func GetClosedDataRequestsByOrgID(orgID string, startID string, limit int) (resu
 
 // GetOpenDataRequestsByOrgUserID Get data requests against orgID
 func GetOpenDataRequestsByOrgUserID(orgID string, userID string, startID string, limit int) (results []DataRequest, lastID string, err error) {
-	s := session()
-	defer s.Close()
+	filter := bson.M{
+		"orgid":  orgID,
+		"userid": userID,
+		"state":  bson.M{"$lt": DataRequestStatusProcessedWithoutAction},
+	}
 
-	if startID == "" {
-		err = collection(s).Find(bson.M{"orgid": orgID, "userid": userID, "state": bson.M{"$lt": DataRequestStatusProcessedWithoutAction}}).Sort("-_id").Limit(limit).All(&results)
-	} else {
-		err = collection(s).Find(bson.M{"orgid": orgID, "userid": userID, "state": bson.M{"$lt": DataRequestStatusProcessedWithoutAction},
-			"_id": bson.M{"$lt": bson.ObjectIdHex(startID)}}).Sort("-_id").Limit(limit).All(&results)
+	findOptions := options.Find()
+	findOptions.SetSort(bson.D{{Key: "_id", Value: -1}})
+	findOptions.SetLimit(int64(limit))
+
+	if startID != "" {
+		startId, err := primitive.ObjectIDFromHex(startID)
+		if err != nil {
+			return nil, "", err
+		}
+
+		filter["_id"] = bson.M{"$lt": startId}
+	}
+
+	cur, err := collection().Find(context.TODO(), filter, findOptions)
+	if err != nil {
+		return nil, "", err
+	}
+
+	defer cur.Close(context.TODO())
+
+	if err := cur.All(context.TODO(), &results); err != nil {
+		return nil, "", err
 	}
 
 	lastID = ""
@@ -189,14 +248,34 @@ func GetOpenDataRequestsByOrgUserID(orgID string, userID string, startID string,
 
 // GetClosedDataRequestsByOrgUserID Get data requests against orgID
 func GetClosedDataRequestsByOrgUserID(orgID string, userID string, startID string, limit int) (results []DataRequest, lastID string, err error) {
-	s := session()
-	defer s.Close()
+	filter := bson.M{
+		"orgid":  orgID,
+		"userid": userID,
+		"state":  bson.M{"$gte": DataRequestStatusProcessedWithoutAction},
+	}
 
-	if startID == "" {
-		err = collection(s).Find(bson.M{"orgid": orgID, "userid": userID, "state": bson.M{"$gte": DataRequestStatusProcessedWithoutAction}}).Sort("-_id").Limit(limit).All(&results)
-	} else {
-		err = collection(s).Find(bson.M{"orgid": orgID, "userid": userID, "state": bson.M{"$gte": DataRequestStatusProcessedWithoutAction},
-			"_id": bson.M{"$lt": bson.ObjectIdHex(startID)}}).Sort("-_id").Limit(limit).All(&results)
+	findOptions := options.Find()
+	findOptions.SetSort(bson.D{{Key: "_id", Value: -1}})
+	findOptions.SetLimit(int64(limit))
+
+	if startID != "" {
+		startId, err := primitive.ObjectIDFromHex(startID)
+		if err != nil {
+			return nil, "", err
+		}
+
+		filter["_id"] = bson.M{"$lt": startId}
+	}
+
+	cur, err := collection().Find(context.TODO(), filter, findOptions)
+	if err != nil {
+		return nil, "", err
+	}
+
+	defer cur.Close(context.TODO())
+
+	if err := cur.All(context.TODO(), &results); err != nil {
+		return nil, "", err
 	}
 
 	lastID = ""
@@ -211,13 +290,33 @@ func GetClosedDataRequestsByOrgUserID(orgID string, userID string, startID strin
 
 // GetDataRequestsByOrgUserID Get data requests against userID
 func GetDataRequestsByOrgUserID(orgID string, userID string, startID string, limit int) (results []DataRequest, lastID string, err error) {
-	s := session()
-	defer s.Close()
+	filter := bson.M{
+		"orgid":  orgID,
+		"userid": userID,
+	}
 
-	if startID == "" {
-		err = collection(s).Find(bson.M{"orgid": orgID, "userid": userID}).Sort("-_id").Limit(limit).All(&results)
-	} else {
-		err = collection(s).Find(bson.M{"orgid": orgID, "userid": userID, "_id": bson.M{"$lt": bson.ObjectIdHex(startID)}}).Sort("-_id").Limit(limit).All(&results)
+	findOptions := options.Find()
+	findOptions.SetSort(bson.D{{Key: "_id", Value: -1}})
+	findOptions.SetLimit(int64(limit))
+
+	if startID != "" {
+		startId, err := primitive.ObjectIDFromHex(startID)
+		if err != nil {
+			return nil, "", err
+		}
+
+		filter["_id"] = bson.M{"$lt": startId}
+	}
+
+	cur, err := collection().Find(context.TODO(), filter, findOptions)
+	if err != nil {
+		return nil, "", err
+	}
+
+	defer cur.Close(context.TODO())
+
+	if err := cur.All(context.TODO(), &results); err != nil {
+		return nil, "", err
 	}
 
 	lastID = ""
@@ -232,10 +331,16 @@ func GetDataRequestsByOrgUserID(orgID string, userID string, startID string, lim
 
 // GetDataRequestsByUserOrgTypeID Get data requests against orgID
 func GetDataRequestsByUserOrgTypeID(orgID string, userID string, drType int) (results []DataRequest, err error) {
-	s := session()
-	defer s.Close()
 
-	err = collection(s).Find(bson.M{"orgid": orgID, "userid": userID, "type": drType}).All(&results)
+	cur, err := collection().Find(context.TODO(), bson.M{"orgid": orgID, "userid": userID, "type": drType})
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(context.TODO())
 
-	return results, err
+	if err := cur.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }

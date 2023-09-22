@@ -1,11 +1,13 @@
 package consent
 
 import (
+	"context"
 	"time"
 
 	"github.com/bb-consent/api/src/database"
-	"github.com/globalsign/mgo"
-	"github.com/globalsign/mgo/bson"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type consentStatus struct {
@@ -30,67 +32,61 @@ type Purpose struct {
 
 // Consents data type
 type Consents struct {
-	ID       bson.ObjectId `bson:"_id,omitempty"`
+	ID       primitive.ObjectID `bson:"_id,omitempty"`
 	OrgID    string
 	UserID   string
 	Purposes []Purpose
 }
 
-func session() *mgo.Session {
-	return database.DB.Session.Copy()
-}
-
-func collection(s *mgo.Session) *mgo.Collection {
-	return s.DB(database.DB.Name).C("consents")
+func collection() *mongo.Collection {
+	return database.DB.Client.Database(database.DB.Name).Collection("consents")
 }
 
 // Add Adds an consent to the collection
 func Add(consent Consents) (Consents, error) {
-	s := session()
-	defer s.Close()
 
-	consent.ID = bson.NewObjectId()
-	return consent, collection(s).Insert(&consent)
+	consent.ID = primitive.NewObjectID()
+	_, err := collection().InsertOne(context.TODO(), &consent)
+	return consent, err
 }
 
 // DeleteByUserOrg Deletes the consent by userID, orgID
 func DeleteByUserOrg(userID string, orgID string) error {
-	s := session()
-	defer s.Close()
 
-	return collection(s).Remove(bson.M{"userid": userID, "orgid": orgID})
+	_, err := collection().DeleteMany(context.TODO(), bson.M{"userid": userID, "orgid": orgID})
+	return err
 }
 
 // GetByUserOrg Get all consents of a user in organization
 func GetByUserOrg(userID string, orgID string) (Consents, error) {
-	s := session()
-	defer s.Close()
 
 	var consents Consents
-	err := collection(s).Find(bson.M{"userid": userID, "orgid": orgID}).One(&consents)
+	err := collection().FindOne(context.TODO(), bson.M{"userid": userID, "orgid": orgID}).Decode(&consents)
 
 	return consents, err
 }
 
 // Get Get consent by consentID
 func Get(consentID string) (Consents, error) {
-	s := session()
-	defer s.Close()
-
 	var result Consents
-	err := collection(s).FindId(bson.ObjectIdHex(consentID)).One(&result)
+
+	consentId, err := primitive.ObjectIDFromHex(consentID)
+	if err != nil {
+		return result, err
+	}
+	err = collection().FindOne(context.TODO(), bson.M{"_id": consentId}).Decode(&result)
 
 	return result, err
 }
 
 // GetConsentedUsers Get list of users who are consented to an attribute
 func GetConsentedUsers(orgID string, purposeID string, attributeID string, startID string, limit int) (userIDs []string, lastID string, err error) {
-	s := session()
-	defer s.Close()
-	c := collection(s)
+	c := collection()
 
 	limit = 10000
 	var results []Consents
+	var cur *mongo.Cursor
+
 	if startID == "" {
 		pipeline := []bson.M{
 			{"$match": bson.M{"orgid": orgID}},
@@ -101,9 +97,9 @@ func GetConsentedUsers(orgID string, purposeID string, attributeID string, start
 				"purposes.consents.templateid":       attributeID,
 				"purposes.consents.status.consented": bson.M{"$regex": "^A"}},
 			},
-			{"$limit": limit},
+			{"$limit": int64(limit)},
 		}
-		err = c.Pipe(pipeline).All(&results)
+		cur, err = c.Aggregate(context.TODO(), pipeline)
 	} else {
 		pipeline := []bson.M{
 			{"$match": bson.M{"orgid": orgID}},
@@ -114,12 +110,18 @@ func GetConsentedUsers(orgID string, purposeID string, attributeID string, start
 				"purposes.consents.templateid":       attributeID,
 				"purposes.consents.status.consented": bson.M{"$regex": "^A"}},
 			},
-			{"$limit": limit},
+			{"$limit": int64(limit)},
 			{"$gt": startID},
 		}
-		err = c.Pipe(pipeline).All(&results)
+		cur, err = c.Aggregate(context.TODO(), pipeline)
 	}
 	if err != nil {
+		return
+	}
+
+	defer cur.Close(context.TODO())
+
+	if err = cur.All(context.TODO(), &results); err != nil {
 		return
 	}
 
@@ -136,12 +138,12 @@ func GetConsentedUsers(orgID string, purposeID string, attributeID string, start
 
 // GetPurposeConsentedAllUsers Get all users with at-least one attribute consented in purpose.
 func GetPurposeConsentedAllUsers(orgID string, purposeID string, startID string, limit int) (userIDs []string, lastID string, err error) {
-	s := session()
-	defer s.Close()
-	c := collection(s)
+	c := collection()
 
 	limit = 10000
 	var results []Consents
+	var cur *mongo.Cursor
+
 	if startID == "" {
 		pipeline := []bson.M{
 			{"$match": bson.M{"orgid": orgID}},
@@ -151,9 +153,9 @@ func GetPurposeConsentedAllUsers(orgID string, purposeID string, startID string,
 				"purposes.id":                        purposeID,
 				"purposes.consents.status.consented": bson.M{"$regex": "^A"}},
 			},
-			{"$limit": limit},
+			{"$limit": int64(limit)},
 		}
-		err = c.Pipe(pipeline).All(&results)
+		cur, err = c.Aggregate(context.TODO(), pipeline)
 	} else {
 		pipeline := []bson.M{
 			{"$match": bson.M{"orgid": orgID}},
@@ -163,12 +165,18 @@ func GetPurposeConsentedAllUsers(orgID string, purposeID string, startID string,
 				"purposes.id":                        purposeID,
 				"purposes.consents.status.consented": bson.M{"$regex": "^A"}},
 			},
-			{"$limit": limit},
+			{"$limit": int64(limit)},
 			{"$gt": startID},
 		}
-		err = c.Pipe(pipeline).All(&results)
+		cur, err = c.Aggregate(context.TODO(), pipeline)
 	}
 	if err != nil {
+		return
+	}
+
+	defer cur.Close(context.TODO())
+
+	if err = cur.All(context.TODO(), &results); err != nil {
 		return
 	}
 
@@ -189,9 +197,9 @@ func GetPurposeConsentedAllUsers(orgID string, purposeID string, startID string,
 
 // UpdatePurposes Update consents purposes
 func UpdatePurposes(consents Consents) (Consents, error) {
-	s := session()
-	defer s.Close()
-	c := collection(s)
+	c := collection()
 
-	return consents, c.Update(bson.M{"_id": consents.ID}, bson.M{"$set": bson.M{"purposes": consents.Purposes}})
+	_, err := c.UpdateOne(context.TODO(), bson.M{"_id": consents.ID}, bson.M{"$set": bson.M{"purposes": consents.Purposes}})
+
+	return consents, err
 }

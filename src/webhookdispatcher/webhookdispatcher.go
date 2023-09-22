@@ -18,7 +18,7 @@ import (
 
 	"github.com/bb-consent/api/src/config"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/globalsign/mgo/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // WebhookEvent Webhook event wrapper
@@ -59,20 +59,20 @@ var DeliveryStatus = map[int]string{
 
 // Webhook Defines the structure for an organisation webhook
 type Webhook struct {
-	ID                  bson.ObjectId `bson:"_id,omitempty"` // Webhook ID
-	OrgID               string        // Organisation ID
-	PayloadURL          string        // Webhook payload URL
-	ContentType         string        // Webhook payload content type for e.g application/json
-	SubscribedEvents    []string      // Events subscribed for e.g. user.data.delete
-	Disabled            bool          // Disabled or not
-	SecretKey           string        // For calculating SHA256 HMAC to verify data integrity and authenticity
-	SkipSSLVerification bool          // Skip SSL certificate verification or not (expiry is checked)
-	TimeStamp           string        // UTC timestamp
+	ID                  primitive.ObjectID `bson:"_id,omitempty"` // Webhook ID
+	OrgID               string             // Organisation ID
+	PayloadURL          string             // Webhook payload URL
+	ContentType         string             // Webhook payload content type for e.g application/json
+	SubscribedEvents    []string           // Events subscribed for e.g. user.data.delete
+	Disabled            bool               // Disabled or not
+	SecretKey           string             // For calculating SHA256 HMAC to verify data integrity and authenticity
+	SkipSSLVerification bool               // Skip SSL certificate verification or not (expiry is checked)
+	TimeStamp           string             // UTC timestamp
 }
 
 // WebhookDelivery Details of payload delivery to webhook endpoint
 type WebhookDelivery struct {
-	ID                      bson.ObjectId       `bson:"_id,omitempty"` // Webhook delivery ID
+	ID                      primitive.ObjectID  `bson:"_id,omitempty"` // Webhook delivery ID
 	WebhookID               string              // Webhook ID
 	UserID                  string              // ID of user who triggered the webhook event
 	WebhookEventType        string              // Webhook event type for e.g. data.delete.initiated
@@ -162,7 +162,7 @@ func WebhookDispatcherInit(webhookConfig *config.Configuration) {
 
 				// Instantiating webhook delivery
 				webhookDelivery = WebhookDelivery{
-					ID:                      bson.NewObjectId(),
+					ID:                      primitive.NewObjectID(),
 					WebhookID:               webhookEvent.WebhookID,
 					UserID:                  userID,
 					WebhookEventType:        webhookEventType,

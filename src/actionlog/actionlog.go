@@ -1,9 +1,13 @@
 package actionlog
 
 import (
+	"context"
+
 	"github.com/bb-consent/api/src/database"
-	"github.com/globalsign/mgo"
-	"github.com/globalsign/mgo/bson"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Log type const
@@ -38,7 +42,7 @@ func GetTypeStr(logType int) string {
 
 // ActionLog All access logs
 type ActionLog struct {
-	ID       bson.ObjectId `bson:"_id,omitempty"`
+	ID       primitive.ObjectID `bson:"_id,omitempty"`
 	Type     int
 	TypeStr  string
 	OrgID    string
@@ -47,20 +51,13 @@ type ActionLog struct {
 	Action   string //Free string storing the real log
 }
 
-func session() *mgo.Session {
-	return database.DB.Session.Copy()
-}
-
-func collection(s *mgo.Session) *mgo.Collection {
-	return s.DB(database.DB.Name).C("actionLogs")
+func collection() *mongo.Collection {
+	return database.DB.Client.Database(database.DB.Name).Collection("actionLogs")
 }
 
 // Add Adds access log
 func Add(log ActionLog) error {
-	s := session()
-	defer s.Close()
-
-	err := collection(s).Insert(log)
+	_, err := collection().InsertOne(context.TODO(), log)
 	if err != nil {
 		return err
 	}
@@ -69,13 +66,29 @@ func Add(log ActionLog) error {
 
 // GetAccessLogByOrgID gets all notifications of a given user
 func GetAccessLogByOrgID(orgID string, startID string, limit int) (results []ActionLog, lastID string, err error) {
-	s := session()
-	defer s.Close()
 
-	if startID == "" {
-		err = collection(s).Find(bson.M{"orgid": orgID}).Sort("-_id").Limit(limit).All(&results)
-	} else {
-		err = collection(s).Find(bson.M{"orgid": orgID, "_id": bson.M{"$lt": bson.ObjectIdHex(startID)}}).Sort("-_id").Limit(limit).All(&results)
+	findOptions := options.Find()
+	findOptions.SetSort(bson.D{{Key: "_id", Value: -1}})
+	findOptions.SetLimit(int64(limit))
+
+	filter := bson.M{"orgid": orgID}
+	if startID != "" {
+		startId, err := primitive.ObjectIDFromHex(startID)
+		if err != nil {
+			return nil, "", err
+		}
+
+		filter["_id"] = bson.M{"$lt": startId}
+	}
+
+	cursor, err := collection().Find(context.TODO(), filter, findOptions)
+	if err != nil {
+		return nil, "", err
+	}
+	defer cursor.Close(context.TODO())
+
+	if err := cursor.All(context.TODO(), &results); err != nil {
+		return nil, "", err
 	}
 
 	lastID = ""

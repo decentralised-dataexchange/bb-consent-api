@@ -34,7 +34,7 @@ func GetDeleteMyData(w http.ResponseWriter, r *http.Request) {
 func transformDataReqToResp(dReq dr.DataRequest) dataReqResp {
 	return dataReqResp{ID: dReq.ID, UserID: dReq.UserID, UserName: dReq.UserName, OrgID: dReq.OrgID, Type: dReq.Type,
 		State: dReq.State, StateStr: dr.GetStatusTypeStr(dReq.State), Comment: dReq.Comments[dReq.State], TypeStr: dr.GetRequestTypeStr(dReq.Type),
-		ClosedDate: dReq.ClosedDate.String(), RequestedDate: dReq.ID.Time().String()}
+		ClosedDate: dReq.ClosedDate.String(), RequestedDate: dReq.ID.Timestamp().String()}
 }
 
 // GetMyOrgDataRequestStatus Get data request status
@@ -139,7 +139,7 @@ func getOngoingDataRequest(userID string, orgID string, drType int) (resp myData
 			resp.ID = d.ID.Hex()
 			resp.State = d.State
 			resp.StateStr = d.StateStr
-			resp.RequestedDate = d.ID.Time().String()
+			resp.RequestedDate = d.ID.Timestamp().String()
 		}
 	}
 
