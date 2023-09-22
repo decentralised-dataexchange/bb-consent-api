@@ -24,8 +24,8 @@ import (
 	"github.com/bb-consent/api/src/otp"
 	"github.com/bb-consent/api/src/token"
 	"github.com/bb-consent/api/src/user"
-	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type registerReq struct {
@@ -145,6 +145,8 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	u.IamID = userIamID
 	u.Email = regReq.Username
 	u.Phone = regReq.Phone
+	u.Orgs = []user.Org{}
+	u.Roles = []user.Role{}
 
 	u, err = user.Add(u)
 	if err != nil {
@@ -756,7 +758,7 @@ func ValidatePhoneNumber(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if o != (otp.Otp{}) {
-		if bson.NewObjectId().Time().Sub(o.ID.Time()) > 2*time.Minute {
+		if primitive.NewObjectID().Timestamp().Sub(o.ID.Timestamp()) > 2*time.Minute {
 			err = otp.Delete(o.ID.Hex())
 			if err != nil {
 				m := fmt.Sprintf("Failed to clear expired otp")

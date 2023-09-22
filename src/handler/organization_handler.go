@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,8 +26,8 @@ import (
 	"github.com/bb-consent/api/src/token"
 	"github.com/bb-consent/api/src/user"
 	"github.com/bb-consent/api/src/webhooks"
-	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type organization struct {
@@ -383,25 +384,36 @@ func handleEulaUpdateNotification(o org.Organization) {
 	// Get all users subscribed to this organization.
 	orgID := o.ID.Hex()
 
-	iter := user.GetOrgSubscribeIter(orgID)
+	iter, err := user.GetOrgSubscribeIter(orgID)
+	if err != nil {
+		log.Printf("Failed to find users: %v", err)
+		return
+	}
 
-	var u user.User
+	for iter.Next(context.TODO()) {
+		var u user.User
+		err := iter.Decode(&u)
+		if err != nil {
+			log.Printf("Failed to decode user: %v", err)
+			continue
+		}
 
-	for iter.Next(&u) {
 		if u.Client.Token == "" {
 			continue
 		}
-		err := notifications.SendEulaUpdateNotification(u, o)
+
+		err = notifications.SendEulaUpdateNotification(u, o)
 		if err != nil {
 			notificationErrCount++
 			continue
 		}
+
 		notificationSent++
 	}
 	log.Printf("notification sending for EULA update orgID: %v with err: %v sent: %v", orgID,
 		notificationErrCount, notificationSent)
 
-	err := iter.Close()
+	err = iter.Close(context.TODO())
 	if err != nil {
 		log.Printf("Failed to close the iterator: %v", iter)
 	}
@@ -604,7 +616,7 @@ func AddConsentPurposes(w http.ResponseWriter, r *http.Request) {
 		tempLawfulUsage := getLawfulUsageByLawfulBasis(p.LawfulBasisOfProcessing)
 
 		tempPurpose := org.Purpose{
-			ID:                      bson.NewObjectId().Hex(),
+			ID:                      primitive.NewObjectID().Hex(),
 			Name:                    p.Name,
 			Description:             p.Description,
 			LawfulUsage:             tempLawfulUsage,
@@ -923,7 +935,7 @@ func AddConsentTemplates(w http.ResponseWriter, r *http.Request) {
 
 		// Appending the new template to existing org templates
 		o.Templates = append(o.Templates, org.Template{
-			ID:         bson.NewObjectId().Hex(),
+			ID:         primitive.NewObjectID().Hex(),
 			Consent:    t.Consent,
 			PurposeIDs: t.PurposeIDs,
 		})
@@ -1291,7 +1303,7 @@ func UpdateGlobalPolicyConfiguration(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if type id is valid bson objectid hex
-	if !bson.IsObjectIdHex(policyReq.TypeID) {
+	if !primitive.IsValidObjectID(policyReq.TypeID) {
 		m := fmt.Sprintf("Invalid organization type ID: %v", policyReq.TypeID)
 		common.HandleError(w, http.StatusBadRequest, m, err)
 		return
@@ -1726,7 +1738,7 @@ func GetOrganizationSubscriptionStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 type orgUserCount struct {
-	SubscribeUserCount int
+	SubscribeUserCount int64
 }
 
 // GetOrganizationUsersCount Gets count of organization users
@@ -1752,15 +1764,25 @@ func GetOrganizationUsersCount(w http.ResponseWriter, r *http.Request) {
 func handleDataBreachNotification(dataBreachID string, orgID string, orgName string) {
 	// Get all users subscribed to this organization.
 
-	iter := user.GetOrgSubscribeIter(orgID)
+	iter, err := user.GetOrgSubscribeIter(orgID)
+	if err != nil {
+		log.Printf("Failed to find users: %v", err)
+		return
+	}
 
-	var u user.User
+	for iter.Next(context.TODO()) {
+		var u user.User
+		err := iter.Decode(&u)
+		if err != nil {
+			log.Printf("Failed to decode user: %v", err)
+			continue
+		}
 
-	for iter.Next(&u) {
 		if u.Client.Token == "" {
 			continue
 		}
-		err := notifications.SendDataBreachNotification(dataBreachID, u, orgID, orgName)
+
+		err = notifications.SendDataBreachNotification(dataBreachID, u, orgID, orgName)
 		if err != nil {
 			notificationErrCount++
 			continue
@@ -1770,7 +1792,7 @@ func handleDataBreachNotification(dataBreachID string, orgID string, orgName str
 	log.Printf("notification sending for DataBreach orgID: %v with err: %v sent: %v", orgID,
 		notificationErrCount, notificationSent)
 
-	err := iter.Close()
+	err = iter.Close(context.TODO())
 	if err != nil {
 		log.Printf("Failed to close the iterator: %v", iter)
 	}
@@ -1779,15 +1801,25 @@ func handleDataBreachNotification(dataBreachID string, orgID string, orgName str
 // TODO: Refactor and use common iterator and pass the function
 func handleEventNotification(eventID string, orgID string, orgName string) {
 	// Get all users subscribed to this organization.
-	iter := user.GetOrgSubscribeIter(orgID)
+	iter, err := user.GetOrgSubscribeIter(orgID)
+	if err != nil {
+		log.Printf("Failed to find users: %v", err)
+		return
+	}
 
-	var u user.User
+	for iter.Next(context.TODO()) {
+		var u user.User
+		err := iter.Decode(&u)
+		if err != nil {
+			log.Printf("Failed to decode user: %v", err)
+			continue
+		}
 
-	for iter.Next(&u) {
 		if u.Client.Token == "" {
 			continue
 		}
-		err := notifications.SendEventNotification(eventID, u, orgID, orgName)
+
+		err = notifications.SendEventNotification(eventID, u, orgID, orgName)
 		if err != nil {
 			notificationErrCount++
 			continue
@@ -1797,7 +1829,7 @@ func handleEventNotification(eventID string, orgID string, orgName string) {
 	log.Printf("notification sending for event orgID: %v with err: %v sent: %v", orgID,
 		notificationErrCount, notificationSent)
 
-	err := iter.Close()
+	err = iter.Close(context.TODO())
 	if err != nil {
 		log.Printf("Failed to close the iterator: %v", iter)
 	}
@@ -1836,7 +1868,7 @@ func NotifyDataBreach(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dataBreachEntry := misc.DataBreach{}
-	dataBreachEntry.ID = bson.NewObjectId()
+	dataBreachEntry.ID = primitive.NewObjectID()
 	dataBreachEntry.HeadLine = dBNotificationReq.HeadLine
 	dataBreachEntry.UsersCount = dBNotificationReq.UsersCount
 	dataBreachEntry.DpoEmail = dBNotificationReq.DpoEmail
@@ -1887,7 +1919,7 @@ func NotifyEvents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	eventEntry := misc.Event{}
-	eventEntry.ID = bson.NewObjectId()
+	eventEntry.ID = primitive.NewObjectID()
 	eventEntry.OrgID = orgID
 	eventEntry.Details = eventNotificationReq.Details
 
@@ -1906,7 +1938,7 @@ func NotifyEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 type dataReqResp struct {
-	ID            bson.ObjectId `bson:"_id,omitempty"`
+	ID            primitive.ObjectID `bson:"_id,omitempty"`
 	UserID        string
 	UserName      string
 	OrgID         string

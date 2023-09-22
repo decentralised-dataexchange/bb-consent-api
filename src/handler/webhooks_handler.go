@@ -17,8 +17,8 @@ import (
 	"github.com/bb-consent/api/src/org"
 	"github.com/bb-consent/api/src/user"
 	wh "github.com/bb-consent/api/src/webhooks"
-	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // WebhookEventTypesResp Define response structure for webhook event types
@@ -206,11 +206,11 @@ func CreateWebhook(w http.ResponseWriter, r *http.Request) {
 
 // WebhookWithLastDeliveryStatus Defines webhook structure along with last delivery status
 type WebhookWithLastDeliveryStatus struct {
-	ID                    bson.ObjectId `bson:"_id,omitempty"` // Webhook ID
-	PayloadURL            string        // Webhook payload URL
-	Disabled              bool          // Disabled or not
-	TimeStamp             string        // UTC timestamp
-	IsLastDeliverySuccess bool          // Indicates whether last payload delivery to webhook was success or not
+	ID                    primitive.ObjectID `bson:"_id,omitempty"` // Webhook ID
+	PayloadURL            string             // Webhook payload URL
+	Disabled              bool               // Disabled or not
+	TimeStamp             string             // UTC timestamp
+	IsLastDeliverySuccess bool               // Indicates whether last payload delivery to webhook was success or not
 }
 
 // GetAllWebhooks Gets all webhooks for an organisation
@@ -545,13 +545,13 @@ func PingWebhook(w http.ResponseWriter, r *http.Request) {
 
 // recentWebhookDelivery Defines the structure for recent webhook delivery
 type recentWebhookDelivery struct {
-	ID                 bson.ObjectId `bson:"_id,omitempty"` // Webhook delivery ID
-	WebhookID          string        // Webhook ID
-	ResponseStatusCode int           // HTTP response status code
-	ResponseStatusStr  string        // HTTP response status string
-	TimeStamp          string        // UTC timestamp when webhook execution started
-	Status             string        // Status of webhook delivery for e.g. failed or completed
-	StatusDescription  string        // Describe the status for e.g. Reason for failure
+	ID                 primitive.ObjectID `bson:"_id,omitempty"` // Webhook delivery ID
+	WebhookID          string             // Webhook ID
+	ResponseStatusCode int                // HTTP response status code
+	ResponseStatusStr  string             // HTTP response status string
+	TimeStamp          string             // UTC timestamp when webhook execution started
+	Status             string             // Status of webhook delivery for e.g. failed or completed
+	StatusDescription  string             // Describe the status for e.g. Reason for failure
 }
 
 type recentWebhookDeliveryResp struct {
@@ -624,7 +624,7 @@ func GetRecentWebhookDeliveries(w http.ResponseWriter, r *http.Request) {
 }
 
 type webhookDeliveryResp struct {
-	ID                      bson.ObjectId       `bson:"_id,omitempty"`
+	ID                      primitive.ObjectID  `bson:"_id,omitempty"`
 	RequestHeaders          map[string][]string // HTTP headers posted to webhook endpoint
 	RequestPayload          interface{}         // JSON payload posted to webhook endpoint
 	ResponseHeaders         map[string][]string // HTTP response headers received from webhook endpoint

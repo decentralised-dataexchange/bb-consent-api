@@ -44,7 +44,7 @@ func GetOrgLogs(w http.ResponseWriter, r *http.Request) {
 	var ls orgLogsResp
 	for _, l := range logs {
 		ls.Logs = append(ls.Logs, orgLog{ID: l.ID.Hex(), Type: l.Type, TypeStr: l.TypeStr,
-			UserID: l.UserID, UserName: l.UserName, TimeStamp: l.ID.Time().String(), Log: l.Action})
+			UserID: l.UserID, UserName: l.UserName, TimeStamp: l.ID.Timestamp().String(), Log: l.Action})
 	}
 
 	ls.Links = common.CreatePaginationLinks(r, startID, lastID, limit)
