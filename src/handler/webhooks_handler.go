@@ -116,9 +116,11 @@ func CreateWebhook(w http.ResponseWriter, r *http.Request) {
 		common.HandleError(w, http.StatusBadRequest, m, err)
 		return
 	}
+	sanitizedOrgId := common.Sanitize(organizationID)
+	sanitizedPayloadURL := common.Sanitize(requestPayload.PayloadURL)
 
 	// Check if webhook with provided payload URL already exists
-	count, err := wh.GetWebhookCountByPayloadURL(organizationID, requestPayload.PayloadURL)
+	count, err := wh.GetWebhookCountByPayloadURL(sanitizedOrgId, sanitizedPayloadURL)
 	if err != nil {
 		m := fmt.Sprintf("Failed to create webhook for organisation:%v", organizationID)
 		common.HandleError(w, http.StatusInternalServerError, m, err)
@@ -226,8 +228,10 @@ func GetAllWebhooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sanitizedOrgId := common.Sanitize(organizationID)
+
 	// Fetching all the webhooks for an organisation
-	webhooks, err := wh.GetAllWebhooksByOrgID(organizationID)
+	webhooks, err := wh.GetAllWebhooksByOrgID(sanitizedOrgId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch webhooks for organization: %v", organizationID)
 		common.HandleError(w, http.StatusInternalServerError, m, err)
@@ -287,8 +291,10 @@ func GetWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sanitizedOrgId := common.Sanitize(organizationID)
+
 	// Fetching webhook by ID for an organisation
-	webhook, err := wh.GetByOrgID(webhookID, organizationID)
+	webhook, err := wh.GetByOrgID(webhookID, sanitizedOrgId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get webhook:%v for organisation: %v", webhookID, organizationID)
 		common.HandleError(w, http.StatusNotFound, m, err)
@@ -315,8 +321,11 @@ func DeleteWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sanitizedOrgId := common.Sanitize(organizationID)
+	sanitizedWebhookId := common.Sanitize(webhookID)
+
 	// Validating the given webhook ID for an organisation
-	_, err = wh.GetByOrgID(webhookID, organizationID)
+	_, err = wh.GetByOrgID(sanitizedWebhookId, sanitizedOrgId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get webhook:%v for organisation: %v", webhookID, organizationID)
 		common.HandleError(w, http.StatusBadRequest, m, err)
@@ -362,8 +371,11 @@ func UpdateWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sanitizedOrgId := common.Sanitize(organizationID)
+	sanitizedWebhookId := common.Sanitize(webhookID)
+
 	// Validating the given webhook ID for an organisation
-	webhook, err := wh.GetByOrgID(webhookID, organizationID)
+	webhook, err := wh.GetByOrgID(sanitizedWebhookId, sanitizedOrgId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get webhook:%v for organisation: %v", webhookID, organizationID)
 		common.HandleError(w, http.StatusBadRequest, m, err)
@@ -392,8 +404,10 @@ func UpdateWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sanitizedPayloadURL := common.Sanitize(requestPayload.PayloadURL)
+
 	// Check if webhook with provided payload URL already exists
-	tempWebhook, err := wh.GetWebhookByPayloadURL(organizationID, requestPayload.PayloadURL)
+	tempWebhook, err := wh.GetWebhookByPayloadURL(sanitizedOrgId, sanitizedPayloadURL)
 	if err == nil {
 		if tempWebhook.ID.Hex() != webhookID {
 			m := fmt.Sprintf("Webhook with provided payload URL already exists; Failed to update webhook for organisation:%v", organizationID)
@@ -495,8 +509,11 @@ func PingWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sanitizedOrgId := common.Sanitize(organizationID)
+	sanitizedWebhookId := common.Sanitize(webhookID)
+
 	// Validating the given webhook ID for an organisation
-	webhook, err := wh.GetByOrgID(webhookID, organizationID)
+	webhook, err := wh.GetByOrgID(sanitizedWebhookId, sanitizedOrgId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get webhook:%v for organisation: %v", webhookID, organizationID)
 		common.HandleError(w, http.StatusBadRequest, m, err)
@@ -578,8 +595,11 @@ func GetRecentWebhookDeliveries(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sanitizedOrgId := common.Sanitize(organizationID)
+	sanitizedWebhookId := common.Sanitize(webhookID)
+
 	// Validating the given webhook ID for an organisation
-	webhook, err := wh.GetByOrgID(webhookID, organizationID)
+	webhook, err := wh.GetByOrgID(sanitizedWebhookId, sanitizedOrgId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get webhook:%v for organisation: %v", webhookID, organizationID)
 		common.HandleError(w, http.StatusBadRequest, m, err)
@@ -652,8 +672,12 @@ func GetWebhookDeliveryByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sanitizedOrgId := common.Sanitize(organizationID)
+	sanitizedWebhookId := common.Sanitize(webhookID)
+	sanitizedDeliveryId := common.Sanitize(deliveryID)
+
 	// Validating the given webhook ID for an organisation
-	webhook, err := wh.GetByOrgID(webhookID, organizationID)
+	webhook, err := wh.GetByOrgID(sanitizedWebhookId, sanitizedOrgId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get webhook:%v for organisation: %v", webhookID, organizationID)
 		common.HandleError(w, http.StatusBadRequest, m, err)
@@ -661,7 +685,7 @@ func GetWebhookDeliveryByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the webhook delivery by ID
-	webhookDelivery, err := wh.GetWebhookDeliveryByID(webhook.ID.Hex(), deliveryID)
+	webhookDelivery, err := wh.GetWebhookDeliveryByID(webhook.ID.Hex(), sanitizedDeliveryId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get delivery details by ID:%v for webhook:%v for organisation: %v", deliveryID, webhookID, organizationID)
 		common.HandleError(w, http.StatusBadRequest, m, err)
@@ -703,8 +727,12 @@ func ReDeliverWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sanitizedOrgId := common.Sanitize(organizationID)
+	sanitizedWebhookId := common.Sanitize(webhookID)
+	sanitizedDeliveryId := common.Sanitize(deliveryID)
+
 	// Validating the given webhook ID for an organisation
-	webhook, err := wh.GetByOrgID(webhookID, organizationID)
+	webhook, err := wh.GetByOrgID(sanitizedWebhookId, sanitizedOrgId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get webhook:%v for organisation: %v", webhookID, organizationID)
 		common.HandleError(w, http.StatusBadRequest, m, err)
@@ -712,7 +740,7 @@ func ReDeliverWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validating the given delivery ID for a webhook
-	webhookDelivery, err := wh.GetWebhookDeliveryByID(webhook.ID.Hex(), deliveryID)
+	webhookDelivery, err := wh.GetWebhookDeliveryByID(webhook.ID.Hex(), sanitizedDeliveryId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get delivery details by ID:%v for webhook:%v for organisation: %v", deliveryID, webhookID, organizationID)
 		common.HandleError(w, http.StatusBadRequest, m, err)

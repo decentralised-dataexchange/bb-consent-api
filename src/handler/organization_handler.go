@@ -1445,7 +1445,10 @@ func DeleteUserFromOrganization(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = consent.DeleteByUserOrg(userID, organizationID)
+	sanitizedOrgId := common.Sanitize(organizationID)
+	sanitizedUserId := common.Sanitize(userID)
+
+	err = consent.DeleteByUserOrg(sanitizedUserId, sanitizedOrgId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to remove user :%v consents from organization:%v", userID, organizationID)
 		common.HandleError(w, http.StatusInternalServerError, m, err)
@@ -1987,10 +1990,12 @@ func GetDataRequests(w http.ResponseWriter, r *http.Request) {
 	var dReqs []dr.DataRequest
 	var lastID string
 
+	sanitizedOrgId := common.Sanitize(orgID)
+
 	if requestStatus == "open" {
-		dReqs, lastID, err = dr.GetOpenDataRequestsByOrgID(orgID, startID, limit)
+		dReqs, lastID, err = dr.GetOpenDataRequestsByOrgID(sanitizedOrgId, startID, limit)
 	} else if requestStatus == "closed" {
-		dReqs, lastID, err = dr.GetClosedDataRequestsByOrgID(orgID, startID, limit)
+		dReqs, lastID, err = dr.GetClosedDataRequestsByOrgID(sanitizedOrgId, startID, limit)
 	} else {
 		m := fmt.Sprintf("Incorrect query parameter: %v to get data requests for organization: %v", requestStatus, orgID)
 		common.HandleError(w, http.StatusBadRequest, m, nil)

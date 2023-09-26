@@ -85,7 +85,10 @@ func GetConsentResponse(w http.ResponseWriter, userID string, orgID string) (Con
 		return c, err
 	}
 
-	consents, err := consent.GetByUserOrg(userID, orgID)
+	sanitizedOrgId := common.Sanitize(orgID)
+	sanitizedUserId := common.Sanitize(userID)
+
+	consents, err := consent.GetByUserOrg(sanitizedUserId, sanitizedOrgId)
 	if err != nil {
 		if err.Error() == "not found" {
 			var con consent.Consents
@@ -124,7 +127,10 @@ func GetConsents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c, err := GetConsentResponse(w, userID, orgID)
+	sanitizedOrgId := common.Sanitize(orgID)
+	sanitizedUserId := common.Sanitize(userID)
+
+	c, err := GetConsentResponse(w, sanitizedUserId, sanitizedOrgId)
 	if err != nil {
 		log.Printf("Failed to get consents for user: %v org: %v err: %v", userID, orgID, err)
 		return
@@ -273,6 +279,10 @@ func GetConsentPurposeByID(w http.ResponseWriter, r *http.Request) {
 	cpResp.UserID = userID
 	cpResp.Consents = cp
 
+	sanitizedOrgId := common.Sanitize(orgID)
+	sanitizedUserId := common.Sanitize(userID)
+	sanitizedPurposeId := common.Sanitize(purposeID)
+
 	// Data retention expiry
 	if o.DataRetention.Enabled {
 
@@ -287,7 +297,7 @@ func GetConsentPurposeByID(w http.ResponseWriter, r *http.Request) {
 
 		if isPurposeAllowed {
 
-			latestConsentHistory, err := consenthistory.GetLatestByUserOrgPurposeID(userID, orgID, purposeID)
+			latestConsentHistory, err := consenthistory.GetLatestByUserOrgPurposeID(sanitizedUserId, sanitizedOrgId, sanitizedPurposeId)
 			if err != nil {
 				response, _ := json.Marshal(cpResp)
 				w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
@@ -345,7 +355,13 @@ func GetAllUsersConsentedToAttribute(w http.ResponseWriter, r *http.Request) {
 		w.Write(response)
 		return
 	}
-	userIDs, nextID, err := consent.GetConsentedUsers(orgID, purposeID, attributeID, startID, limit)
+
+	sanitizedOrgId := common.Sanitize(orgID)
+	sanitizedPurposeId := common.Sanitize(purposeID)
+	sanitizedAttributeId := common.Sanitize(attributeID)
+	sanitizedStartId := common.Sanitize(startID)
+
+	userIDs, nextID, err := consent.GetConsentedUsers(sanitizedOrgId, sanitizedPurposeId, sanitizedAttributeId, sanitizedStartId, limit)
 
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch users constented orgID: %v purposeID: %v attributeID: %v", orgID, purposeID, attributeID)
@@ -454,7 +470,11 @@ func GetAllUsersConsentedToPurpose(w http.ResponseWriter, r *http.Request) {
 		w.Write(response)
 		return
 	}
-	userIDs, nextID, err := consent.GetPurposeConsentedAllUsers(orgID, purposeID, startID, limit)
+	sanitizedOrgId := common.Sanitize(orgID)
+	sanitizedPurposeId := common.Sanitize(purposeID)
+	sanitizedStartId := common.Sanitize(startID)
+
+	userIDs, nextID, err := consent.GetPurposeConsentedAllUsers(sanitizedOrgId, sanitizedPurposeId, sanitizedStartId, limit)
 
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch users constented orgID: %v purposeID: %v ", orgID, purposeID)
@@ -622,6 +642,9 @@ func UpdatePurposeAllConsentsv2(w http.ResponseWriter, r *http.Request) {
 	cRespWithDataRetention.UserID = cResp.UserID
 	cRespWithDataRetention.ID = cResp.ID
 
+	sanitizedOrgId := common.Sanitize(orgID)
+	sanitizedUserId := common.Sanitize(userID)
+
 	for i, _ := range cResp.ConsentsAndPurposes {
 		var tempConsentsAndPurposeWithDataRetention consentsAndPurposeWithDataRetention
 		tempConsentsAndPurposeWithDataRetention.Consents = cResp.ConsentsAndPurposes[i].Consents
@@ -632,7 +655,7 @@ func UpdatePurposeAllConsentsv2(w http.ResponseWriter, r *http.Request) {
 
 			// Check if purpose is allowed
 			if cResp.ConsentsAndPurposes[i].Count.Consented > 0 {
-				latestConsentHistory, err := consenthistory.GetLatestByUserOrgPurposeID(userID, orgID, cResp.ConsentsAndPurposes[i].Purpose.ID)
+				latestConsentHistory, err := consenthistory.GetLatestByUserOrgPurposeID(sanitizedUserId, sanitizedOrgId, cResp.ConsentsAndPurposes[i].Purpose.ID)
 				if err != nil {
 					cRespWithDataRetention.ConsentsAndPurposes = append(cRespWithDataRetention.ConsentsAndPurposes, tempConsentsAndPurposeWithDataRetention)
 					continue

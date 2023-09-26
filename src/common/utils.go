@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/microcosm-cc/bluemonday"
 )
 
 const (
@@ -141,4 +143,10 @@ func GetRandomString(length int) string {
 		b.WriteRune(chars[rand.Intn(len(chars))])
 	}
 	return b.String()
+}
+
+// Sanitize sanitizes the string
+func Sanitize(s string) string {
+	p := bluemonday.UGCPolicy()
+	return p.Sanitize(s)
 }

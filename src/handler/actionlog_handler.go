@@ -34,7 +34,9 @@ func GetOrgLogs(w http.ResponseWriter, r *http.Request) {
 		limit = 50
 	}
 
-	logs, lastID, err := actionlog.GetAccessLogByOrgID(orgID, startID, limit)
+	sanitizedOrgId := common.Sanitize(orgID)
+
+	logs, lastID, err := actionlog.GetAccessLogByOrgID(sanitizedOrgId, startID, limit)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get logs for organization: %v", orgID)
 		common.HandleError(w, http.StatusInternalServerError, m, err)
