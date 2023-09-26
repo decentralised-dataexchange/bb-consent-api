@@ -18,7 +18,9 @@ func GetDeleteMyData(w http.ResponseWriter, r *http.Request) {
 	orgID := mux.Vars(r)["orgID"]
 	userID := token.GetUserID(r)
 
-	drs, err := getDataReqWithUserOrgTypeID(userID, orgID, dr.DataRequestTypeDelete)
+	sanitizedOrgId := common.Sanitize(orgID)
+
+	drs, err := getDataReqWithUserOrgTypeID(userID, sanitizedOrgId, dr.DataRequestTypeDelete)
 
 	if err != nil {
 		m := fmt.Sprintf("Failed to get user: %v data request for organization: %v", userID, orgID)
@@ -58,12 +60,14 @@ func GetMyOrgDataRequestStatus(w http.ResponseWriter, r *http.Request) {
 	var dReqs []dr.DataRequest
 	var lastID string
 
+	sanitizedOrgId := common.Sanitize(orgID)
+
 	if requestStatus == "open" {
-		dReqs, lastID, err = dr.GetOpenDataRequestsByOrgUserID(orgID, userID, startID, limit)
+		dReqs, lastID, err = dr.GetOpenDataRequestsByOrgUserID(sanitizedOrgId, userID, startID, limit)
 	} else if requestStatus == "closed" {
-		dReqs, lastID, err = dr.GetClosedDataRequestsByOrgUserID(orgID, userID, startID, limit)
+		dReqs, lastID, err = dr.GetClosedDataRequestsByOrgUserID(sanitizedOrgId, userID, startID, limit)
 	} else {
-		dReqs, lastID, err = dr.GetDataRequestsByOrgUserID(orgID, userID, startID, limit)
+		dReqs, lastID, err = dr.GetDataRequestsByOrgUserID(sanitizedOrgId, userID, startID, limit)
 	}
 
 	if err != nil {
@@ -151,7 +155,9 @@ func DeleteMyData(w http.ResponseWriter, r *http.Request) {
 	orgID := mux.Vars(r)["orgID"]
 	userID := token.GetUserID(r)
 
-	resp, err := getOngoingDataRequest(userID, orgID, dr.DataRequestTypeDelete)
+	sanitizedOrgId := common.Sanitize(orgID)
+
+	resp, err := getOngoingDataRequest(userID, sanitizedOrgId, dr.DataRequestTypeDelete)
 
 	if err == nil && resp.RequestOngoing == true {
 		m := fmt.Sprintf("Request (%v) ongoing for user: %v organization: %v", dr.GetRequestTypeStr(dr.DataRequestTypeDelete), userID, orgID)
@@ -184,7 +190,9 @@ func GetDeleteMyDataStatus(w http.ResponseWriter, r *http.Request) {
 	orgID := mux.Vars(r)["orgID"]
 	userID := token.GetUserID(r)
 
-	resp, err := getOngoingDataRequest(userID, orgID, dr.DataRequestTypeDelete)
+	sanitizedOrgId := common.Sanitize(orgID)
+
+	resp, err := getOngoingDataRequest(userID, sanitizedOrgId, dr.DataRequestTypeDelete)
 
 	if err != nil {
 		m := fmt.Sprintf("Failed to get user: %v data request for organization: %v", userID, orgID)
@@ -250,7 +258,9 @@ func GetDownloadMyData(w http.ResponseWriter, r *http.Request) {
 	orgID := mux.Vars(r)["orgID"]
 	userID := token.GetUserID(r)
 
-	drs, err := getDataReqWithUserOrgTypeID(userID, orgID, dr.DataRequestTypeDownload)
+	sanitizedOrgId := common.Sanitize(orgID)
+
+	drs, err := getDataReqWithUserOrgTypeID(userID, sanitizedOrgId, dr.DataRequestTypeDownload)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get user: %v data request for organization: %v", userID, orgID)
 		common.HandleError(w, http.StatusInternalServerError, m, err)
@@ -267,7 +277,9 @@ func DownloadMyData(w http.ResponseWriter, r *http.Request) {
 	orgID := mux.Vars(r)["orgID"]
 	userID := token.GetUserID(r)
 
-	resp, err := getOngoingDataRequest(userID, orgID, dr.DataRequestTypeDownload)
+	sanitizedOrgId := common.Sanitize(orgID)
+
+	resp, err := getOngoingDataRequest(userID, sanitizedOrgId, dr.DataRequestTypeDownload)
 
 	if err == nil && resp.RequestOngoing {
 		m := fmt.Sprintf("Request (%v) ongoing for user: %v organization: %v", dr.GetRequestTypeStr(dr.DataRequestTypeDownload), userID, orgID)
@@ -300,7 +312,9 @@ func GetDownloadMyDataStatus(w http.ResponseWriter, r *http.Request) {
 	orgID := mux.Vars(r)["orgID"]
 	userID := token.GetUserID(r)
 
-	resp, err := getOngoingDataRequest(userID, orgID, dr.DataRequestTypeDownload)
+	sanitizedOrgId := common.Sanitize(orgID)
+
+	resp, err := getOngoingDataRequest(userID, sanitizedOrgId, dr.DataRequestTypeDownload)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get user: %v data request for organization: %v", userID, orgID)
 		common.HandleError(w, http.StatusInternalServerError, m, err)

@@ -520,8 +520,10 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		common.HandleError(w, status, m, err)
 		return
 	}
+	sanitizedUserName := common.Sanitize(lReq.Username)
+
 	//TODO: Remove me when the auth server is per dev environment
-	u, err := user.GetByEmail(lReq.Username)
+	u, err := user.GetByEmail(sanitizedUserName)
 	if err != nil {
 		m := fmt.Sprintf("Login failed for non existant user:%v", lReq.Username)
 		common.HandleError(w, http.StatusUnauthorized, m, err)
@@ -689,8 +691,10 @@ func ValidateUserEmail(w http.ResponseWriter, r *http.Request) {
 	valResp.Result = true
 	valResp.Message = "Email address is valid and not in use in our system"
 
+	sanitizedEmail := common.Sanitize(validateReq.Email)
+
 	//Check whether the email is unique
-	exist, err := user.EmailExist(validateReq.Email)
+	exist, err := user.EmailExist(sanitizedEmail)
 	if err != nil {
 		m := fmt.Sprintf("Failed to validate user email: %v", validateReq.Email)
 		common.HandleError(w, http.StatusInternalServerError, m, err)
@@ -731,8 +735,10 @@ func ValidatePhoneNumber(w http.ResponseWriter, r *http.Request) {
 	valResp.Result = true
 	valResp.Message = "Phone number is not in use"
 
+	sanitizedPhoneNumber := common.Sanitize(validateReq.Phone)
+
 	//Check whether the phone number is unique
-	exist, err := user.PhoneNumberExist(validateReq.Phone)
+	exist, err := user.PhoneNumberExist(sanitizedPhoneNumber)
 	if err != nil {
 		m := fmt.Sprintf("Failed to validate user phone number: %v", validateReq.Phone)
 		common.HandleError(w, http.StatusInternalServerError, m, err)
@@ -750,7 +756,7 @@ func ValidatePhoneNumber(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Check whether the phone number is in otp colleciton
-	o, err := otp.PhoneNumberExist(validateReq.Phone)
+	o, err := otp.PhoneNumberExist(sanitizedPhoneNumber)
 	if err != nil {
 		m := fmt.Sprintf("Failed to validate user phone number: %v", validateReq.Phone)
 		common.HandleError(w, http.StatusInternalServerError, m, err)
@@ -829,7 +835,9 @@ func verifyPhoneNumber(w http.ResponseWriter, r *http.Request, clientType int) {
 	o.Phone = verifyReq.Phone
 	o.Otp = vCode
 
-	oldOtp, err := otp.SearchPhone(o.Phone)
+	sanitizedPhoneNumber := common.Sanitize(o.Phone)
+
+	oldOtp, err := otp.SearchPhone(sanitizedPhoneNumber)
 	if err == nil {
 		otp.Delete(oldOtp.ID.Hex())
 	}
@@ -863,7 +871,9 @@ func VerifyOtp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	o, err := otp.SearchPhone(otpReq.Phone)
+	sanitizedPhoneNumber := common.Sanitize(otpReq.Phone)
+
+	o, err := otp.SearchPhone(sanitizedPhoneNumber)
 	if err != nil {
 		valResp.Result = false
 		valResp.Message = "Unregistered phone number: " + otpReq.Phone
@@ -1007,8 +1017,10 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("User: %v forgot password", fp.Username)
 
+	sanitizedUserName := common.Sanitize(fp.Username)
+
 	//Get user details from DB
-	u, err := user.GetByEmail(fp.Username)
+	u, err := user.GetByEmail(sanitizedUserName)
 	if err != nil {
 		log.Printf("User with %v doesnt exist", fp.Username)
 		handleError(w, fp.Username, http.StatusNotFound, iamError{}, err)

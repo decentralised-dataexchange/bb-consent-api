@@ -95,14 +95,19 @@ func GetUserConsentHistory(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("start: %v orgId: %v purposeid: %v limit: %v start:%v end:%v", startID, orgID, purposeID, limit, startDate, endDate)
 	if orgID != "" && purposeID != "" {
-		chs, lastID, err = consenthistory.GetByUserOrgPurposeID(userID, orgID, purposeID, startID, limit)
+		sanitizedOrgId := common.Sanitize(orgID)
+		sanitizedPurposeId := common.Sanitize(purposeID)
+
+		chs, lastID, err = consenthistory.GetByUserOrgPurposeID(userID, sanitizedOrgId, sanitizedPurposeId, startID, limit)
 		if err != nil {
 			m := fmt.Sprintf("Failed to get consent history for user id:%v orgID: %v purposeID : %v", userID, orgID, purposeID)
 			common.HandleError(w, http.StatusNotFound, m, err)
 			return
 		}
 	} else if orgID != "" {
-		chs, lastID, err = consenthistory.GetByUserOrgID(userID, orgID, startID, limit)
+		sanitizedOrgId := common.Sanitize(orgID)
+
+		chs, lastID, err = consenthistory.GetByUserOrgID(userID, sanitizedOrgId, startID, limit)
 		if err != nil {
 			m := fmt.Sprintf("Failed to get consent history for user id:%v orgID: %v", userID, orgID)
 			common.HandleError(w, http.StatusNotFound, m, err)
