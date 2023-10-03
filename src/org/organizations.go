@@ -259,7 +259,7 @@ func Get(organizationID string) (Organization, error) {
 	return result, err
 }
 
-// Get Gets a single organization
+// GetOrganization Gets a single organization
 func GetOrganization() (Organization, error) {
 
 	var result Organization

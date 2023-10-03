@@ -11,7 +11,9 @@ import (
 	"github.com/bb-consent/api/src/database"
 	"github.com/bb-consent/api/src/email"
 	"github.com/bb-consent/api/src/firebaseUtils"
-	"github.com/bb-consent/api/src/handler"
+	handler "github.com/bb-consent/api/src/handlerv1"
+	"github.com/bb-consent/api/src/httppathsv1"
+	"github.com/bb-consent/api/src/httppathsv2"
 	"github.com/bb-consent/api/src/kafkaUtils"
 	"github.com/bb-consent/api/src/middleware"
 	"github.com/bb-consent/api/src/notifications"
@@ -93,7 +95,8 @@ func main() {
 			}
 
 			router := mux.NewRouter()
-			SetRoutes(router, authEnforcer)
+			httppathsv1.SetRoutes(router, authEnforcer)
+			httppathsv2.SetRoutes(router, authEnforcer)
 
 			log.Println("Listening port 80")
 			http.ListenAndServe(":80", router)
