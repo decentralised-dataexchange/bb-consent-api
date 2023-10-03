@@ -259,6 +259,15 @@ func Get(organizationID string) (Organization, error) {
 	return result, err
 }
 
+// Get Gets a single organization
+func GetOrganization() (Organization, error) {
+
+	var result Organization
+	err := collection().FindOne(context.TODO(), bson.M{}).Decode(&result)
+
+	return result, err
+}
+
 // Update Updates the organization
 func Update(org Organization) (Organization, error) {
 

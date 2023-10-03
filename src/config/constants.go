@@ -7,3 +7,9 @@ const (
 	ContentTypeImage          = "image/jpeg"
 	ContentTypeFormURLEncoded = "application/x-www-form-urlencoded"
 )
+
+// Application mode
+const (
+	SingleTenat = "single-tenant"
+	MultiTenant = "multi-tenant"
+)

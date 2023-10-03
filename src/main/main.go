@@ -13,6 +13,7 @@ import (
 	"github.com/bb-consent/api/src/firebaseUtils"
 	"github.com/bb-consent/api/src/handler"
 	"github.com/bb-consent/api/src/kafkaUtils"
+	"github.com/bb-consent/api/src/middleware"
 	"github.com/bb-consent/api/src/notifications"
 	"github.com/bb-consent/api/src/token"
 	"github.com/bb-consent/api/src/webhookdispatcher"
@@ -81,6 +82,9 @@ func main() {
 
 			firebaseUtils.Init(config)
 			log.Println("Firebase initialized")
+
+			middleware.ApplicationModeInit(config)
+			log.Println("Application mode initialized")
 
 			// setup casbin auth rules
 			authEnforcer, err := casbin.NewEnforcer("/opt/bb-consent/api/config/auth_model.conf", "/opt/bb-consent/api/config/rbac_policy.csv")
