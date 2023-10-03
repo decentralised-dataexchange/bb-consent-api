@@ -79,11 +79,12 @@ type Configuration struct {
 		UserName string
 		Password string
 	}
-	Iam      Iam
-	Twilio   Twilio
-	Firebase Firebase
-	Smtp     SmtpConfig
-	Webhooks WebhooksConfig
+	ApplicationMode string
+	Iam             Iam
+	Twilio          Twilio
+	Firebase        Firebase
+	Smtp            SmtpConfig
+	Webhooks        WebhooksConfig
 }
 
 // Load the config file

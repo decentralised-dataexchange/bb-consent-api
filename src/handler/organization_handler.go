@@ -134,6 +134,16 @@ func GetOrganizationByID(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+// GetOrganizationId Gets an organization Id.
+func GetOrganizationId() (string, error) {
+	org, err := org.GetOrganization()
+	if err != nil {
+		log.Printf("Failed to get organization")
+		return "", err
+	}
+	return org.ID.Hex(), err
+}
+
 type orgUpdateReq struct {
 	Name        string
 	Location    string

@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"github.com/bb-consent/api/src/apikey"
+	"github.com/bb-consent/api/src/handler"
 	"github.com/bb-consent/api/src/rbac"
 	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
 
 	"github.com/bb-consent/api/src/common"
-	"github.com/bb-consent/api/src/handler"
+	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/token"
 	"github.com/bb-consent/api/src/user"
 )
@@ -194,6 +195,36 @@ func Authorize(e *casbin.Enforcer) Middleware {
 				m := "Unauthorized access;User doesn't have enough permissions;"
 				common.HandleError(w, http.StatusForbidden, m, nil)
 				return
+			}
+
+			// Call the next middleware/handler in chain
+			f(w, r)
+		}
+	}
+}
+
+var ApplicationMode string
+
+func ApplicationModeInit(config *config.Configuration) {
+	ApplicationMode = config.ApplicationMode
+}
+
+// SetApplicationMode sets application modes for routes to either single tenant or multi tenant
+func SetApplicationMode() Middleware {
+	// Create a new Middleware
+	return func(f http.HandlerFunc) http.HandlerFunc {
+
+		// Define the http.HandlerFunc
+		return func(w http.ResponseWriter, r *http.Request) {
+
+			if ApplicationMode == config.SingleTenat {
+				organizationId, err := handler.GetOrganizationId()
+				if err != nil {
+					m := "failed to find organization"
+					common.HandleError(w, http.StatusBadRequest, m, err)
+					return
+				}
+				r.Header.Set("OrganizationID", organizationId)
 			}
 
 			// Call the next middleware/handler in chain
