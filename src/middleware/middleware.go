@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/bb-consent/api/src/apikey"
-	"github.com/bb-consent/api/src/handler"
+	handler "github.com/bb-consent/api/src/handlerv1"
 	"github.com/bb-consent/api/src/rbac"
 	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
@@ -217,14 +217,14 @@ func SetApplicationMode() Middleware {
 		// Define the http.HandlerFunc
 		return func(w http.ResponseWriter, r *http.Request) {
 
-			if ApplicationMode == config.SingleTenat {
+			if ApplicationMode == config.SingleTenant {
 				organizationId, err := handler.GetOrganizationId()
 				if err != nil {
 					m := "failed to find organization"
 					common.HandleError(w, http.StatusBadRequest, m, err)
 					return
 				}
-				r.Header.Set("OrganizationID", organizationId)
+				r.Header.Set(config.OrganizationId, organizationId)
 			}
 
 			// Call the next middleware/handler in chain

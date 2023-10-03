@@ -10,6 +10,16 @@ const (
 
 // Application mode
 const (
-	SingleTenat = "single-tenant"
-	MultiTenant = "multi-tenant"
+	SingleTenant = "single-tenant"
+	MultiTenant  = "multi-tenant"
+)
+
+// All http path url variables
+const (
+	OrganizationId    = "organizationId"
+	DataAgreementId   = "dataAgreementId"
+	DataAttributeId   = "dataAttributeId"
+	WebhookId         = "webhookId"
+	WebhookDeliveryId = "deliveryId"
+	PolicyId          = "policyId"
 )
