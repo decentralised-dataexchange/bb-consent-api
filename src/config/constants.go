@@ -16,10 +16,11 @@ const (
 
 // All http path url variables
 const (
-	OrganizationId    = "organizationId"
-	DataAgreementId   = "dataAgreementId"
-	DataAttributeId   = "dataAttributeId"
-	WebhookId         = "webhookId"
-	WebhookDeliveryId = "deliveryId"
-	PolicyId          = "policyId"
+	OrganizationId        = "organizationId"
+	DataAgreementId       = "dataAgreementId"
+	DataAttributeId       = "dataAttributeId"
+	WebhookId             = "webhookId"
+	WebhookDeliveryId     = "deliveryId"
+	PolicyId              = "policyId"
+	DataAgreementRecordId = "dataAgreementRecordId"
 )
