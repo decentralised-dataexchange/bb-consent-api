@@ -1,6 +1,8 @@
 package httppathsv2
 
 import (
+	"net/http"
+
 	handler "github.com/bb-consent/api/src/handlerv2"
 	m "github.com/bb-consent/api/src/middleware"
 	"github.com/casbin/casbin/v2"
@@ -91,4 +93,23 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 
 	// organization action logs
 	r.Handle(GetOrgLogs, m.Chain(handler.GetOrgLogs, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
+
+	// Onboard api(s)
+
+	r.Handle(LoginAdminUser, m.Chain(handler.LoginAdminUser, m.LoggerNoAuth())).Methods("POST")
+	r.Handle(LoginUser, m.Chain(handler.LoginUser, m.LoggerNoAuth())).Methods("POST")
+
+	r.Handle(ValidateUserEmail, m.Chain(handler.ValidateUserEmail, m.LoggerNoAuth())).Methods("POST")
+	r.Handle(ValidatePhoneNumber, m.Chain(handler.ValidatePhoneNumber, m.LoggerNoAuth())).Methods("POST")
+	r.Handle(VerifyPhoneNumber, m.Chain(handler.VerifyPhoneNumber, m.LoggerNoAuth())).Methods("POST")
+	r.Handle(VerifyOtp, m.Chain(handler.VerifyOtp, m.LoggerNoAuth())).Methods("POST")
+
+	r.Handle(GetToken, http.HandlerFunc(handler.GetToken)).Methods("POST")
+
+	r.Handle(GetOrganizationByID, m.Chain(handler.GetOrganizationByID, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
+	r.Handle(UpdateOrganization, m.Chain(handler.UpdateOrganization, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("POST")
+	r.Handle(UpdateOrganizationCoverImage, m.Chain(handler.UpdateOrganizationCoverImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("POST")
+	r.Handle(UpdateOrganizationLogoImage, m.Chain(handler.UpdateOrganizationLogoImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("POST")
+	r.Handle(GetOrganizationCoverImage, m.Chain(handler.GetOrganizationImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
+	r.Handle(GetOrganizationLogoImage, m.Chain(handler.GetOrganizationImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
 }
