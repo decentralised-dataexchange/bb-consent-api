@@ -60,4 +60,25 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(DeleteAPIKey, m.Chain(handler.DeleteAPIKey, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("DELETE")
 	r.Handle(GetAPIKey, m.Chain(handler.GetAPIKey, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
 
+	// Service api(s)
+
+	//  Data agreements
+	r.Handle(ServiceDataAgreementRead, m.Chain(handler.GetDataAgreementById, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
+
+	// Global policy configuration
+	r.Handle(ServicePolicyRead, m.Chain(handler.GetGlobalPolicyConfiguration, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
+
+	// Data attributes
+	r.Handle(ServiceGetDataAttributes, m.Chain(handler.GetDataAttributes, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
+
+	// Verification mechanisms
+	r.Handle(ServiceVerificationAgreementList, m.Chain(handler.ServiceVerificationAgreementList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
+	r.Handle(ServiceVerificationAgreementConsentRecordRead, m.Chain(handler.ServiceVerificationAgreementConsentRecordRead, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
+	r.Handle(ServiceVerificationConsentRecordList, m.Chain(handler.ServiceVerificationConsentRecordList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
+
+	// Recording consent
+	r.Handle(ServiceCreateIndividualConsentRecord, m.Chain(handler.ServiceCreateIndividualConsentRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("POST")
+	r.Handle(ServiceUpdateIndividualConsentRecord, m.Chain(handler.ServiceCreateIndividualConsentRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("PUT")
+	r.Handle(ServiceListIndividualRecordList, m.Chain(handler.ServiceListIndividualRecordList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
+	r.Handle(ServiceReadIndividualRecordRead, m.Chain(handler.ServiceReadIndividualRecordRead, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
 }
