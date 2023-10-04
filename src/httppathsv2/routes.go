@@ -81,4 +81,14 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(ServiceUpdateIndividualConsentRecord, m.Chain(handler.ServiceCreateIndividualConsentRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("PUT")
 	r.Handle(ServiceListIndividualRecordList, m.Chain(handler.ServiceListIndividualRecordList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
 	r.Handle(ServiceReadIndividualRecordRead, m.Chain(handler.ServiceReadIndividualRecordRead, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
+
+	// Audit api(s)
+
+	r.Handle(AuditConsentRecordList, m.Chain(handler.AuditConsentRecordList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
+	r.Handle(AuditConsentRecordRead, m.Chain(handler.AuditConsentRecordRead, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
+	r.Handle(AuditAgreementList, m.Chain(handler.AuditAgreementList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
+	r.Handle(AuditReadRecord, m.Chain(handler.AuditReadRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
+
+	// organization action logs
+	r.Handle(GetOrgLogs, m.Chain(handler.GetOrgLogs, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
 }
