@@ -8,7 +8,6 @@ import (
 	"github.com/bb-consent/api/src/actionlog"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
-	"github.com/gorilla/mux"
 )
 
 type orgLog struct {
@@ -27,7 +26,7 @@ type orgLogsResp struct {
 
 // GetOrgLogs Get action logs for the organization
 func GetOrgLogs(w http.ResponseWriter, r *http.Request) {
-	orgID := mux.Vars(r)["orgID"]
+	orgID := r.Header.Get(config.OrganizationId)
 
 	startID, limit := common.ParsePaginationQueryParameters(r)
 	if limit == 0 {
