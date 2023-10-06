@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -25,13 +24,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func handleCommandLineArgs() (configFileName string) {
-	fconfigFileName := flag.String("config", "config-development.json", "configuration file")
-	flag.Parse()
-
-	return *fconfigFileName
-}
-
 func main() {
 
 	var rootCmd = &cobra.Command{Use: "bb-consent-api"}
@@ -45,7 +37,7 @@ func main() {
 		Run: func(cmd *cobra.Command, args []string) {
 
 			configFile := "/opt/bb-consent/api/config/" + configFileName
-			config, err := config.Load(configFile)
+			loadedConfig, err := config.Load(configFile)
 			if err != nil {
 				log.Printf("Failed to load config file %s \n", configFile)
 				panic(err)
@@ -53,28 +45,28 @@ func main() {
 
 			log.Printf("config file: %s loaded\n", configFile)
 
-			err = database.Init(config)
+			err = database.Init(loadedConfig)
 			if err != nil {
 				panic(err)
 			}
 			log.Println("Data base session opened")
 
-			webhooks.Init(config)
+			webhooks.Init(loadedConfig)
 			log.Println("Webhooks configuration initialized")
 
-			err = kafkaUtils.Init(config)
+			err = kafkaUtils.Init(loadedConfig)
 			if err != nil {
 				panic(err)
 			}
 			log.Println("Kafka producer client initialised")
 
-			handler.IamInit(config)
+			handler.IamInit(loadedConfig)
 			log.Println("Iam initialized")
 
-			email.Init(config)
+			email.Init(loadedConfig)
 			log.Println("Email initialized")
 
-			token.Init(config)
+			token.Init(loadedConfig)
 			log.Println("Token initialized")
 
 			err = notifications.Init()
@@ -82,16 +74,21 @@ func main() {
 				panic(err)
 			}
 
-			firebaseUtils.Init(config)
+			firebaseUtils.Init(loadedConfig)
 			log.Println("Firebase initialized")
 
-			middleware.ApplicationModeInit(config)
+			middleware.ApplicationModeInit(loadedConfig)
 			log.Println("Application mode initialized")
 
 			// setup casbin auth rules
 			authEnforcer, err := casbin.NewEnforcer("/opt/bb-consent/api/config/auth_model.conf", "/opt/bb-consent/api/config/rbac_policy.csv")
 			if err != nil {
 				panic(err)
+			}
+
+			// If the application starts in single tenant mode then create/update organisation, type, admin logic
+			if loadedConfig.ApplicationMode == config.SingleTenant {
+				SingleTenantConfiguration(loadedConfig)
 			}
 
 			router := mux.NewRouter()
@@ -114,20 +111,20 @@ func main() {
 
 			configFile := "/opt/bb-consent/api/config/" + configFileName
 
-			config, err := config.Load(configFile)
+			loadedConfig, err := config.Load(configFile)
 			if err != nil {
 				log.Printf("Failed to load config file %s \n", configFile)
 				panic(err)
 			}
 			log.Printf("config file: %s loaded\n", configFile)
 
-			err = database.Init(config)
+			err = database.Init(loadedConfig)
 			if err != nil {
 				panic(err)
 			}
 			log.Println("Data base session opened")
 
-			webhookdispatcher.WebhookDispatcherInit(config)
+			webhookdispatcher.WebhookDispatcherInit(loadedConfig)
 		},
 	}
 

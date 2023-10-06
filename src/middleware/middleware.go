@@ -8,6 +8,7 @@ import (
 
 	"github.com/bb-consent/api/src/apikey"
 	handler "github.com/bb-consent/api/src/handlerv1"
+	"github.com/bb-consent/api/src/org"
 	"github.com/bb-consent/api/src/rbac"
 	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
@@ -204,9 +205,11 @@ func Authorize(e *casbin.Enforcer) Middleware {
 }
 
 var ApplicationMode string
+var Organization config.Organization
 
 func ApplicationModeInit(config *config.Configuration) {
 	ApplicationMode = config.ApplicationMode
+	Organization = config.Organization
 }
 
 // SetApplicationMode sets application modes for routes to either single tenant or multi tenant
@@ -218,12 +221,14 @@ func SetApplicationMode() Middleware {
 		return func(w http.ResponseWriter, r *http.Request) {
 
 			if ApplicationMode == config.SingleTenant {
-				organizationId, err := handler.GetOrganizationId()
+
+				organization, err := org.GetFirstOrganization()
 				if err != nil {
 					m := "failed to find organization"
 					common.HandleError(w, http.StatusBadRequest, m, err)
 					return
 				}
+				organizationId := organization.ID.Hex()
 				r.Header.Set(config.OrganizationId, organizationId)
 			}
 

@@ -4,9 +4,14 @@ import (
 	"context"
 	"errors"
 	"log"
+	"strings"
 
+	"github.com/asaskevich/govalidator"
+	"github.com/bb-consent/api/src/common"
+	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/database"
 	"github.com/bb-consent/api/src/orgtype"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -259,8 +264,8 @@ func Get(organizationID string) (Organization, error) {
 	return result, err
 }
 
-// GetOrganization Gets a single organization
-func GetOrganization() (Organization, error) {
+// GetFirstOrganization Gets first organization
+func GetFirstOrganization() (Organization, error) {
 
 	var result Organization
 	err := collection().FindOne(context.TODO(), bson.M{}).Decode(&result)
@@ -659,4 +664,72 @@ func GetName(organizationID string) (string, error) {
 	err = collection().FindOne(context.TODO(), filter, findOptions).Decode(&result)
 
 	return result.Name, err
+}
+
+// GetOrganizationsCount Get organizations count
+func GetOrganizationsCount() (int64, error) {
+	count, err := collection().CountDocuments(context.TODO(), bson.D{})
+	if err != nil {
+		return count, err
+	}
+
+	return count, err
+}
+
+// DeleteAllOrganizations delete all organizations
+func DeleteAllOrganizations() (*mongo.DeleteResult, error) {
+
+	result, err := collection().DeleteMany(context.TODO(), bson.D{})
+	if err != nil {
+		return result, err
+	}
+	log.Printf("Number of documents deleted: %d\n", result.DeletedCount)
+
+	return result, err
+}
+
+// AddOrganization Adds an organization
+func AddOrganization(orgReq config.Organization, typeId string, userId string) (Organization, error) {
+
+	// validating request payload
+	valid, err := govalidator.ValidateStruct(orgReq)
+	if !valid {
+		log.Printf("Missing mandatory params for adding organization")
+		return Organization{}, err
+	}
+
+	// checking if the string contained whitespace only
+	if strings.TrimSpace(orgReq.Name) == "" {
+		log.Printf("Failed to add organization: Missing mandatory param - Name")
+		return Organization{}, errors.New("missing mandatory param - Name")
+	}
+
+	if strings.TrimSpace(orgReq.Location) == "" {
+		log.Printf("Failed to add organization: Missing mandatory param - Location")
+		return Organization{}, errors.New("missing mandatory param - Location")
+	}
+
+	orgType, err := orgtype.Get(typeId)
+	if err != nil {
+		log.Printf("Invalid organization type ID: %v", typeId)
+		return Organization{}, err
+	}
+
+	admin := Admin{UserID: userId, RoleID: common.GetRoleID("Admin")}
+
+	var o Organization
+	o.Name = orgReq.Name
+	o.Location = orgReq.Location
+	o.Type = orgType
+	o.Description = orgReq.Description
+	o.EulaURL = orgReq.EulaURL
+	o.Admins = append(o.Admins, admin)
+
+	orgResp, err := Add(o)
+	if err != nil {
+		log.Printf("Failed to add organization: %v", orgReq.Name)
+		return orgResp, err
+	}
+
+	return orgResp, err
 }

@@ -2,7 +2,10 @@ package orgtype
 
 import (
 	"context"
+	"log"
 
+	"github.com/asaskevich/govalidator"
+	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/database"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -98,4 +101,56 @@ func UpdateImage(organizationTypeID string, imageID string, imageURL string) err
 	_, err = collection().UpdateOne(context.TODO(), bson.M{"_id": orgTypeID},
 		bson.M{"$set": bson.M{"imageid": imageID, "imageurl": imageURL}})
 	return err
+}
+
+// GetTypesCount Gets types count
+func GetTypesCount() (int64, error) {
+	count, err := collection().CountDocuments(context.TODO(), bson.D{})
+	if err != nil {
+		return count, err
+	}
+
+	return count, err
+}
+
+// GetFirstOrganization Gets first type
+func GetFirstType() (OrgType, error) {
+
+	var result OrgType
+	err := collection().FindOne(context.TODO(), bson.M{}).Decode(&result)
+
+	return result, err
+}
+
+// DeleteAllTypes delete all types
+func DeleteAllTypes() (*mongo.DeleteResult, error) {
+
+	result, err := collection().DeleteMany(context.TODO(), bson.D{})
+	if err != nil {
+		return result, err
+	}
+	log.Printf("Number of documents deleted: %d\n", result.DeletedCount)
+
+	return result, err
+}
+
+// AddOrganizationType Adds an organization type
+func AddOrganizationType(typeReq config.OrgType) (OrgType, error) {
+
+	// validating request payload
+	valid, err := govalidator.ValidateStruct(typeReq)
+	if !valid {
+		log.Printf("Failed to add organization type: Missing mandatory param - Type")
+		return OrgType{}, err
+	}
+
+	var orgType OrgType
+	orgType.Type = typeReq.Name
+
+	orgType, err = Add(orgType)
+	if err != nil {
+		log.Printf("Failed to add organization type: %v", orgType)
+		return OrgType{}, err
+	}
+	return orgType, err
 }
