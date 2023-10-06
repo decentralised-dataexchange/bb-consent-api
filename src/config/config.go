@@ -71,6 +71,23 @@ type WebhooksConfig struct {
 	KafkaConfig KafkaConfig
 }
 
+// Organization organization data type
+type Organization struct {
+	Name        string `valid:"required"`
+	Location    string `valid:"required"`
+	Description string
+	EulaURL     string
+}
+
+type OrgType struct {
+	Name string `valid:"required"`
+}
+
+type User struct {
+	Username string `valid:"required"`
+	Password string `valid:"required"`
+}
+
 // Configuration data type
 type Configuration struct {
 	DataBase struct {
@@ -80,6 +97,9 @@ type Configuration struct {
 		Password string
 	}
 	ApplicationMode string
+	Organization    Organization
+	Type            OrgType
+	User            User
 	Iam             Iam
 	Twilio          Twilio
 	Firebase        Firebase
