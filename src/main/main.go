@@ -10,7 +10,8 @@ import (
 	"github.com/bb-consent/api/src/database"
 	"github.com/bb-consent/api/src/email"
 	"github.com/bb-consent/api/src/firebaseUtils"
-	handler "github.com/bb-consent/api/src/handlerv1"
+	"github.com/bb-consent/api/src/handlerv1"
+	"github.com/bb-consent/api/src/handlerv2"
 	"github.com/bb-consent/api/src/httppathsv1"
 	"github.com/bb-consent/api/src/httppathsv2"
 	"github.com/bb-consent/api/src/kafkaUtils"
@@ -60,7 +61,8 @@ func main() {
 			}
 			log.Println("Kafka producer client initialised")
 
-			handler.IamInit(loadedConfig)
+			handlerv1.IamInit(loadedConfig)
+			handlerv2.IamInit(loadedConfig)
 			log.Println("Iam initialized")
 
 			email.Init(loadedConfig)
