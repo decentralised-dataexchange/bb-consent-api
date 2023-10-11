@@ -17,8 +17,8 @@ type validateUserEmailReq struct {
 }
 
 type validateResp struct {
-	Result  bool //True for valid email
-	Message string
+	Result  bool   `json:"result"` //True for valid email
+	Message string `json:"message"`
 }
 
 // ValidateUserEmail Validates the user email
@@ -50,7 +50,7 @@ func ValidateUserEmail(w http.ResponseWriter, r *http.Request) {
 	exist, err := user.EmailExist(sanitizedEmail)
 	if err != nil {
 		m := fmt.Sprintf("Failed to validate user email: %v", validateReq.Email)
-		common.HandleError(w, http.StatusInternalServerError, m, err)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 

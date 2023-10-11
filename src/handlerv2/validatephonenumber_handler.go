@@ -17,7 +17,7 @@ import (
 )
 
 type validatePhoneNumberReq struct {
-	Phone string `valid:"required"`
+	Phone string `valid:"required" json:"phone"`
 }
 
 // ValidatePhoneNumber Check if the phone number is already in use
@@ -32,7 +32,7 @@ func ValidatePhoneNumber(w http.ResponseWriter, r *http.Request) {
 	valid, err := govalidator.ValidateStruct(validateReq)
 	if valid != true {
 		log.Printf("Missing mandatory params for validating phone number")
-		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
 		return
 	}
 
@@ -45,7 +45,7 @@ func ValidatePhoneNumber(w http.ResponseWriter, r *http.Request) {
 	exist, err := user.PhoneNumberExist(sanitizedPhoneNumber)
 	if err != nil {
 		m := fmt.Sprintf("Failed to validate user phone number: %v", validateReq.Phone)
-		common.HandleError(w, http.StatusInternalServerError, m, err)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 
@@ -63,7 +63,7 @@ func ValidatePhoneNumber(w http.ResponseWriter, r *http.Request) {
 	o, err := otp.PhoneNumberExist(sanitizedPhoneNumber)
 	if err != nil {
 		m := fmt.Sprintf("Failed to validate user phone number: %v", validateReq.Phone)
-		common.HandleError(w, http.StatusInternalServerError, m, err)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 
@@ -72,7 +72,7 @@ func ValidatePhoneNumber(w http.ResponseWriter, r *http.Request) {
 			err = otp.Delete(o.ID.Hex())
 			if err != nil {
 				m := fmt.Sprintf("Failed to clear expired otp")
-				common.HandleError(w, http.StatusInternalServerError, m, err)
+				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 				return
 			}
 		} else {

@@ -25,41 +25,59 @@ import (
 
 // Org Organization snippet stored as part of user
 type Org struct {
-	OrgID        primitive.ObjectID `bson:"orgid,omitempty"`
-	Name         string
-	Location     string
-	Type         string
-	TypeID       primitive.ObjectID `bson:"typeid,omitempty"`
-	EulaAccepted bool
+	OrgID        primitive.ObjectID `bson:"orgid,omitempty" json:"id"`
+	Name         string             `json:"name"`
+	Location     string             `json:"location"`
+	Type         string             `json:"type"`
+	TypeID       primitive.ObjectID `bson:"typeid,omitempty" json:"typeId"`
+	EulaAccepted bool               `json:"lastVisit"`
 }
 
 // ClientInfo The client device details.
 type ClientInfo struct {
-	Token string
-	Type  int
+	Token string `json:"token"`
+	Type  int    `json:"type"`
 }
 
 // Role Role assignment to user
 type Role struct {
-	RoleID int
-	OrgID  string
+	RoleID int    `json:"roleId"`
+	OrgID  string `json:"orgId"`
 }
 
 // User data type
 type User struct {
-	ID                primitive.ObjectID `bson:"_id,omitempty"`
-	Name              string
-	IamID             string
-	Email             string
-	Phone             string
-	ImageID           string
-	ImageURL          string
-	LastVisit         string //TODO Replace with ISODate()
-	Client            ClientInfo
-	Orgs              []Org
-	APIKey            string
-	Roles             []Role
-	IncompleteProfile bool
+	ID                primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Name              string             `json:"name"`
+	IamID             string             `json:"iamId"`
+	Email             string             `json:"email"`
+	Phone             string             `json:"phone"`
+	ImageID           string             `json:"imageId"`
+	ImageURL          string             `json:"imageUrl"`
+	LastVisit         string             `json:"lastVisit"` //TODO Replace with ISODate()
+	Client            ClientInfo         `json:"client"`
+	Orgs              []Org              `json:"orgs"`
+	APIKey            string             `json:"apiKey"`
+	Roles             []Role             `json:"roles"`
+	IncompleteProfile bool               `json:"incompleteProfile"`
+}
+
+type UserV2 struct {
+	ID                 primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Name               string             `json:"name"`
+	ExternalId         string             `json:"externalId"`
+	ExternalIdType     string             `json:"externalIdType"`
+	IdentityProviderId string             `json:"identityProviderId"`
+	IamID              string             `json:"iamId"`
+	Email              string             `json:"email"`
+	Phone              string             `json:"phone"`
+	ImageID            string             `json:"imageId"`
+	ImageURL           string             `json:"imageUrl"`
+	LastVisit          string             `json:"lastVisit"` //TODO Replace with ISODate()
+	Orgs               []Org              `json:"orgs"`
+	APIKey             string             `json:"apiKey"`
+	Roles              []Role             `json:"roles"`
+	IncompleteProfile  bool               `json:"incompleteProfile"`
 }
 
 func collection() *mongo.Collection {
@@ -109,6 +127,18 @@ func Delete(userID string) error {
 // GetByIamID Get the user by IamID
 func GetByIamID(iamID string) (User, error) {
 	var result User
+
+	err := collection().FindOne(context.TODO(), bson.M{"iamid": iamID}).Decode(&result)
+	if err != nil {
+		log.Printf("Failed to find user id:%v err:%v", iamID, err)
+		return result, err
+	}
+
+	return result, err
+}
+
+func GetByIamIDV2(iamID string) (UserV2, error) {
+	var result UserV2
 
 	err := collection().FindOne(context.TODO(), bson.M{"iamid": iamID}).Decode(&result)
 	if err != nil {

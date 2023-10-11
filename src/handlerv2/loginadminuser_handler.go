@@ -16,13 +16,16 @@ import (
 )
 
 type loginReq struct {
-	Username string `valid:"required,email"`
-	Password string `valid:"required"`
+	Username string `json:"username" valid:"required,email"`
+	Password string `json:"password" valid:"required"`
 }
 
 type loginResp struct {
-	User  user.User
-	Token iamToken
+	AccessToken      string `json:"accessToken"`
+	ExpiresIn        int    `json:"expiresIn"`
+	RefreshExpiresIn int    `json:"refreshExpiresIn"`
+	RefreshToken     string `json:"refreshToken"`
+	TokenType        string `json:"tokenType"`
 }
 
 // LoginAdminUser Implements the admin users login
@@ -39,7 +42,7 @@ func LoginAdminUser(w http.ResponseWriter, r *http.Request) {
 
 	if !valid {
 		log.Printf("Invalid request params for authentication")
-		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
 		return
 	}
 
@@ -53,33 +56,39 @@ func LoginAdminUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		m := fmt.Sprintf("Failed to get token for user:%v", lReq.Username)
-		common.HandleError(w, status, m, err)
+		common.HandleErrorV2(w, status, m, err)
 		return
 	}
 	accessToken, err := token.ParseToken(t.AccessToken)
 	if err != nil {
 		m := fmt.Sprintf("Failed to parse token for user:%v", lReq.Username)
-		common.HandleError(w, status, m, err)
+		common.HandleErrorV2(w, status, m, err)
 		return
 	}
 
 	u, err := user.GetByIamID(accessToken.IamID)
 	if err != nil {
 		m := fmt.Sprintf("User: %v does not exist", lReq.Username)
-		common.HandleError(w, http.StatusUnauthorized, m, err)
+		common.HandleErrorV2(w, http.StatusUnauthorized, m, err)
 		return
 	}
 
 	if len(u.Roles) == 0 {
 		//Normal user can not login with this API.
 		m := fmt.Sprintf("Non Admin User: %v tried admin login", lReq.Username)
-		common.HandleError(w, http.StatusForbidden, m, err)
+		common.HandleErrorV2(w, http.StatusForbidden, m, err)
 		return
 	}
 
 	actionLog := fmt.Sprintf("%v logged in", u.Email)
 	actionlog.LogOrgSecurityCalls(u.ID.Hex(), u.Email, u.Roles[0].OrgID, actionLog)
-	lResp := loginResp{u, t}
+	lResp := loginResp{
+		AccessToken:      t.AccessToken,
+		ExpiresIn:        t.ExpiresIn,
+		RefreshExpiresIn: t.RefreshExpiresIn,
+		RefreshToken:     t.RefreshToken,
+		TokenType:        t.TokenType,
+	}
 	resp, _ := json.Marshal(lResp)
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)

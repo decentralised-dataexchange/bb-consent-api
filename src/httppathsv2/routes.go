@@ -107,7 +107,7 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(GetToken, http.HandlerFunc(handler.GetToken)).Methods("POST")
 
 	r.Handle(GetOrganizationByID, m.Chain(handler.GetOrganizationByID, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
-	r.Handle(UpdateOrganization, m.Chain(handler.UpdateOrganization, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("POST")
+	r.Handle(UpdateOrganization, m.Chain(handler.UpdateOrganization, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("PUT")
 	r.Handle(UpdateOrganizationCoverImage, m.Chain(handler.UpdateOrganizationCoverImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("POST")
 	r.Handle(UpdateOrganizationLogoImage, m.Chain(handler.UpdateOrganizationLogoImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("POST")
 	r.Handle(GetOrganizationCoverImage, m.Chain(handler.GetOrganizationImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")

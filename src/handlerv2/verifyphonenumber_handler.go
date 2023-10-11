@@ -19,9 +19,7 @@ import (
 )
 
 type verifyPhoneNumberReq struct {
-	Name  string
-	Email string
-	Phone string `valid:"required"`
+	Phone string `valid:"required" json:"phone"`
 }
 
 // VerifyPhoneNumber Verifies the user phone number
@@ -43,7 +41,7 @@ func generateVerificationCode() (code string, err error) {
 	return string(b), nil
 }
 
-func sendPhoneVerificationMessage(msgTo string, name string, message string) error {
+func sendPhoneVerificationMessage(msgTo string, message string) error {
 	urlStr := "https://api.twilio.com/2010-04-01/Accounts/" + twilioConfig.AccountSid + "/Messages.json"
 
 	// Pack up the data for our message
@@ -99,14 +97,14 @@ func verifyPhoneNumber(w http.ResponseWriter, r *http.Request, clientType int) {
 	valid, err := govalidator.ValidateStruct(verifyReq)
 	if valid != true {
 		log.Printf("Invalid request params for verifying phone number")
-		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
 		return
 	}
 
 	vCode, err := generateVerificationCode()
 	if err != nil {
 		m := fmt.Sprintf("Failed to generate OTP :%v", verifyReq.Phone)
-		common.HandleError(w, http.StatusInternalServerError, m, err)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 
@@ -118,15 +116,13 @@ func verifyPhoneNumber(w http.ResponseWriter, r *http.Request, clientType int) {
 		fmt.Fprintf(&message, "Thank you for signing up for iGrant.io! Your code is %s", vCode)
 	}
 
-	err = sendPhoneVerificationMessage(verifyReq.Phone, verifyReq.Name, message.String())
+	err = sendPhoneVerificationMessage(verifyReq.Phone, message.String())
 	if err != nil {
 		m := fmt.Sprintf("Failed to send sms to :%v", verifyReq.Phone)
-		common.HandleError(w, http.StatusInternalServerError, m, err)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
-	var o otp.Otp
-	o.Name = verifyReq.Name
-	o.Email = verifyReq.Email
+	var o otp.OtpV2
 	o.Phone = verifyReq.Phone
 	o.Otp = vCode
 
@@ -137,10 +133,10 @@ func verifyPhoneNumber(w http.ResponseWriter, r *http.Request, clientType int) {
 		otp.Delete(oldOtp.ID.Hex())
 	}
 
-	o, err = otp.Add(o)
+	o, err = otp.AddV2(o)
 	if err != nil {
 		m := fmt.Sprintf("Failed to store otp details")
-		common.HandleError(w, http.StatusInternalServerError, m, err)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
