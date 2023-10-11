@@ -87,8 +87,12 @@ func main() {
 			}
 
 			// If the application starts in single tenant mode then create/update organisation, type, admin logic
-			if loadedConfig.ApplicationMode == config.SingleTenant {
+			switch loadedConfig.ApplicationMode {
+			case config.SingleTenant:
 				SingleTenantConfiguration(loadedConfig)
+			case config.MultiTenant:
+			default:
+				panic("Application mode is mandatory. Specify either 'single-tenant' or 'multi-tenant'.")
 			}
 
 			router := mux.NewRouter()
