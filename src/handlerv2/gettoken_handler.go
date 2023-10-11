@@ -14,8 +14,8 @@ import (
 )
 
 type tokenReq struct {
-	RefreshToken string `valid:"required"`
-	ClientID     string `valid:"required"`
+	RefreshToken string `valid:"required" json:"refreshToken"`
+	ClientID     string `valid:"required" json:"clientId"`
 }
 
 // GetToken return access token when refresh token is given
@@ -67,7 +67,14 @@ func GetToken(w http.ResponseWriter, r *http.Request) {
 
 	var tok iamToken
 	json.Unmarshal(body, &tok)
-	response, _ := json.Marshal(tok)
+	tResp := tokenResp{
+		AccessToken:      tok.AccessToken,
+		ExpiresIn:        tok.ExpiresIn,
+		RefreshExpiresIn: tok.RefreshExpiresIn,
+		RefreshToken:     tok.RefreshToken,
+		TokenType:        tok.TokenType,
+	}
+	response, _ := json.Marshal(tResp)
 	w.WriteHeader(resp.StatusCode)
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(response)

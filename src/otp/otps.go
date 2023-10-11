@@ -18,6 +18,12 @@ type Otp struct {
 	Otp      string
 	Verified bool
 }
+type OtpV2 struct {
+	ID       primitive.ObjectID `bson:"_id,omitempty"`
+	Phone    string
+	Otp      string
+	Verified bool
+}
 
 func collection() *mongo.Collection {
 	return database.DB.Client.Database(database.DB.Name).Collection("otps")
@@ -31,6 +37,19 @@ func Add(otp Otp) (Otp, error) {
 	_, err := collection().InsertOne(context.TODO(), otp)
 	if err != nil {
 		return Otp{}, err
+	}
+
+	return otp, nil
+}
+
+// Add Adds the otp to the db
+func AddV2(otp OtpV2) (OtpV2, error) {
+
+	otp.ID = primitive.NewObjectID()
+
+	_, err := collection().InsertOne(context.TODO(), otp)
+	if err != nil {
+		return OtpV2{}, err
 	}
 
 	return otp, nil

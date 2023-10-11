@@ -13,6 +13,11 @@ import (
 	"github.com/bb-consent/api/src/org"
 )
 
+type logoImageResp struct {
+	LogoImageId  string `json:"logoImageId"`
+	LogoImageUrl string `json:"logoImageUrl"`
+}
+
 // UpdateOrganizationLogoImage Inserts the image and update the id to user
 func UpdateOrganizationLogoImage(w http.ResponseWriter, r *http.Request) {
 	organizationID := r.Header.Get(config.OrganizationId)
@@ -20,7 +25,7 @@ func UpdateOrganizationLogoImage(w http.ResponseWriter, r *http.Request) {
 	file, _, err := r.FormFile("orgimage")
 	if err != nil {
 		m := fmt.Sprintf("Failed to extract image organization: %v", organizationID)
-		common.HandleError(w, http.StatusInternalServerError, m, err)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 	defer file.Close()
@@ -29,14 +34,14 @@ func UpdateOrganizationLogoImage(w http.ResponseWriter, r *http.Request) {
 	_, err = io.Copy(buf, file)
 	if err != nil {
 		m := fmt.Sprintf("Failed to copy image organization: %v", organizationID)
-		common.HandleError(w, http.StatusInternalServerError, m, err)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 
 	imageID, err := image.Add(buf.Bytes())
 	if err != nil {
 		m := fmt.Sprintf("Failed to store image in data store organization: %v", organizationID)
-		common.HandleError(w, http.StatusInternalServerError, m, err)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 
@@ -44,11 +49,16 @@ func UpdateOrganizationLogoImage(w http.ResponseWriter, r *http.Request) {
 	o, err := org.UpdateLogoImage(organizationID, imageID, imageURL)
 	if err != nil {
 		m := fmt.Sprintf("Failed to update organization: %v with image: %v details", organizationID, imageID)
-		common.HandleError(w, http.StatusInternalServerError, m, err)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 
-	response, _ := json.Marshal(organization{o})
+	respBody := logoImageResp{
+		LogoImageId:  o.LogoImageID,
+		LogoImageUrl: o.LogoImageURL,
+	}
+
+	response, _ := json.Marshal(respBody)
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)

@@ -10,8 +10,22 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
+	"github.com/bb-consent/api/src/token"
 	"github.com/bb-consent/api/src/user"
 )
+
+type tokenResp struct {
+	AccessToken      string `json:"accessToken"`
+	ExpiresIn        int    `json:"expiresIn"`
+	RefreshExpiresIn int    `json:"refreshExpiresIn"`
+	RefreshToken     string `json:"refreshToken"`
+	TokenType        string `json:"tokenType"`
+}
+
+type userLoginResp struct {
+	Individual user.UserV2 `json:"individual"`
+	Token      tokenResp   `json:"token"`
+}
 
 // LoginUser Implements the user login
 func LoginUser(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +43,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	if !valid {
 		log.Printf("Invalid request params for authentication")
-		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
 		return
 	}
 
@@ -43,27 +57,34 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		m := fmt.Sprintf("Failed to get token for user:%v", lReq.Username)
-		common.HandleError(w, status, m, err)
+		common.HandleErrorV2(w, status, m, err)
 		return
 	}
-	sanitizedUserName := common.Sanitize(lReq.Username)
 
-	//TODO: Remove me when the auth server is per dev environment
-	u, err := user.GetByEmail(sanitizedUserName)
+	accessToken, err := token.ParseToken(t.AccessToken)
 	if err != nil {
-		m := fmt.Sprintf("Login failed for non existant user:%v", lReq.Username)
-		common.HandleError(w, http.StatusUnauthorized, m, err)
+		m := fmt.Sprintf("Failed to parse token for user:%v", lReq.Username)
+		common.HandleErrorV2(w, status, m, err)
 		return
 	}
-
-	if len(u.Roles) > 0 {
-		m := fmt.Sprintf("Login not allowed for admin users:%v", lReq.Username)
-		common.HandleError(w, http.StatusUnauthorized, m, err)
+	u, err := user.GetByIamIDV2(accessToken.IamID)
+	if err != nil {
+		m := fmt.Sprintf("User: %v does not exist", lReq.Username)
+		common.HandleErrorV2(w, status, m, err)
 		return
 	}
+	tResp := tokenResp{
+		AccessToken:      t.AccessToken,
+		ExpiresIn:        t.ExpiresIn,
+		RefreshExpiresIn: t.RefreshExpiresIn,
+		RefreshToken:     t.RefreshToken,
+		TokenType:        t.TokenType,
+	}
 
-	resp, _ := json.Marshal(t)
+	lResp := userLoginResp{u, tResp}
+	resp, _ := json.Marshal(lResp)
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.Write(resp)
+
 }

@@ -14,10 +14,10 @@ import (
 )
 
 type orgUpdateReq struct {
-	Name        string
-	Location    string
-	Description string
-	PolicyURL   string
+	Name        string `json:"name"`
+	Location    string `json:"location"`
+	Description string `json:"description"`
+	PolicyURL   string `json:"policyUrl"`
 }
 
 // UpdateOrganization Updates an organization
@@ -33,7 +33,7 @@ func UpdateOrganization(w http.ResponseWriter, r *http.Request) {
 	o, err := org.Get(organizationID)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get organization: %v", organizationID)
-		common.HandleError(w, http.StatusInternalServerError, m, err)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 
@@ -53,12 +53,9 @@ func UpdateOrganization(w http.ResponseWriter, r *http.Request) {
 	orgResp, err := org.Update(o)
 	if err != nil {
 		m := fmt.Sprintf("Failed to update organization: %v", organizationID)
-		common.HandleError(w, http.StatusInternalServerError, m, err)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 	go user.UpdateOrganizationsSubscribedUsers(orgResp)
-	//response, _ := json.Marshal(organization{orgResp})
-	//w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusAccepted)
-	//w.Write(response)
 }

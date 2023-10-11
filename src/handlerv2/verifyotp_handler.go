@@ -14,8 +14,8 @@ import (
 )
 
 type verifyOtpReq struct {
-	Phone string `valid:"required"`
-	Otp   string `valid:"required"`
+	Phone string `valid:"required" json:"phone"`
+	Otp   string `valid:"required" json:"otp"`
 }
 
 // VerifyOtp Verifies the Otp
@@ -29,7 +29,7 @@ func VerifyOtp(w http.ResponseWriter, r *http.Request) {
 	valid, err := govalidator.ValidateStruct(otpReq)
 	if valid != true {
 		log.Printf("Missing mandatory params for verify otp")
-		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
 		return
 	}
 
@@ -59,7 +59,7 @@ func VerifyOtp(w http.ResponseWriter, r *http.Request) {
 		err := otp.UpdateVerified(o)
 		if err != nil {
 			m := fmt.Sprintf("Failed to update internal database")
-			common.HandleError(w, http.StatusInternalServerError, m, err)
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 			return
 		}
 	}
@@ -68,5 +68,4 @@ func VerifyOtp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
-	return
 }
