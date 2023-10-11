@@ -724,6 +724,7 @@ func AddOrganization(orgReq config.Organization, typeId string, userId string) (
 	o.Description = orgReq.Description
 	o.EulaURL = orgReq.EulaURL
 	o.Admins = append(o.Admins, admin)
+	o.Enabled = true
 
 	orgResp, err := Add(o)
 	if err != nil {

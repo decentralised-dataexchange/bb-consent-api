@@ -96,6 +96,7 @@ func AddOrganization(w http.ResponseWriter, r *http.Request) {
 	o.EulaURL = orgReq.EulaURL
 	o.Admins = append(o.Admins, admin)
 	o.HlcSupport = orgReq.HlcSupport
+	o.Enabled = true
 
 	orgResp, err := org.Add(o)
 	if err != nil {
