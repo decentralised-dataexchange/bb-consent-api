@@ -61,6 +61,10 @@ type Template struct {
 	DataExchange bool
 	Description  string
 }
+type DPIA struct {
+	DPIADate       string
+	DPIASummaryUrl string
+}
 
 // Purpose data type
 type Purpose struct {
@@ -75,6 +79,7 @@ type Purpose struct {
 	Disclosure                string
 	IndustryScope             string
 	DataRetention             DataRetention
+	DPIA                      DPIA
 	Restriction               string
 	Shared3PP                 bool
 	SSIID                     string

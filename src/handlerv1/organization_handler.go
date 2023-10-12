@@ -563,6 +563,11 @@ func GetOrganizationRoles(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+type DPIA struct {
+	DPIADate       string
+	DPIASummaryUrl string
+}
+
 type purpose struct {
 	Name                    string `valid:"required"`
 	Description             string `valid:"required"`
@@ -572,6 +577,7 @@ type purpose struct {
 	Jurisdiction            string
 	Disclosure              string
 	IndustryScope           string
+	DPIA                    DPIA
 	DataRetention           org.DataRetention
 	Restriction             string
 	Shared3PP               bool
@@ -627,10 +633,14 @@ func AddConsentPurposes(w http.ResponseWriter, r *http.Request) {
 			Jurisdiction:            p.Jurisdiction,
 			Disclosure:              p.Disclosure,
 			IndustryScope:           p.IndustryScope,
-			DataRetention:           p.DataRetention,
-			Restriction:             p.Restriction,
-			Shared3PP:               p.Shared3PP,
-			SSIID:                   p.SSIID}
+			DPIA: org.DPIA{
+				DPIADate:       p.DPIA.DPIADate,
+				DPIASummaryUrl: p.DPIA.DPIASummaryUrl,
+			},
+			DataRetention: p.DataRetention,
+			Restriction:   p.Restriction,
+			Shared3PP:     p.Shared3PP,
+			SSIID:         p.SSIID}
 
 		o.Purposes = append(o.Purposes, tempPurpose)
 	}
@@ -742,7 +752,7 @@ func UpdatePurposeByID(w http.ResponseWriter, r *http.Request) {
 
 	// Proceed if lawful basis of processing provided is valid
 	if !isValidLawfulBasisOfProcessing(uReq.LawfulBasisOfProcessing) {
-		m := fmt.Sprintf("Invalid lawful basis of processing provided")
+		m := "Invalid lawful basis of processing provided"
 		common.HandleError(w, http.StatusBadRequest, m, err)
 		return
 	}
@@ -761,6 +771,8 @@ func UpdatePurposeByID(w http.ResponseWriter, r *http.Request) {
 			o.Purposes[i].Jurisdiction = uReq.Jurisdiction
 			o.Purposes[i].Disclosure = uReq.Disclosure
 			o.Purposes[i].IndustryScope = uReq.IndustryScope
+			o.Purposes[i].DPIA.DPIADate = uReq.DPIA.DPIADate
+			o.Purposes[i].DPIA.DPIASummaryUrl = uReq.DPIA.DPIASummaryUrl
 			o.Purposes[i].DataRetention = uReq.DataRetention
 			o.Purposes[i].Restriction = uReq.Restriction
 			o.Purposes[i].Shared3PP = uReq.Shared3PP
