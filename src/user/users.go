@@ -25,12 +25,20 @@ import (
 
 // Org Organization snippet stored as part of user
 type Org struct {
+	OrgID        primitive.ObjectID `bson:"orgid,omitempty"`
+	Name         string
+	Location     string
+	Type         string
+	TypeID       primitive.ObjectID
+	EulaAccepted bool
+}
+type OrgV2 struct {
 	OrgID        primitive.ObjectID `bson:"orgid,omitempty" json:"id"`
 	Name         string             `json:"name"`
 	Location     string             `json:"location"`
 	Type         string             `json:"type"`
 	TypeID       primitive.ObjectID `bson:"typeid,omitempty" json:"typeId"`
-	EulaAccepted bool               `json:"lastVisit"`
+	EulaAccepted bool               `json:"eulaAccepted"`
 }
 
 // ClientInfo The client device details.
@@ -41,25 +49,29 @@ type ClientInfo struct {
 
 // Role Role assignment to user
 type Role struct {
+	RoleID int
+	OrgID  string
+}
+type RoleV2 struct {
 	RoleID int    `json:"roleId"`
 	OrgID  string `json:"orgId"`
 }
 
 // User data type
 type User struct {
-	ID                primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Name              string             `json:"name"`
-	IamID             string             `json:"iamId"`
-	Email             string             `json:"email"`
-	Phone             string             `json:"phone"`
-	ImageID           string             `json:"imageId"`
-	ImageURL          string             `json:"imageUrl"`
-	LastVisit         string             `json:"lastVisit"` //TODO Replace with ISODate()
-	Client            ClientInfo         `json:"client"`
-	Orgs              []Org              `json:"orgs"`
-	APIKey            string             `json:"apiKey"`
-	Roles             []Role             `json:"roles"`
-	IncompleteProfile bool               `json:"incompleteProfile"`
+	ID                primitive.ObjectID `bson:"_id,omitempty"`
+	Name              string
+	IamID             string
+	Email             string
+	Phone             string
+	ImageID           string
+	ImageURL          string
+	LastVisit         string //TODO Replace with ISODate()
+	Client            ClientInfo
+	Orgs              []Org
+	APIKey            string
+	Roles             []Role
+	IncompleteProfile bool
 }
 
 type UserV2 struct {
@@ -74,9 +86,9 @@ type UserV2 struct {
 	ImageID            string             `json:"imageId"`
 	ImageURL           string             `json:"imageUrl"`
 	LastVisit          string             `json:"lastVisit"` //TODO Replace with ISODate()
-	Orgs               []Org              `json:"orgs"`
+	Orgs               []OrgV2            `json:"orgs"`
 	APIKey             string             `json:"apiKey"`
-	Roles              []Role             `json:"roles"`
+	Roles              []RoleV2           `json:"roles"`
 	IncompleteProfile  bool               `json:"incompleteProfile"`
 }
 
