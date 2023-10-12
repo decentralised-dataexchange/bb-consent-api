@@ -49,8 +49,8 @@ type ClientInfo struct {
 
 // Role Role assignment to user
 type Role struct {
-	RoleID int
-	OrgID  string
+	RoleID int    `json:"roleId"`
+	OrgID  string `json:"orgId"`
 }
 type RoleV2 struct {
 	RoleID int    `json:"roleId"`
@@ -60,18 +60,18 @@ type RoleV2 struct {
 // User data type
 type User struct {
 	ID                primitive.ObjectID `bson:"_id,omitempty"`
-	Name              string
-	IamID             string
-	Email             string
-	Phone             string
-	ImageID           string
-	ImageURL          string
-	LastVisit         string //TODO Replace with ISODate()
-	Client            ClientInfo
-	Orgs              []Org
-	APIKey            string
-	Roles             []Role
-	IncompleteProfile bool
+	Name              string             `json:"Name"`
+	IamID             string             `json:"IamID"`
+	Email             string             `json:"Email"`
+	Phone             string             `json:"Phone"`
+	ImageID           string             `json:"ImageID"`
+	ImageURL          string             `json:"ImageURL"`
+	LastVisit         string             `json:"LastVisit"`
+	Client            ClientInfo         `json:"Client"`
+	Orgs              []Org              `json:"Orgs"`
+	APIKey            string             `json:"APIKey"`
+	Roles             []Role             `json:"Roles"`
+	IncompleteProfile bool               `json:"IncompleteProfile"`
 }
 
 type UserV2 struct {
