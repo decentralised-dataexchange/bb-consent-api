@@ -23,7 +23,7 @@ type organizationResp struct {
 }
 
 type getOrgResp struct {
-	Organization organizationResp `json:"organization"`
+	Organization organizationResp `json:"organisation"`
 }
 
 // GetOrganizationByID Gets a single organization by given id
