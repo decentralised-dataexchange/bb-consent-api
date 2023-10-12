@@ -7,19 +7,24 @@ import (
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/image"
-	"github.com/gorilla/mux"
+	"github.com/bb-consent/api/src/org"
 )
 
-// GetOrganizationImage Retrieves the organization image
-func GetOrganizationImage(w http.ResponseWriter, r *http.Request) {
+// GetOrganizationLogoImage Retrieves the organization logo image
+func GetOrganizationLogoImage(w http.ResponseWriter, r *http.Request) {
 	organizationID := r.Header.Get(config.OrganizationId)
-	imageID := mux.Vars(r)["imageID"]
+	o, err := org.Get(organizationID)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get organization by ID :%v", organizationID)
+		common.HandleErrorV2(w, http.StatusNotFound, m, err)
+		return
+	}
+	imageID := o.LogoImageID
 
 	image, err := image.Get(imageID)
-
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch image with id: %v for org: %v", imageID, organizationID)
-		common.HandleError(w, http.StatusInternalServerError, m, err)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 
