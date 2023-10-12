@@ -14,6 +14,7 @@ import (
 type organizationResp struct {
 	ID            primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	Name          string             `json:"name"`
+	Description   string             `json:"description"`
 	Location      string             `json:"location"`
 	PolicyURL     string             `json:"policyUrl"`
 	CoverImageID  string             `json:"coverImageId"`
@@ -39,6 +40,7 @@ func GetOrganizationByID(w http.ResponseWriter, r *http.Request) {
 	oResp := organizationResp{
 		ID:            o.ID,
 		Name:          o.Name,
+		Description:   o.Description,
 		Location:      o.Location,
 		PolicyURL:     o.PolicyURL,
 		CoverImageID:  o.CoverImageID,
