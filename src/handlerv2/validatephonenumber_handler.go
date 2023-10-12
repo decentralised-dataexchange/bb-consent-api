@@ -30,7 +30,7 @@ func ValidatePhoneNumber(w http.ResponseWriter, r *http.Request) {
 
 	// validating request payload
 	valid, err := govalidator.ValidateStruct(validateReq)
-	if valid != true {
+	if !valid {
 		log.Printf("Missing mandatory params for validating phone number")
 		common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
 		return
@@ -49,7 +49,7 @@ func ValidatePhoneNumber(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if exist == true {
+	if exist {
 		valResp.Result = false
 		valResp.Message = "Phone number is in use"
 		response, _ := json.Marshal(valResp)
@@ -62,16 +62,15 @@ func ValidatePhoneNumber(w http.ResponseWriter, r *http.Request) {
 	//Check whether the phone number is in otp colleciton
 	o, err := otp.PhoneNumberExist(sanitizedPhoneNumber)
 	if err != nil {
-		m := fmt.Sprintf("Failed to validate user phone number: %v", validateReq.Phone)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
+		m := fmt.Sprintf("Failed to find otp for phone number: %v", err)
+		log.Println(m)
 	}
 
 	if o != (otp.Otp{}) {
 		if primitive.NewObjectID().Timestamp().Sub(o.ID.Timestamp()) > 2*time.Minute {
 			err = otp.Delete(o.ID.Hex())
 			if err != nil {
-				m := fmt.Sprintf("Failed to clear expired otp")
+				m := "Failed to clear expired otp"
 				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 				return
 			}
