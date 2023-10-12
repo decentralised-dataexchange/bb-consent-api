@@ -9,7 +9,7 @@ const ValidatePhoneNumber = "/v2/onboard/validate/phone"
 const VerifyPhoneNumber = "/v2/onboard/verify/phone"
 const VerifyOtp = "/v2/onboard/verify/otp"
 
-const GetToken = "/v2/onboard/token"
+const GetToken = "/v2/onboard/token/refresh"
 
 const GetOrganizationByID = "/v2/onboard/organisation"
 const UpdateOrganization = "/v2/onboard/organisation"
