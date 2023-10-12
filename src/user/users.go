@@ -70,7 +70,7 @@ type User struct {
 	Client            ClientInfo         `json:"Client"`
 	Orgs              []Org              `json:"Orgs"`
 	APIKey            string             `json:"APIKey"`
-	Roles             []Role             `json:"Roles"`
+	Roles             []Role             `json:"roles"`
 	IncompleteProfile bool               `json:"IncompleteProfile"`
 }
 
