@@ -110,6 +110,6 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(UpdateOrganization, m.Chain(handler.UpdateOrganization, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("PUT")
 	r.Handle(UpdateOrganizationCoverImage, m.Chain(handler.UpdateOrganizationCoverImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("POST")
 	r.Handle(UpdateOrganizationLogoImage, m.Chain(handler.UpdateOrganizationLogoImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("POST")
-	r.Handle(GetOrganizationCoverImage, m.Chain(handler.GetOrganizationImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
+	r.Handle(GetOrganizationCoverImage, m.Chain(handler.GetOrganizationCoverImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
 	r.Handle(GetOrganizationLogoImage, m.Chain(handler.GetOrganizationImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate())).Methods("GET")
 }
