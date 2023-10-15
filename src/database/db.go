@@ -122,6 +122,11 @@ func Init(config *config.Configuration) error {
 		return err
 	}
 
+	err = initCollection("policies", []string{"id"}, true)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -11,7 +11,7 @@ import (
 func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	// Organization global policy configuration
 	r.Handle(GetGlobalPolicyConfigurations, m.Chain(handler.GetGlobalPolicyConfiguration, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(UpdateGlobalPolicyConfigurations, m.Chain(handler.UpdateGlobalPolicyConfiguration, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	r.Handle(UpdateGlobalPolicyConfigurations, m.Chain(handler.AddGlobalPolicyConfiguration, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
 	r.Handle(UpdateGlobalPolicyConfigurationById, m.Chain(handler.UpdateGlobalPolicyConfigurationById, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
 	r.Handle(OrgListPolicyRevisions, m.Chain(handler.OrgListPolicyRevisions, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 	r.Handle(OrgDeletePolicy, m.Chain(handler.OrgDeletePolicy, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("DELETE")
