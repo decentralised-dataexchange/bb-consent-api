@@ -24,3 +24,10 @@ const (
 	PolicyId              = "policyId"
 	DataAgreementRecordId = "dataAgreementRecordId"
 )
+
+// Schemas
+const (
+	DataAgreement       = "dataAgreement"
+	Policy              = "policy"
+	DataAgreementRecord = "dataAgreementRecord"
+)

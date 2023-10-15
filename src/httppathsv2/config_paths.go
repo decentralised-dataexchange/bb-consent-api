@@ -2,11 +2,11 @@ package httppathsv2
 
 // Global policy configuration
 const UpdateGlobalPolicyConfigurations = "/v2/config/policy"
-const GetGlobalPolicyConfigurations = "/v2/config/policy"
-const UpdateGlobalPolicyConfigurationById = "/v2/config/policy/{policyId}/"
-const OrgListPolicyRevisions = "/v2/config/policy/{policyId}/revisions/"
-const OrgDeletePolicy = "/v2/config/policy/{policyId}/"
-const OrgListPolicy = "/v2/config/policies/"
+const GetGlobalPolicyConfigurations = "/v2/config/policy/{policyId}"
+const UpdateGlobalPolicyConfigurationById = "/v2/config/policy/{policyId}"
+const OrgListPolicyRevisions = "/v2/config/policy/{policyId}/revisions"
+const OrgDeletePolicy = "/v2/config/policy/{policyId}"
+const OrgListPolicy = "/v2/config/policies"
 
 // Data agreements
 const GetDataAgreementById = "/v2/config/data-agreement/{dataAgreementId}"

@@ -1,7 +1,10 @@
 package common
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -119,6 +122,8 @@ func ParsePaginationQueryParameters(r *http.Request) (startID string, limit int)
 
 	if ok {
 		limit, _ = strconv.Atoi(limits[0])
+	} else {
+		limit = 10
 	}
 	return
 }
@@ -171,4 +176,48 @@ func GetRandomString(length int) string {
 func Sanitize(s string) string {
 	p := bluemonday.UGCPolicy()
 	return p.Sanitize(s)
+}
+
+func IntegerToSemver(version int) string {
+	major := version
+	minor := 0
+	patch := 0
+
+	return fmt.Sprintf("%d.%d.%d", major, minor, patch)
+}
+
+func BumpMajorVersion(version string) (string, error) {
+	// Split the version into major, minor, and patch
+	versionParts := strings.Split(version, ".")
+
+	// Parse the parts into integers
+	major, err := strconv.Atoi(versionParts[0])
+	if err != nil {
+		return version, err
+	}
+
+	// Increment the major version and reset minor and patch to zero
+	return fmt.Sprintf("%d.0.0", major+1), err
+}
+
+func CalculateSHA1(data string) (string, error) {
+	// Convert the JSON string to bytes
+	dataBytes := []byte(data)
+
+	// Create a new SHA-1 hasher
+	sha1Hasher := sha1.New()
+
+	// Write the data to the hasher
+	_, err := sha1Hasher.Write(dataBytes)
+	if err != nil {
+		return "", err
+	}
+
+	// Get the hash sum
+	hashSum := sha1Hasher.Sum(nil)
+
+	// Convert the hash sum to a hex string
+	hashHex := hex.EncodeToString(hashSum)
+
+	return hashHex, err
 }

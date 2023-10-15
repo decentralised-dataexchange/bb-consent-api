@@ -4,66 +4,54 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
-	"github.com/bb-consent/api/src/org"
-	"github.com/bb-consent/api/src/orgtype"
+	"github.com/bb-consent/api/src/policy"
+	"github.com/gorilla/mux"
 )
 
-type globalPolicyConfigurationResp struct {
-	PolicyURL     string
-	DataRetention org.DataRetention
-	Jurisdiction  string
-	Disclosure    string
-	Type          orgtype.OrgType
-	Restriction   string
-	Shared3PP     bool
+type getPolicyResp struct {
+	Policy   policy.Policy `json:"policy"`
+	Revision interface{}   `json:"revision"`
 }
 
 // GetGlobalPolicyConfiguration Handler to get global policy configurations
 func GetGlobalPolicyConfiguration(w http.ResponseWriter, r *http.Request) {
-	organizationID := r.Header.Get(config.OrganizationId)
+	organisationId := r.Header.Get(config.OrganizationId)
+	organisationId = common.Sanitize(organisationId)
 
-	o, err := org.Get(organizationID)
+	policyId := mux.Vars(r)[config.PolicyId]
+
+	// Parse the URL query parameters
+	queryParams := r.URL.Query()
+	revisionId := queryParams.Get("revisionId")
+
+	p, err := policy.Get(policyId, organisationId)
 	if err != nil {
-		m := fmt.Sprintf("Failed to fetch organization: %v", organizationID)
-		common.HandleError(w, http.StatusInternalServerError, m, err)
+		m := fmt.Sprintf("Failed to fetch policy: %v", policyId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
+	}
+	var revision policy.Revision
+	if revisionId != "" {
+		for _, p := range p.Revisions {
+			if p.Id == revisionId {
+				revision = p
+			}
+		}
+
+	} else {
+		revision = p.Revisions[len(p.Revisions)-1]
 	}
 
 	// Constructing the response
-	var resp globalPolicyConfigurationResp
+	var resp getPolicyResp
+	resp.Policy = p
 
-	resp.PolicyURL = o.PolicyURL
-	resp.DataRetention = o.DataRetention
-
-	if len(strings.TrimSpace(o.Jurisdiction)) == 0 {
-		resp.Jurisdiction = o.Location
-		o.Jurisdiction = o.Location
-	} else {
-		resp.Jurisdiction = o.Jurisdiction
-	}
-
-	if len(strings.TrimSpace(o.Disclosure)) == 0 {
-		resp.Disclosure = "false"
-		o.Disclosure = "false"
-	} else {
-		resp.Disclosure = o.Disclosure
-	}
-
-	resp.Type = o.Type
-	resp.Restriction = o.Restriction
-	resp.Shared3PP = o.Shared3PP
-
-	// Updating global configuration policy with defaults
-	_, err = org.Update(o)
-	if err != nil {
-		m := fmt.Sprintf("Failed to update global configuration with defaults to organization: %v", organizationID)
-		common.HandleError(w, http.StatusInternalServerError, m, err)
-		return
-	}
+	var revisionForHTTPResponse policy.RevisionForHTTPResponse
+	revisionForHTTPResponse.Init(revision)
+	resp.Revision = revisionForHTTPResponse
 
 	response, _ := json.Marshal(resp)
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
