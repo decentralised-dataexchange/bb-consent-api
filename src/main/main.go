@@ -10,14 +10,14 @@ import (
 	"github.com/bb-consent/api/src/database"
 	"github.com/bb-consent/api/src/email"
 	"github.com/bb-consent/api/src/firebaseUtils"
-	"github.com/bb-consent/api/src/handlerv1"
-	"github.com/bb-consent/api/src/handlerv2"
-	"github.com/bb-consent/api/src/httppathsv1"
-	"github.com/bb-consent/api/src/httppathsv2"
 	"github.com/bb-consent/api/src/kafkaUtils"
 	"github.com/bb-consent/api/src/middleware"
 	"github.com/bb-consent/api/src/notifications"
 	"github.com/bb-consent/api/src/token"
+	v1Handlers "github.com/bb-consent/api/src/v1/handler"
+	v1HttpPaths "github.com/bb-consent/api/src/v1/http_path"
+	v2Handlers "github.com/bb-consent/api/src/v2/handler"
+	v2HttpPaths "github.com/bb-consent/api/src/v2/http_path"
 	"github.com/bb-consent/api/src/webhookdispatcher"
 	"github.com/bb-consent/api/src/webhooks"
 	"github.com/casbin/casbin/v2"
@@ -61,8 +61,8 @@ func main() {
 			}
 			log.Println("Kafka producer client initialised")
 
-			handlerv1.IamInit(loadedConfig)
-			handlerv2.IamInit(loadedConfig)
+			v1Handlers.IamInit(loadedConfig)
+			v2Handlers.IamInit(loadedConfig)
 			log.Println("Iam initialized")
 
 			email.Init(loadedConfig)
@@ -98,8 +98,8 @@ func main() {
 			}
 
 			router := mux.NewRouter()
-			httppathsv1.SetRoutes(router, authEnforcer)
-			httppathsv2.SetRoutes(router, authEnforcer)
+			v1HttpPaths.SetRoutes(router, authEnforcer)
+			v2HttpPaths.SetRoutes(router, authEnforcer)
 
 			log.Println("Listening port 80")
 			http.ListenAndServe(":80", router)

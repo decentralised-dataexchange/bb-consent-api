@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/bb-consent/api/src/apikey"
-	handler "github.com/bb-consent/api/src/handlerv1"
 	"github.com/bb-consent/api/src/org"
 	"github.com/bb-consent/api/src/rbac"
+	v1Handlers "github.com/bb-consent/api/src/v1/handler"
 	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
 
@@ -54,7 +54,7 @@ func Authenticate() Middleware {
 			authType, key, err := token.DecodeAuthHeader(r)
 			if err != nil {
 				log.Printf("Authorization header decoding failed: %v", err)
-				m := fmt.Sprintf("Invalid authorization header, Authorization failed")
+				m := "Invalid authorization header, Authorization failed"
 				common.HandleError(w, http.StatusUnauthorized, m, nil)
 				return
 			}
@@ -63,26 +63,26 @@ func Authenticate() Middleware {
 				t, err := token.ParseToken(key)
 				if err != nil {
 					log.Printf("token decoding failed: %v", err)
-					m := fmt.Sprintf("Invalid token, Authorization failed")
+					m := "Invalid token, Authorization failed"
 					common.HandleError(w, http.StatusUnauthorized, m, nil)
 					return
 				}
 				token.Set(r, t)
-				u, err := handler.GetUserByIamID(token.GetIamID(r))
+				u, err := v1Handlers.GetUserByIamID(token.GetIamID(r))
 				if err != nil {
 					log.Printf("User not found err: %v", err)
-					m := fmt.Sprintf("User does not exist, Authorization failed")
+					m := "User does not exist, Authorization failed"
 					common.HandleError(w, http.StatusUnauthorized, m, nil)
 					return
 				}
 				token.SetUserID(r, u.ID.Hex())
-				token.SetUserRoles(r, handler.GetUserRoles(u.Roles))
+				token.SetUserRoles(r, v1Handlers.GetUserRoles(u.Roles))
 			}
 			if authType == token.AuthorizationAPIKey {
 				claims, err := apikey.Decode(key)
 				if err != nil {
 					log.Printf("api key decoding failed: %v", err)
-					m := fmt.Sprintf("Invalid token, Authorization failed")
+					m := "Invalid token, Authorization failed"
 					common.HandleError(w, http.StatusUnauthorized, m, nil)
 					return
 				}
@@ -91,24 +91,24 @@ func Authenticate() Middleware {
 					var u user.User
 
 					if userID, ok := mux.Vars(r)["userID"]; ok {
-						u, err = handler.GetUser(userID)
+						u, err = v1Handlers.GetUser(userID)
 						if err != nil {
 							log.Printf("User not found err: %v", err)
-							m := fmt.Sprintf("Invalid API Key, Authorization failed")
+							m := "Invalid API Key, Authorization failed"
 							common.HandleError(w, http.StatusUnauthorized, m, nil)
 							return
 						}
 					} else {
-						u, err = handler.GetUser(claims.UserID)
+						u, err = v1Handlers.GetUser(claims.UserID)
 						if err != nil {
 							log.Printf("User not found err: %v", err)
-							m := fmt.Sprintf("Invalid API Key, Authorization failed")
+							m := "Invalid API Key, Authorization failed"
 							common.HandleError(w, http.StatusUnauthorized, m, nil)
 							return
 						}
 						if u.APIKey != key {
 							log.Printf("API Key does not match")
-							m := fmt.Sprintf("Invalid API Key, Authorization failed")
+							m := "Invalid API Key, Authorization failed"
 							common.HandleError(w, http.StatusUnauthorized, m, nil)
 							return
 						}
@@ -121,7 +121,7 @@ func Authenticate() Middleware {
 
 					token.Set(r, t)
 					token.SetUserID(r, u.ID.Hex())
-					token.SetUserRoles(r, handler.GetUserRoles(u.Roles))
+					token.SetUserRoles(r, v1Handlers.GetUserRoles(u.Roles))
 				}
 
 			}
