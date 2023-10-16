@@ -86,6 +86,7 @@ type Purpose struct {
 	CloudAgentDataAgreementId string
 	Version                   string
 	PublishFlag               bool
+	StorageLocation           string
 }
 
 // DataRetention data retention configuration

@@ -583,6 +583,7 @@ type purpose struct {
 	Shared3PP               bool
 	SSIID                   string
 	PublishFlag             bool
+	StorageLocation         string
 }
 
 type purposeReq struct {
@@ -638,11 +639,12 @@ func AddConsentPurposes(w http.ResponseWriter, r *http.Request) {
 				DPIADate:       p.DPIA.DPIADate,
 				DPIASummaryUrl: p.DPIA.DPIASummaryUrl,
 			},
-			DataRetention: p.DataRetention,
-			Restriction:   p.Restriction,
-			Shared3PP:     p.Shared3PP,
-			SSIID:         p.SSIID,
-			PublishFlag:   p.PublishFlag,
+			DataRetention:   p.DataRetention,
+			Restriction:     p.Restriction,
+			Shared3PP:       p.Shared3PP,
+			SSIID:           p.SSIID,
+			PublishFlag:     p.PublishFlag,
+			StorageLocation: p.StorageLocation,
 		}
 
 		o.Purposes = append(o.Purposes, tempPurpose)
@@ -780,6 +782,7 @@ func UpdatePurposeByID(w http.ResponseWriter, r *http.Request) {
 			o.Purposes[i].Restriction = uReq.Restriction
 			o.Purposes[i].Shared3PP = uReq.Shared3PP
 			o.Purposes[i].PublishFlag = uReq.PublishFlag
+			o.Purposes[i].StorageLocation = uReq.StorageLocation
 			if (o.Purposes[i].AttributeType != uReq.AttributeType) ||
 				(o.Purposes[i].SSIID != uReq.SSIID) {
 				m := fmt.Sprintf("Can not modify attributeType or SSIID for purpose: %v organization: %v",
