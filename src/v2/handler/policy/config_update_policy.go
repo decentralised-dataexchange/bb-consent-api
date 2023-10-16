@@ -1,4 +1,4 @@
-package handler
+package policy
 
 import (
 	"encoding/json"
@@ -12,6 +12,7 @@ import (
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/policy"
+	"github.com/bb-consent/api/src/revision"
 	"github.com/bb-consent/api/src/token"
 	"github.com/gorilla/mux"
 )
@@ -59,8 +60,8 @@ func updatePolicyFromRequestBody(requestBody updatePolicyReq, toBeUpdatedPolicy 
 	return toBeUpdatedPolicy
 }
 
-// UpdateGlobalPolicyConfigurationById Handler to update global policy configuration
-func UpdateGlobalPolicyConfigurationById(w http.ResponseWriter, r *http.Request) {
+// ConfigUpdatePolicy
+func ConfigUpdatePolicy(w http.ResponseWriter, r *http.Request) {
 	// Current user
 	orgAdminId := token.GetUserID(r)
 
@@ -70,6 +71,7 @@ func UpdateGlobalPolicyConfigurationById(w http.ResponseWriter, r *http.Request)
 
 	// Path params
 	policyId := mux.Vars(r)[config.PolicyId]
+	policyId = common.Sanitize(policyId)
 
 	// Request body
 	var policyReq updatePolicyReq
@@ -84,15 +86,22 @@ func UpdateGlobalPolicyConfigurationById(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Repository
+	policyRepo := policy.PolicyRepository{}
+	policyRepo.Init(organisationId)
+
 	// Get policy from db
-	toBeUpdatedPolicy, err := policy.Get(policyId, organisationId)
+	toBeUpdatedPolicy, err := policyRepo.Get(policyId)
 	if err != nil {
 		common.HandleErrorV2(w, http.StatusInternalServerError, err.Error(), err)
 		return
 	}
-
-	// Get current revision
-	currentRevision := toBeUpdatedPolicy.Revisions[len(toBeUpdatedPolicy.Revisions)-1]
+	// Get revision from db
+	currentRevision, err := revision.GetLatestByPolicyId(policyId)
+	if err != nil {
+		common.HandleErrorV2(w, http.StatusInternalServerError, err.Error(), err)
+		return
+	}
 
 	// Update policy from request body
 	toBeUpdatedPolicy = updatePolicyFromRequestBody(policyReq, toBeUpdatedPolicy)
@@ -107,18 +116,33 @@ func UpdateGlobalPolicyConfigurationById(w http.ResponseWriter, r *http.Request)
 	toBeUpdatedPolicy.Version = updatedVersion
 
 	// Update revision
-	newRevision, err := policy.UpdateRevisionForPolicy(toBeUpdatedPolicy, currentRevision, orgAdminId)
+	newRevision, err := revision.UpdateRevisionForPolicy(toBeUpdatedPolicy, &currentRevision, orgAdminId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to update revision for policy: %v", policyId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
-	toBeUpdatedPolicy.Revisions = append(toBeUpdatedPolicy.Revisions, newRevision)
 
 	// Save the policy to db
-	savedPolicy, err := policy.Update(toBeUpdatedPolicy, organisationId)
+	savedPolicy, err := policyRepo.Update(toBeUpdatedPolicy)
 	if err != nil {
 		m := fmt.Sprintf("Failed to update policy: %v", toBeUpdatedPolicy.Name)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Save the previous revision to db
+	updatedRevision, err := revision.Update(currentRevision)
+	if err != nil {
+		m := fmt.Sprintf("Failed to update revision: %v", updatedRevision.Id)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Save the revision to db
+	savedRevision, err := revision.Add(newRevision)
+	if err != nil {
+		m := fmt.Sprintf("Failed to create new policy: %v", newRevision.Id)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
@@ -127,8 +151,8 @@ func UpdateGlobalPolicyConfigurationById(w http.ResponseWriter, r *http.Request)
 	var resp updatePolicyResp
 	resp.Policy = savedPolicy
 
-	var revisionForHTTPResponse policy.RevisionForHTTPResponse
-	revisionForHTTPResponse.Init(newRevision)
+	var revisionForHTTPResponse revision.RevisionForHTTPResponse
+	revisionForHTTPResponse.Init(savedRevision)
 	resp.Revision = revisionForHTTPResponse
 
 	response, _ := json.Marshal(resp)

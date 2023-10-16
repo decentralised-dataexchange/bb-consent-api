@@ -1,12 +1,12 @@
 package http_path
 
 // Global policy configuration
-const UpdateGlobalPolicyConfigurations = "/v2/config/policy"
-const GetGlobalPolicyConfigurations = "/v2/config/policy/{policyId}"
-const UpdateGlobalPolicyConfigurationById = "/v2/config/policy/{policyId}"
-const OrgListPolicyRevisions = "/v2/config/policy/{policyId}/revisions"
-const OrgDeletePolicy = "/v2/config/policy/{policyId}"
-const OrgListPolicy = "/v2/config/policies"
+const ConfigCreatePolicy = "/v2/config/policy"
+const ConfigReadPolicy = "/v2/config/policy/{policyId}"
+const ConfigUpdatePolicy = "/v2/config/policy/{policyId}"
+const ConfigDeletePolicy = "/v2/config/policy/{policyId}"
+const ConfigListPolicies = "/v2/config/policies"
+const ConfigListPolicyRevisions = "/v2/config/policy/{policyId}/revisions"
 
 // Data agreements
 const GetDataAgreementById = "/v2/config/data-agreement/{dataAgreementId}"

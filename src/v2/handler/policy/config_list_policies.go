@@ -1,4 +1,4 @@
-package handler
+package policy
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/paginate"
 	"github.com/bb-consent/api/src/policy"
+	"github.com/bb-consent/api/src/revision"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -57,8 +58,8 @@ func returnHTTPResponse(resp interface{}, w http.ResponseWriter) {
 	w.Write(response)
 }
 
-// OrgListPolicy Handler to list all global policies
-func OrgListPolicy(w http.ResponseWriter, r *http.Request) {
+// ConfigListPolicies
+func ConfigListPolicies(w http.ResponseWriter, r *http.Request) {
 	// Headers
 	organisationId := r.Header.Get(config.OrganizationId)
 	organisationId = common.Sanitize(organisationId)
@@ -69,6 +70,7 @@ func OrgListPolicy(w http.ResponseWriter, r *http.Request) {
 	offset, limit := paginate.ParsePaginationQueryParams(r)
 	log.Printf("Offset: %v and limit: %v\n", offset, limit)
 	revisionId, err := ParseListPoliciesQueryParams(r)
+	revisionId = common.Sanitize(revisionId)
 	if err != nil && errors.Is(err, RevisionIDIsMissingError) {
 		// Return all policies
 		var policies []policy.Policy
@@ -104,15 +106,15 @@ func OrgListPolicy(w http.ResponseWriter, r *http.Request) {
 
 	} else {
 		// Fetch revision by id
-		revision, err := policy.GetRevisionById(revisionId, organisationId)
+		revisionResp, err := revision.GetByRevisionId(revisionId)
 		if err != nil {
-			m := fmt.Sprintf("Failed to fetch policy by revision: %v", revisionId)
+			m := fmt.Sprintf("Failed to fetch revision by id: %v", revisionId)
 			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 			return
 		}
 
 		// Recreate policy from revision
-		p, err := policy.RecreatePolicyFromRevision(revision)
+		p, err := revision.RecreatePolicyFromRevision(revisionResp)
 		if err != nil {
 			m := fmt.Sprintf("Failed to fetch policy by revision: %v", revisionId)
 			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)

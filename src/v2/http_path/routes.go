@@ -3,19 +3,20 @@ package http_path
 import (
 	m "github.com/bb-consent/api/src/middleware"
 	v2Handler "github.com/bb-consent/api/src/v2/handler"
+	policyHandler "github.com/bb-consent/api/src/v2/handler/policy"
 	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
 )
 
 // SetRoutes sets the routes that the back end server serves
 func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
-	// Organization global policy configuration
-	r.Handle(GetGlobalPolicyConfigurations, m.Chain(v2Handler.GetGlobalPolicyConfiguration, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(UpdateGlobalPolicyConfigurations, m.Chain(v2Handler.AddGlobalPolicyConfiguration, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
-	r.Handle(UpdateGlobalPolicyConfigurationById, m.Chain(v2Handler.UpdateGlobalPolicyConfigurationById, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
-	r.Handle(OrgListPolicyRevisions, m.Chain(v2Handler.OrgListPolicyRevisions, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(OrgDeletePolicy, m.Chain(v2Handler.OrgDeletePolicy, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("DELETE")
-	r.Handle(OrgListPolicy, m.Chain(v2Handler.OrgListPolicy, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	// Policy
+	r.Handle(ConfigReadPolicy, m.Chain(policyHandler.ConfigReadPolicy, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ConfigCreatePolicy, m.Chain(policyHandler.ConfigCreatePolicy, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	r.Handle(ConfigUpdatePolicy, m.Chain(policyHandler.ConfigUpdatePolicy, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
+	r.Handle(ConfigListPolicyRevisions, m.Chain(policyHandler.ConfigListPolicyRevisions, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ConfigDeletePolicy, m.Chain(policyHandler.ConfigDeletePolicy, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("DELETE")
+	r.Handle(ConfigListPolicies, m.Chain(policyHandler.ConfigListPolicies, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	r.Handle(GetDataAgreementById, m.Chain(v2Handler.GetDataAgreementById, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 	r.Handle(AddDataAgreement, m.Chain(v2Handler.AddDataAgreement, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
@@ -66,7 +67,7 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(ServiceDataAgreementRead, m.Chain(v2Handler.GetDataAgreementById, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Global policy configuration
-	r.Handle(ServicePolicyRead, m.Chain(v2Handler.GetGlobalPolicyConfiguration, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ServicePolicyRead, m.Chain(policyHandler.ConfigReadPolicy, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Data attributes
 	r.Handle(ServiceGetDataAttributes, m.Chain(v2Handler.GetDataAttributes, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")

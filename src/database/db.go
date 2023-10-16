@@ -127,6 +127,11 @@ func Init(config *config.Configuration) error {
 		return err
 	}
 
+	err = initCollection("revisions", []string{"id"}, true)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
