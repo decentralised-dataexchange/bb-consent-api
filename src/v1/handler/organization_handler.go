@@ -909,8 +909,9 @@ func deletePurposeIDFromTemplate(purposeID string, orgID string, templates []org
 }
 
 type template struct {
-	Consent    string   `valid:"required"`
-	PurposeIDs []string `valid:"required"`
+	Consent     string   `valid:"required"`
+	Description string   `valid:"required"`
+	PurposeIDs  []string `valid:"required"`
 }
 type templateReq struct {
 	Templates []template
@@ -928,7 +929,7 @@ func AddConsentTemplates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var tReq templateReq
-	b, _ := ioutil.ReadAll(r.Body)
+	b, _ := io.ReadAll(r.Body)
 	defer r.Body.Close()
 
 	json.Unmarshal(b, &tReq)
@@ -955,9 +956,10 @@ func AddConsentTemplates(w http.ResponseWriter, r *http.Request) {
 
 		// Appending the new template to existing org templates
 		o.Templates = append(o.Templates, org.Template{
-			ID:         primitive.NewObjectID().Hex(),
-			Consent:    t.Consent,
-			PurposeIDs: t.PurposeIDs,
+			ID:          primitive.NewObjectID().Hex(),
+			Consent:     t.Consent,
+			Description: t.Description,
+			PurposeIDs:  t.PurposeIDs,
 		})
 	}
 
