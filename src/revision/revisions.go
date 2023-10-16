@@ -1,16 +1,18 @@
-package policy
+package revision
 
 import (
 	"encoding/json"
 	"time"
 
 	"github.com/bb-consent/api/src/common"
+	"github.com/bb-consent/api/src/config"
+	"github.com/bb-consent/api/src/policy"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Revision
 type Revision struct {
-	Id                       string `json:"id"`
+	Id                       string `json:"id" bson:"_id,omitempty"`
 	SchemaName               string `json:"schemaName"`
 	ObjectId                 string `json:"objectId"`
 	SignedWithoutObjectId    bool   `json:"signedWithoutObjectId"`
@@ -26,16 +28,15 @@ type Revision struct {
 }
 
 // Init
-func (r *Revision) Init(objectId string, authorisedByOtherId string) {
+func (r *Revision) Init(objectId string, authorisedByOtherId string, schemaName string) {
 	r.Id = primitive.NewObjectID().Hex()
-	r.SchemaName = "policy"
+	r.SchemaName = schemaName
 	r.ObjectId = objectId
 	r.SignedWithoutObjectId = false
 	r.Timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 	r.AuthorizedByIndividualId = ""
 	r.AuthorizedByOtherId = authorisedByOtherId
 }
-
 func (r *Revision) updateSuccessorId(successorId string) {
 	r.SuccessorId = successorId
 }
@@ -77,12 +78,12 @@ func (r *Revision) CreateRevision(objectData interface{}) error {
 }
 
 // UpdateRevision
-func (r *Revision) UpdateRevision(previousRevision Revision, objectData interface{}) error {
+func (r *Revision) UpdateRevision(previousRevision *Revision, objectData interface{}) error {
 	// Update successor for previous revision
 	previousRevision.updateSuccessorId(r.Id)
 
 	// Predecessor hash
-	r.updatePredecessorHash(previousRevision.PredecessorHash)
+	r.updatePredecessorHash(previousRevision.SerializedHash)
 
 	// Predecessor signature
 	// TODO: Add signature for predecessor hash
@@ -95,7 +96,7 @@ func (r *Revision) UpdateRevision(previousRevision Revision, objectData interfac
 		return err
 	}
 
-	return nil
+	return err
 }
 
 type policyForObjectData struct {
@@ -111,7 +112,7 @@ type policyForObjectData struct {
 }
 
 // CreateRevisionForPolicy
-func CreateRevisionForPolicy(newPolicy Policy, orgAdminId string) (Revision, error) {
+func CreateRevisionForPolicy(newPolicy policy.Policy, orgAdminId string) (Revision, error) {
 	// Object data
 	objectData := policyForObjectData{
 		Id:                      newPolicy.Id,
@@ -127,14 +128,14 @@ func CreateRevisionForPolicy(newPolicy Policy, orgAdminId string) (Revision, err
 
 	// Create revision
 	revision := Revision{}
-	revision.Init(objectData.Id.Hex(), orgAdminId)
+	revision.Init(objectData.Id.Hex(), orgAdminId, config.Policy)
 	err := revision.CreateRevision(objectData)
 
 	return revision, err
 }
 
 // UpdateRevisionForPolicy
-func UpdateRevisionForPolicy(updatedPolicy Policy, previousRevision Revision, orgAdminId string) (Revision, error) {
+func UpdateRevisionForPolicy(updatedPolicy policy.Policy, previousRevision *Revision, orgAdminId string) (Revision, error) {
 	// Object data
 	objectData := policyForObjectData{
 		Id:                      updatedPolicy.Id,
@@ -150,26 +151,26 @@ func UpdateRevisionForPolicy(updatedPolicy Policy, previousRevision Revision, or
 
 	// Update revision
 	revision := Revision{}
-	revision.Init(objectData.Id.Hex(), orgAdminId)
+	revision.Init(objectData.Id.Hex(), orgAdminId, config.Policy)
 	err := revision.UpdateRevision(previousRevision, objectData)
 
 	return revision, err
 }
 
-func RecreatePolicyFromRevision(revision Revision) (Policy, error) {
+func RecreatePolicyFromRevision(revision Revision) (policy.Policy, error) {
 
 	// Deserialise revision snapshot
 	var r Revision
 	err := json.Unmarshal([]byte(revision.SerializedSnapshot), &r)
 	if err != nil {
-		return Policy{}, err
+		return policy.Policy{}, err
 	}
 
 	// Deserialise policy
-	var p Policy
+	var p policy.Policy
 	err = json.Unmarshal([]byte(r.ObjectData), &p)
 	if err != nil {
-		return Policy{}, err
+		return policy.Policy{}, err
 	}
 
 	return p, nil

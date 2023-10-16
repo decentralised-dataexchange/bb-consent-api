@@ -1,4 +1,4 @@
-package handler
+package policy
 
 import (
 	"encoding/json"
@@ -12,12 +12,13 @@ import (
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/policy"
+	"github.com/bb-consent/api/src/revision"
 	"github.com/bb-consent/api/src/token"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type RevisionForSnapshot struct {
-	policy.Revision
+	revision.Revision
 	SerializedSnapshot   string `json:"-"`
 	Id                   string `json:"-"`
 	SuccessorId          string `json:"-"`
@@ -69,8 +70,8 @@ func updatePolicyFromAddPolicyRequestBody(requestBody addPolicyReq, newPolicy po
 	return newPolicy
 }
 
-// AddGlobalPolicyConfiguration Handler to add global policy configuration
-func AddGlobalPolicyConfiguration(w http.ResponseWriter, r *http.Request) {
+// ConfigCreatePolicy
+func ConfigCreatePolicy(w http.ResponseWriter, r *http.Request) {
 	// Current user
 	orgAdminId := token.GetUserID(r)
 
@@ -103,18 +104,29 @@ func AddGlobalPolicyConfiguration(w http.ResponseWriter, r *http.Request) {
 	newPolicy.Version = version
 
 	// Create new revision
-	newRevision, err := policy.CreateRevisionForPolicy(newPolicy, orgAdminId)
+	newRevision, err := revision.CreateRevisionForPolicy(newPolicy, orgAdminId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to create revision for new policy: %v", newPolicy.Name)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
-	newPolicy.Revisions = append(newPolicy.Revisions, newRevision)
+
+	// Repository
+	prepo := policy.PolicyRepository{}
+	prepo.Init(organisationId)
 
 	// Save the policy to db
-	savedPolicy, err := policy.Add(newPolicy)
+	savedPolicy, err := prepo.Add(newPolicy)
 	if err != nil {
 		m := fmt.Sprintf("Failed to create new policy: %v", newPolicy.Name)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Save the revision to db
+	savedRevision, err := revision.Add(newRevision)
+	if err != nil {
+		m := fmt.Sprintf("Failed to create new revision: %v", newRevision.Id)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
@@ -123,8 +135,8 @@ func AddGlobalPolicyConfiguration(w http.ResponseWriter, r *http.Request) {
 	var resp addPolicyResp
 	resp.Policy = savedPolicy
 
-	var revisionForHTTPResponse policy.RevisionForHTTPResponse
-	revisionForHTTPResponse.Init(newRevision)
+	var revisionForHTTPResponse revision.RevisionForHTTPResponse
+	revisionForHTTPResponse.Init(savedRevision)
 	resp.Revision = revisionForHTTPResponse
 
 	response, _ := json.Marshal(resp)

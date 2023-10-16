@@ -1,4 +1,4 @@
-package handler
+package policy
 
 import (
 	"encoding/json"
@@ -10,6 +10,7 @@ import (
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/paginate"
 	"github.com/bb-consent/api/src/policy"
+	"github.com/bb-consent/api/src/revision"
 	"github.com/gorilla/mux"
 )
 
@@ -19,7 +20,7 @@ type listRevisionsResp struct {
 	Pagination paginate.Pagination `json:"pagination"`
 }
 
-func revisionsToInterfaceSlice(revisions []policy.RevisionForHTTPResponse) []interface{} {
+func revisionsToInterfaceSlice(revisions []revision.RevisionForHTTPResponse) []interface{} {
 	interfaceSlice := make([]interface{}, len(revisions))
 	for i, r := range revisions {
 		interfaceSlice[i] = r
@@ -27,16 +28,28 @@ func revisionsToInterfaceSlice(revisions []policy.RevisionForHTTPResponse) []int
 	return interfaceSlice
 }
 
-// OrgListPolicyRevisions Handler to list global policy revisions
-func OrgListPolicyRevisions(w http.ResponseWriter, r *http.Request) {
+// ConfigListPolicyRevisions
+func ConfigListPolicyRevisions(w http.ResponseWriter, r *http.Request) {
 
 	organisationId := r.Header.Get(config.OrganizationId)
 	organisationId = common.Sanitize(organisationId)
 	policyId := mux.Vars(r)[config.PolicyId]
+	policyId = common.Sanitize(policyId)
 
-	p, err := policy.Get(policyId, organisationId)
+	// Repository
+	policyRepo := policy.PolicyRepository{}
+	policyRepo.Init(organisationId)
+
+	p, err := policyRepo.Get(policyId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch policy: %v", policyId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	revisions, err := revision.ListAllByPolicyId(policyId)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch revision: %v", policyId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
@@ -58,8 +71,8 @@ func OrgListPolicyRevisions(w http.ResponseWriter, r *http.Request) {
 		Offset: offset,
 	}
 
-	revisionForHTTPResponses := make([]policy.RevisionForHTTPResponse, len(p.Revisions))
-	for i, r := range p.Revisions {
+	revisionForHTTPResponses := make([]revision.RevisionForHTTPResponse, len(revisions))
+	for i, r := range revisions {
 		revisionForHTTPResponses[i].Init(r)
 	}
 
