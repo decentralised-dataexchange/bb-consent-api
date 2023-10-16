@@ -989,8 +989,14 @@ func GetTemplates(w http.ResponseWriter, r *http.Request) {
 		common.HandleError(w, http.StatusInternalServerError, m, err)
 		return
 	}
+	templates := []org.Template{}
 
-	response, _ := json.Marshal(getTemplatesResp{OrgID: o.ID.Hex(), Templates: o.Templates})
+	// Check if o.Templates is not empty, assign it to templates
+	if len(o.Templates) > 0 {
+		templates = o.Templates
+	}
+
+	response, _ := json.Marshal(getTemplatesResp{OrgID: o.ID.Hex(), Templates: templates})
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
