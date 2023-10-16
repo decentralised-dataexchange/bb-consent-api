@@ -14,6 +14,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type organization struct {
+	Organization org.Organization
+}
+
 type template struct {
 	Consent    string   `valid:"required"`
 	PurposeIDs []string `valid:"required"`

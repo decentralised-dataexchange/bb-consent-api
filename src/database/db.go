@@ -132,6 +132,11 @@ func Init(config *config.Configuration) error {
 		return err
 	}
 
+	err = initCollection("dataAgreements", []string{"id"}, true)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

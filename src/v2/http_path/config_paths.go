@@ -9,12 +9,13 @@ const ConfigListPolicies = "/v2/config/policies"
 const ConfigListPolicyRevisions = "/v2/config/policy/{policyId}/revisions"
 
 // Data agreements
-const GetDataAgreementById = "/v2/config/data-agreement/{dataAgreementId}"
-const AddDataAgreement = "/v2/config/data-agreement/"
-const UpdateDataAgreement = "/v2/config/data-agreement/{dataAgreementId}"
-const DeleteDataAgreement = "/v2/config/data-agreement/{dataAgreementId}"
-const ListDataAgreements = "/v2/config/data-agreements"
-const ListDataAgreementRevisions = "/v2/config/data-agreement/{dataAgreementId}/revisions"
+const ConfigCreateDataAgreement = "/v2/config/data-agreement"
+const ConfigReadDataAgreement = "/v2/config/data-agreement/{dataAgreementId}"
+const ConfigUpdateDataAgreement = "/v2/config/data-agreement/{dataAgreementId}"
+const ConfigDeleteDataAgreement = "/v2/config/data-agreement/{dataAgreementId}"
+const ConfigListDataAgreements = "/v2/config/data-agreements"
+const ConfigListDataAgreementRevisions = "/v2/config/data-agreement/{dataAgreementId}/revisions"
+
 const ReadDataAgreementRevision = "/v2/config/data-agreement/{dataAgreementId}/revision/{revisionId}"
 
 // Data attributes

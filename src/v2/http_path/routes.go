@@ -3,6 +3,7 @@ package http_path
 import (
 	m "github.com/bb-consent/api/src/middleware"
 	v2Handler "github.com/bb-consent/api/src/v2/handler"
+	dataAgreementHandler "github.com/bb-consent/api/src/v2/handler/dataagreement"
 	policyHandler "github.com/bb-consent/api/src/v2/handler/policy"
 	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
@@ -18,12 +19,12 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(ConfigDeletePolicy, m.Chain(policyHandler.ConfigDeletePolicy, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("DELETE")
 	r.Handle(ConfigListPolicies, m.Chain(policyHandler.ConfigListPolicies, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
-	r.Handle(GetDataAgreementById, m.Chain(v2Handler.GetDataAgreementById, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(AddDataAgreement, m.Chain(v2Handler.AddDataAgreement, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
-	r.Handle(UpdateDataAgreement, m.Chain(v2Handler.UpdateDataAgreement, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
-	r.Handle(DeleteDataAgreement, m.Chain(v2Handler.DeleteDataAgreement, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("DELETE")
-	r.Handle(ListDataAgreements, m.Chain(v2Handler.ListDataAgreements, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(ListDataAgreementRevisions, m.Chain(v2Handler.ListDataAgreementRevisions, m.Logger(), m.SetApplicationMode(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ConfigReadDataAgreement, m.Chain(dataAgreementHandler.ConfigReadDataAgreement, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ConfigCreateDataAgreement, m.Chain(dataAgreementHandler.ConfigCreateDataAgreement, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	r.Handle(ConfigUpdateDataAgreement, m.Chain(dataAgreementHandler.ConfigUpdateDataAgreement, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
+	r.Handle(ConfigListDataAgreementRevisions, m.Chain(dataAgreementHandler.ConfigListDataAgreementRevisions, m.Logger(), m.SetApplicationMode(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ConfigDeleteDataAgreement, m.Chain(dataAgreementHandler.ConfigDeleteDataAgreement, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("DELETE")
+	r.Handle(ConfigListDataAgreements, m.Chain(dataAgreementHandler.ConfigListDataAgreements, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 	r.Handle(ReadDataAgreementRevision, m.Chain(v2Handler.ReadDataAgreementRevision, m.Logger(), m.SetApplicationMode(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	r.Handle(GetDataAttributes, m.Chain(v2Handler.GetDataAttributes, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
@@ -64,7 +65,7 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	// Service api(s)
 
 	//  Data agreements
-	r.Handle(ServiceDataAgreementRead, m.Chain(v2Handler.GetDataAgreementById, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ServiceDataAgreementRead, m.Chain(dataAgreementHandler.ConfigReadDataAgreement, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Global policy configuration
 	r.Handle(ServicePolicyRead, m.Chain(policyHandler.ConfigReadPolicy, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
