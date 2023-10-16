@@ -79,3 +79,34 @@ func GetByRevisionId(revisionId string) (Revision, error) {
 
 	return result, err
 }
+
+// Get Gets revision by data agreement id
+func GetLatestByDataAgreementId(dataAgreementId string) (Revision, error) {
+
+	var result Revision
+	opts := options.FindOne().SetSort(bson.M{"timestamp": -1})
+	err := Collection().FindOne(context.TODO(), bson.M{"objectid": dataAgreementId}, opts).Decode(&result)
+	if err != nil {
+		return Revision{}, err
+	}
+
+	return result, err
+}
+
+// Get Gets revisions by data agreement id
+func ListAllByDataAgreementId(dataAgreementId string) ([]Revision, error) {
+
+	var results []Revision
+	cursor, err := Collection().Find(context.TODO(), bson.M{"objectid": dataAgreementId})
+	if err != nil {
+		return []Revision{}, err
+	}
+
+	defer cursor.Close(context.TODO())
+
+	if err := cursor.All(context.TODO(), &results); err != nil {
+		return []Revision{}, err
+	}
+
+	return results, err
+}

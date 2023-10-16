@@ -6,6 +6,7 @@ import (
 
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
+	"github.com/bb-consent/api/src/dataagreement"
 	"github.com/bb-consent/api/src/policy"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -199,4 +200,105 @@ func (r *RevisionForHTTPResponse) Init(revision Revision) {
 	r.SuccessorId = revision.SuccessorId
 	r.SerializedHash = revision.SerializedHash
 	r.SerializedSnapshot = revision.SerializedSnapshot
+}
+
+type dataAgreementForObjectData struct {
+	Id                      string                  `json:"id"`
+	Version                 string                  `json:"version"`
+	ControllerId            string                  `json:"controllerId"`
+	ControllerUrl           string                  `json:"controllerUrl" valid:"required"`
+	ControllerName          string                  `json:"controllerName" valid:"required"`
+	Policy                  policy.Policy           `json:"policy" valid:"required"`
+	Purpose                 string                  `json:"purpose" valid:"required"`
+	PurposeDescription      string                  `json:"purposeDescription" valid:"required"`
+	LawfulBasis             int                     `json:"lawfulBasis" valid:"required"`
+	MethodOfUse             string                  `json:"methodOfUse" valid:"required"`
+	DpiaDate                string                  `json:"dpiaDate"`
+	DpiaSummaryUrl          string                  `json:"dpiaSummaryUrl"`
+	Signature               dataagreement.Signature `json:"signature"`
+	Active                  bool                    `json:"active"`
+	Forgettable             bool                    `json:"forgettable"`
+	CompatibleWithVersionId string                  `json:"compatibleWithVersionId"`
+	Lifecycle               string                  `json:"lifecycle" valid:"required"`
+	OrganisationId          string                  `json:"-"`
+	IsDeleted               bool                    `json:"-"`
+}
+
+// CreateRevisionForDataAgreement
+func CreateRevisionForDataAgreement(newDataAgreement dataagreement.DataAgreement, orgAdminId string) (Revision, error) {
+	// Object data
+	objectData := dataAgreementForObjectData{
+		Id:                      newDataAgreement.Id,
+		Version:                 newDataAgreement.Version,
+		ControllerId:            newDataAgreement.ControllerId,
+		ControllerUrl:           newDataAgreement.ControllerUrl,
+		Policy:                  newDataAgreement.Policy,
+		Purpose:                 newDataAgreement.Purpose,
+		PurposeDescription:      newDataAgreement.PurposeDescription,
+		LawfulBasis:             newDataAgreement.LawfulBasis,
+		MethodOfUse:             newDataAgreement.MethodOfUse,
+		DpiaDate:                newDataAgreement.DpiaDate,
+		DpiaSummaryUrl:          newDataAgreement.DpiaSummaryUrl,
+		Signature:               newDataAgreement.Signature,
+		Active:                  newDataAgreement.Active,
+		Forgettable:             newDataAgreement.Forgettable,
+		CompatibleWithVersionId: newDataAgreement.CompatibleWithVersionId,
+		Lifecycle:               newDataAgreement.Lifecycle,
+	}
+
+	// Create revision
+	revision := Revision{}
+	revision.Init(objectData.Id, orgAdminId, config.DataAgreement)
+	err := revision.CreateRevision(objectData)
+
+	return revision, err
+}
+
+// UpdateRevisionForDataAgreement
+func UpdateRevisionForDataAgreement(updatedDataAgreement dataagreement.DataAgreement, previousRevision *Revision, orgAdminId string) (Revision, error) {
+	// Object data
+	objectData := dataAgreementForObjectData{
+		Id:                      updatedDataAgreement.Id,
+		Version:                 updatedDataAgreement.Version,
+		ControllerId:            updatedDataAgreement.ControllerId,
+		ControllerUrl:           updatedDataAgreement.ControllerUrl,
+		Policy:                  updatedDataAgreement.Policy,
+		Purpose:                 updatedDataAgreement.Purpose,
+		PurposeDescription:      updatedDataAgreement.PurposeDescription,
+		LawfulBasis:             updatedDataAgreement.LawfulBasis,
+		MethodOfUse:             updatedDataAgreement.MethodOfUse,
+		DpiaDate:                updatedDataAgreement.DpiaDate,
+		DpiaSummaryUrl:          updatedDataAgreement.DpiaSummaryUrl,
+		Signature:               updatedDataAgreement.Signature,
+		Active:                  updatedDataAgreement.Active,
+		Forgettable:             updatedDataAgreement.Forgettable,
+		CompatibleWithVersionId: updatedDataAgreement.CompatibleWithVersionId,
+		Lifecycle:               updatedDataAgreement.Lifecycle,
+	}
+
+	// Update revision
+	revision := Revision{}
+	revision.Init(objectData.Id, orgAdminId, config.DataAgreement)
+	err := revision.UpdateRevision(previousRevision, objectData)
+
+	return revision, err
+}
+
+func RecreateDataAgreementFromRevision(revision Revision) (dataagreement.DataAgreement, error) {
+
+	// Deserialise revision snapshot
+	var r Revision
+	err := json.Unmarshal([]byte(revision.SerializedSnapshot), &r)
+	if err != nil {
+		return dataagreement.DataAgreement{}, err
+	}
+
+	// Deserialise data agreement
+	var da dataagreement.DataAgreement
+	err = json.Unmarshal([]byte(r.ObjectData), &da)
+	if err != nil {
+		return dataagreement.DataAgreement{}, err
+	}
+
+	return da, nil
 }

@@ -31,3 +31,16 @@ const (
 	Policy              = "policy"
 	DataAgreementRecord = "dataAgreementRecord"
 )
+
+// Data Agreement Method of Use
+const (
+	Null             = "null"
+	DataSource       = "data_source"
+	DataUsingService = "data_using_service"
+)
+
+// Lifecycle
+const (
+	Draft    = "draft"
+	Complete = "complete"
+)
