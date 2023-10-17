@@ -137,6 +137,11 @@ func Init(config *config.Configuration) error {
 		return err
 	}
 
+	err = initCollection("dataAttributes", []string{"id"}, true)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -1,4 +1,4 @@
-package dataagreement
+package dataattribute
 
 import (
 	"context"
@@ -10,21 +10,21 @@ import (
 
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
-	"github.com/bb-consent/api/src/dataagreement"
+	"github.com/bb-consent/api/src/dataattribute"
 	"github.com/bb-consent/api/src/paginate"
 	"github.com/bb-consent/api/src/revision"
 )
 
-// ListDataAgreementsError is an error enumeration for list data agreement API.
-type ListDataAgreementsError int
+// ListDataAttributesError is an error enumeration for list data attribute API.
+type ListDataAttributesError int
 
 const (
 	// ErrRevisionIDIsMissing indicates that the revisionId query param is missing.
-	RevisionIDIsMissingError ListDataAgreementsError = iota
+	RevisionIDIsMissingError ListDataAttributesError = iota
 )
 
 // Error returns the string representation of the error.
-func (e ListDataAgreementsError) Error() string {
+func (e ListDataAttributesError) Error() string {
 	switch e {
 	case RevisionIDIsMissingError:
 		return "Query param revisionId is missing!"
@@ -33,8 +33,8 @@ func (e ListDataAgreementsError) Error() string {
 	}
 }
 
-// ParseListDataAgreementsQueryParams parses query params for listing data agreements.
-func ParseListDataAgreementsQueryParams(r *http.Request) (revisionId string, err error) {
+// ParseListDataAttributesQueryParams parses query params for listing data attributes.
+func ParseListDataAttributesQueryParams(r *http.Request) (revisionId string, err error) {
 	query := r.URL.Query()
 
 	// Check if revisionId query param is provided.
@@ -45,11 +45,6 @@ func ParseListDataAgreementsQueryParams(r *http.Request) (revisionId string, err
 	return "", RevisionIDIsMissingError
 }
 
-type listDataAgreementsResp struct {
-	DataAgreements interface{}         `json:"dataAgreements"`
-	Pagination     paginate.Pagination `json:"pagination"`
-}
-
 func returnHTTPResponse(resp interface{}, w http.ResponseWriter) {
 	response, _ := json.Marshal(resp)
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
@@ -57,50 +52,56 @@ func returnHTTPResponse(resp interface{}, w http.ResponseWriter) {
 	w.Write(response)
 }
 
-// ConfigListDataAgreements
-func ConfigListDataAgreements(w http.ResponseWriter, r *http.Request) {
+type listDataAttributesResp struct {
+	DataAttributes interface{}         `json:"dataAttributes"`
+	Pagination     paginate.Pagination `json:"pagination"`
+}
+
+// ConfigListDataAttributes
+func ConfigListDataAttributes(w http.ResponseWriter, r *http.Request) {
 	// Headers
 	organisationId := r.Header.Get(config.OrganizationId)
 	organisationId = common.Sanitize(organisationId)
 
-	var resp listDataAgreementsResp
+	var resp listDataAttributesResp
 
 	// Query params
 	offset, limit := paginate.ParsePaginationQueryParams(r)
 	log.Printf("Offset: %v and limit: %v\n", offset, limit)
-	revisionId, err := ParseListDataAgreementsQueryParams(r)
+	revisionId, err := ParseListDataAttributesQueryParams(r)
 	revisionId = common.Sanitize(revisionId)
 	if err != nil && errors.Is(err, RevisionIDIsMissingError) {
+		// Repository
+		dataAttributeRepo := dataattribute.DataAttributeRepository{}
+		dataAttributeRepo.Init(organisationId)
 
-		darepo := dataagreement.DataAgreementRepository{}
-		darepo.Init(organisationId)
-		// Return all data agreements
-		var dataAgreements []dataagreement.DataAgreement
+		// Return all data attributes
+		var dataAttributes []dataattribute.DataAttribute
 		query := paginate.PaginateDBObjectsQuery{
-			Filter:     darepo.DefaultFilter,
-			Collection: dataagreement.Collection(),
+			Filter:     dataAttributeRepo.DefaultFilter,
+			Collection: dataattribute.Collection(),
 			Context:    context.Background(),
 			Limit:      limit,
 			Offset:     offset,
 		}
-		result, err := paginate.PaginateDBObjects(query, &dataAgreements)
+		result, err := paginate.PaginateDBObjects(query, &dataAttributes)
 		if err != nil {
 			if errors.Is(err, paginate.EmptyDBError) {
-				emptyDataAgreements := make([]interface{}, 0)
-				resp = listDataAgreementsResp{
-					DataAgreements: emptyDataAgreements,
+				emptyDataAttributes := make([]interface{}, 0)
+				resp = listDataAttributesResp{
+					DataAttributes: emptyDataAttributes,
 					Pagination:     result.Pagination,
 				}
 				returnHTTPResponse(resp, w)
 				return
 			}
-			m := "Failed to paginate data agreement"
+			m := "Failed to paginate data attribute"
 			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 			return
 
 		}
-		resp = listDataAgreementsResp{
-			DataAgreements: result.Items,
+		resp = listDataAttributesResp{
+			DataAttributes: result.Items,
 			Pagination:     result.Pagination,
 		}
 		returnHTTPResponse(resp, w)
@@ -115,10 +116,10 @@ func ConfigListDataAgreements(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Recreate data agreement from revision
-		da, err := revision.RecreateDataAgreementFromRevision(revisionResp)
+		// Recreate data attribute from revision
+		da, err := revision.RecreateDataAttributeFromRevision(revisionResp)
 		if err != nil {
-			m := fmt.Sprintf("Failed to fetch data agreement by revision: %v", revisionId)
+			m := fmt.Sprintf("Failed to fetch data attribute by revision: %v", revisionId)
 			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 			return
 		}
@@ -127,8 +128,8 @@ func ConfigListDataAgreements(w http.ResponseWriter, r *http.Request) {
 		interfaceSlice = append(interfaceSlice, da)
 
 		// Constructing the response
-		resp = listDataAgreementsResp{
-			DataAgreements: interfaceSlice,
+		resp = listDataAttributesResp{
+			DataAttributes: interfaceSlice,
 			Pagination: paginate.Pagination{
 				CurrentPage: 1,
 				TotalItems:  1,

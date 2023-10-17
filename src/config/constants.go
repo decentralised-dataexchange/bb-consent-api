@@ -30,6 +30,7 @@ const (
 	DataAgreement       = "dataAgreement"
 	Policy              = "policy"
 	DataAgreementRecord = "dataAgreementRecord"
+	DataAttribute       = "dataAttribute"
 )
 
 // Data Agreement Method of Use

@@ -80,7 +80,6 @@ func (darepo *DataAgreementRepository) Get(dataAgreementId string) (DataAgreemen
 
 	var result DataAgreement
 	err := Collection().FindOne(context.TODO(), filter).Decode(&result)
-
 	return result, err
 }
 
@@ -94,5 +93,17 @@ func (darepo *DataAgreementRepository) Update(dataAgreement DataAgreement) (Data
 	if err != nil {
 		return dataAgreement, err
 	}
-	return dataAgreement, err
+	return dataAgreement, nil
+}
+
+// IsDataAgreementExist Check if data agreement with given id exists
+func (darepo *DataAgreementRepository) IsDataAgreementExist(dataAgreementId string) (int64, error) {
+
+	filter := common.CombineFilters(darepo.DefaultFilter, bson.M{"_id": dataAgreementId})
+
+	exists, err := Collection().CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return exists, err
+	}
+	return exists, nil
 }
