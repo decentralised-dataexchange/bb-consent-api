@@ -11,53 +11,36 @@ import (
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/dataagreement"
-	"github.com/bb-consent/api/src/org"
 	"github.com/bb-consent/api/src/revision"
 	"github.com/bb-consent/api/src/token"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// Lawful basis of processing IDs
-const (
-	ConsentBasis            = 0
-	ContractBasis           = 1
-	LegalObligationBasis    = 2
-	VitalInterestBasis      = 3
-	PublicTaskBasis         = 4
-	LegitimateInterestBasis = 5
-)
-
-// LawfulBasisOfProcessingMapping Structure defining lawful basis of processing label and ID mapping
+// LawfulBasisOfProcessingMapping Structure defining lawful basis of processing label
 type LawfulBasisOfProcessingMapping struct {
-	ID  int
 	Str string
 }
 
 // LawfulBasisOfProcessingMappings List of available lawful basis of processing mappings
 var LawfulBasisOfProcessingMappings = []LawfulBasisOfProcessingMapping{
 	{
-		ID:  ConsentBasis,
-		Str: "consent",
+		"consent",
 	},
 	{
-		ID:  ContractBasis,
-		Str: "contract",
+		"contract",
 	},
 	{
-		ID:  LegalObligationBasis,
-		Str: "legalObligation",
+
+		"legal_obligation",
 	},
 	{
-		ID:  VitalInterestBasis,
-		Str: "vitalInterest",
+		"vital_interest",
 	},
 	{
-		ID:  PublicTaskBasis,
-		Str: "publicTask",
+		"public_task",
 	},
 	{
-		ID:  LegitimateInterestBasis,
-		Str: "legitimateInterest",
+		"legitimate_interest",
 	},
 }
 
@@ -71,10 +54,10 @@ type addDataAgreementResp struct {
 }
 
 // Check if the lawful usage ID provided is valid
-func isValidLawfulBasisOfProcessing(lawfulBasis int) bool {
+func isValidLawfulBasisOfProcessing(lawfulBasis string) bool {
 	isFound := false
-	for _, lawfulBasisOfProcessingMapping := range org.LawfulBasisOfProcessingMappings {
-		if lawfulBasisOfProcessingMapping.ID == lawfulBasis {
+	for _, lawfulBasisOfProcessingMapping := range LawfulBasisOfProcessingMappings {
+		if lawfulBasisOfProcessingMapping.Str == lawfulBasis {
 			isFound = true
 			break
 		}

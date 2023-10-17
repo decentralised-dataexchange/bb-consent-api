@@ -203,25 +203,25 @@ func (r *RevisionForHTTPResponse) Init(revision Revision) {
 }
 
 type dataAgreementForObjectData struct {
-	Id                      string                  `json:"id"`
-	Version                 string                  `json:"version"`
-	ControllerId            string                  `json:"controllerId"`
-	ControllerUrl           string                  `json:"controllerUrl" valid:"required"`
-	ControllerName          string                  `json:"controllerName" valid:"required"`
-	Policy                  policy.Policy           `json:"policy" valid:"required"`
-	Purpose                 string                  `json:"purpose" valid:"required"`
-	PurposeDescription      string                  `json:"purposeDescription" valid:"required"`
-	LawfulBasis             int                     `json:"lawfulBasis" valid:"required"`
-	MethodOfUse             string                  `json:"methodOfUse" valid:"required"`
-	DpiaDate                string                  `json:"dpiaDate"`
-	DpiaSummaryUrl          string                  `json:"dpiaSummaryUrl"`
-	Signature               dataagreement.Signature `json:"signature"`
-	Active                  bool                    `json:"active"`
-	Forgettable             bool                    `json:"forgettable"`
-	CompatibleWithVersionId string                  `json:"compatibleWithVersionId"`
-	Lifecycle               string                  `json:"lifecycle" valid:"required"`
-	OrganisationId          string                  `json:"-"`
-	IsDeleted               bool                    `json:"-"`
+	Id                      string                               `json:"id"`
+	Version                 string                               `json:"version"`
+	ControllerId            string                               `json:"controllerId"`
+	ControllerUrl           string                               `json:"controllerUrl" valid:"required"`
+	ControllerName          string                               `json:"controllerName" valid:"required"`
+	Policy                  dataagreement.PolicyForDataAgreement `json:"policy" valid:"required"`
+	Purpose                 string                               `json:"purpose" valid:"required"`
+	PurposeDescription      string                               `json:"purposeDescription" valid:"required"`
+	LawfulBasis             string                               `json:"lawfulBasis" valid:"required"`
+	MethodOfUse             string                               `json:"methodOfUse" valid:"required"`
+	DpiaDate                string                               `json:"dpiaDate"`
+	DpiaSummaryUrl          string                               `json:"dpiaSummaryUrl"`
+	Signature               dataagreement.Signature              `json:"signature"`
+	Active                  bool                                 `json:"active"`
+	Forgettable             bool                                 `json:"forgettable"`
+	CompatibleWithVersionId string                               `json:"compatibleWithVersionId"`
+	Lifecycle               string                               `json:"lifecycle" valid:"required"`
+	OrganisationId          string                               `json:"-"`
+	IsDeleted               bool                                 `json:"-"`
 }
 
 // CreateRevisionForDataAgreement

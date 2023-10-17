@@ -31,26 +31,31 @@ type Signature struct {
 	ObjectReference              string `json:"objectReference"`
 }
 
+type PolicyForDataAgreement struct {
+	policy.Policy
+	Id string `json:"id"`
+}
+
 type DataAgreement struct {
-	Id                      string        `json:"id" bson:"_id,omitempty"`
-	Version                 string        `json:"version"`
-	ControllerId            string        `json:"controllerId"`
-	ControllerUrl           string        `json:"controllerUrl" valid:"required"`
-	ControllerName          string        `json:"controllerName" valid:"required"`
-	Policy                  policy.Policy `json:"policy" valid:"required"`
-	Purpose                 string        `json:"purpose" valid:"required"`
-	PurposeDescription      string        `json:"purposeDescription" valid:"required"`
-	LawfulBasis             int           `json:"lawfulBasis" valid:"min=0"`
-	MethodOfUse             string        `json:"methodOfUse" valid:"required"`
-	DpiaDate                string        `json:"dpiaDate"`
-	DpiaSummaryUrl          string        `json:"dpiaSummaryUrl"`
-	Signature               Signature     `json:"signature"`
-	Active                  bool          `json:"active"`
-	Forgettable             bool          `json:"forgettable"`
-	CompatibleWithVersionId string        `json:"compatibleWithVersionId"`
-	Lifecycle               string        `json:"lifecycle" valid:"required"`
-	OrganisationId          string        `json:"-"`
-	IsDeleted               bool          `json:"-"`
+	Id                      string                 `json:"id" bson:"_id,omitempty"`
+	Version                 string                 `json:"version"`
+	ControllerId            string                 `json:"controllerId"`
+	ControllerUrl           string                 `json:"controllerUrl" valid:"required"`
+	ControllerName          string                 `json:"controllerName" valid:"required"`
+	Policy                  PolicyForDataAgreement `json:"policy" valid:"required"`
+	Purpose                 string                 `json:"purpose" valid:"required"`
+	PurposeDescription      string                 `json:"purposeDescription" valid:"required"`
+	LawfulBasis             string                 `json:"lawfulBasis" valid:"required"`
+	MethodOfUse             string                 `json:"methodOfUse" valid:"required"`
+	DpiaDate                string                 `json:"dpiaDate"`
+	DpiaSummaryUrl          string                 `json:"dpiaSummaryUrl"`
+	Signature               Signature              `json:"signature"`
+	Active                  bool                   `json:"active"`
+	Forgettable             bool                   `json:"forgettable"`
+	CompatibleWithVersionId string                 `json:"compatibleWithVersionId"`
+	Lifecycle               string                 `json:"lifecycle" valid:"required"`
+	OrganisationId          string                 `json:"-"`
+	IsDeleted               bool                   `json:"-"`
 }
 
 type DataAgreementRepository struct {
