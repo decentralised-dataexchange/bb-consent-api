@@ -23,6 +23,7 @@ const (
 	WebhookDeliveryId     = "deliveryId"
 	PolicyId              = "policyId"
 	DataAgreementRecordId = "dataAgreementRecordId"
+	IndividualId          = "individualId"
 )
 
 // Schemas

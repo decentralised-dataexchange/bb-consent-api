@@ -142,6 +142,11 @@ func Init(config *config.Configuration) error {
 		return err
 	}
 
+	err = initCollection("individuals", []string{"id"}, true)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
