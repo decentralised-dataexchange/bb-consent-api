@@ -7,6 +7,7 @@ import (
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/dataagreement"
+	"github.com/bb-consent/api/src/dataattribute"
 	"github.com/bb-consent/api/src/policy"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -298,6 +299,77 @@ func RecreateDataAgreementFromRevision(revision Revision) (dataagreement.DataAgr
 	err = json.Unmarshal([]byte(r.ObjectData), &da)
 	if err != nil {
 		return dataagreement.DataAgreement{}, err
+	}
+
+	return da, nil
+}
+
+type dataAttributeForObjectData struct {
+	Id           string   `json:"id"`
+	Version      string   `json:"version"`
+	AgreementIds []string `json:"agreementIds"`
+	Name         string   `json:"name" valid:"required"`
+	Description  string   `json:"description" valid:"required"`
+	Sensitivity  bool     `json:"sensitivity"`
+	Category     string   `json:"category"`
+}
+
+// CreateRevisionForDataAttribute
+func CreateRevisionForDataAttribute(newDataAttribute dataattribute.DataAttribute, orgAdminId string) (Revision, error) {
+	// Object data
+	objectData := dataAttributeForObjectData{
+		Id:           newDataAttribute.Id,
+		Version:      newDataAttribute.Version,
+		AgreementIds: newDataAttribute.AgreementIds,
+		Name:         newDataAttribute.Name,
+		Description:  newDataAttribute.Description,
+		Sensitivity:  newDataAttribute.Sensitivity,
+		Category:     newDataAttribute.Category,
+	}
+
+	// Create revision
+	revision := Revision{}
+	revision.Init(objectData.Id, orgAdminId, config.DataAttribute)
+	err := revision.CreateRevision(objectData)
+
+	return revision, err
+}
+
+// UpdateRevisionForDataAttribute
+func UpdateRevisionForDataAttribute(updatedDataAttribute dataattribute.DataAttribute, previousRevision *Revision, orgAdminId string) (Revision, error) {
+	// Object data
+	objectData := dataAttributeForObjectData{
+		Id:           updatedDataAttribute.Id,
+		Version:      updatedDataAttribute.Version,
+		AgreementIds: updatedDataAttribute.AgreementIds,
+		Name:         updatedDataAttribute.Name,
+		Description:  updatedDataAttribute.Description,
+		Sensitivity:  updatedDataAttribute.Sensitivity,
+		Category:     updatedDataAttribute.Category,
+	}
+
+	// Update revision
+	revision := Revision{}
+	revision.Init(objectData.Id, orgAdminId, config.DataAttribute)
+	err := revision.UpdateRevision(previousRevision, objectData)
+
+	return revision, err
+}
+
+func RecreateDataAttributeFromRevision(revision Revision) (dataattribute.DataAttribute, error) {
+
+	// Deserialise revision snapshot
+	var r Revision
+	err := json.Unmarshal([]byte(revision.SerializedSnapshot), &r)
+	if err != nil {
+		return dataattribute.DataAttribute{}, err
+	}
+
+	// Deserialise data attribute
+	var da dataattribute.DataAttribute
+	err = json.Unmarshal([]byte(r.ObjectData), &da)
+	if err != nil {
+		return dataattribute.DataAttribute{}, err
 	}
 
 	return da, nil

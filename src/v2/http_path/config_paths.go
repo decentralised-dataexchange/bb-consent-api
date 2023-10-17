@@ -15,14 +15,17 @@ const ConfigUpdateDataAgreement = "/v2/config/data-agreement/{dataAgreementId}"
 const ConfigDeleteDataAgreement = "/v2/config/data-agreement/{dataAgreementId}"
 const ConfigListDataAgreements = "/v2/config/data-agreements"
 const ConfigListDataAgreementRevisions = "/v2/config/data-agreement/{dataAgreementId}/revisions"
+const ConfigListDataAttributesForDataAgreement = "/v2/config/data-agreement/{dataAgreementId}/data-attributes"
 
 const ReadDataAgreementRevision = "/v2/config/data-agreement/{dataAgreementId}/revision/{revisionId}"
 
 // Data attributes
-const GetDataAttributes = "/v2/config/data-agreements/data-attributes"
-const AddDataAttribute = "/v2/config/data-agreements/data-attribute"
-const UpdateDataAttributeById = "/v2/config/data-agreements/data-attribute/{dataAttributeId}"
-const DeleteDataAttributeById = "/v2/config/data-agreements/data-attribute/{dataAttributeId}"
+const ConfigReadDataAttribute = "/v2/config/data-agreements/data-attribute/{dataAttributeId}"
+const ConfigCreateDataAttribute = "/v2/config/data-agreements/data-attribute"
+const ConfigUpdateDataAttribute = "/v2/config/data-agreements/data-attribute/{dataAttributeId}"
+const ConfigListDataAttributeRevisions = "/v2/config/data-agreements/data-attribute/{dataAttributeId}/revisions"
+const ConfigDeleteDataAttribute = "/v2/config/data-agreements/data-attribute/{dataAttributeId}"
+const ConfigListDataAttributes = "/v2/config/data-agreements/data-attributes"
 
 // Webhooks
 const GetWebhookEventTypes = "/v2/config/webhooks/event-types"

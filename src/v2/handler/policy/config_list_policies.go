@@ -13,7 +13,6 @@ import (
 	"github.com/bb-consent/api/src/paginate"
 	"github.com/bb-consent/api/src/policy"
 	"github.com/bb-consent/api/src/revision"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // ListPoliciesError is an error enumeration for list policies API.
@@ -72,10 +71,13 @@ func ConfigListPolicies(w http.ResponseWriter, r *http.Request) {
 	revisionId, err := ParseListPoliciesQueryParams(r)
 	revisionId = common.Sanitize(revisionId)
 	if err != nil && errors.Is(err, RevisionIDIsMissingError) {
+		// Repository
+		prepo := policy.PolicyRepository{}
+		prepo.Init(organisationId)
 		// Return all policies
 		var policies []policy.Policy
 		query := paginate.PaginateDBObjectsQuery{
-			Filter:     bson.M{"organisationid": organisationId, "isdeleted": false},
+			Filter:     prepo.DefaultFilter,
 			Collection: policy.Collection(),
 			Context:    context.Background(),
 			Limit:      limit,

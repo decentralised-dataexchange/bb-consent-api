@@ -8,11 +8,22 @@ import (
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/dataagreement"
+	"github.com/bb-consent/api/src/dataattribute"
 	"github.com/bb-consent/api/src/revision"
 	"github.com/gorilla/mux"
 )
 
-func deleteDataAgreementIdFromDataAttribute() {
+func deleteDataAgreementIdFromDataAttributes(dataAgreementId string, organisationId string) error {
+
+	dataAttributeRepo := dataattribute.DataAttributeRepository{}
+	dataAttributeRepo.Init(organisationId)
+
+	err := dataAttributeRepo.RemoveDataAgreementIdFromDataAttributes(dataAgreementId)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // ConfigDeleteDataAgreement
@@ -42,8 +53,13 @@ func ConfigDeleteDataAgreement(w http.ResponseWriter, r *http.Request) {
 
 	currentDataAgreement.IsDeleted = true
 
-	//TODO: Before we delete data agreement, need to remove the data agreement from data attribute
-	deleteDataAgreementIdFromDataAttribute()
+	// Remove the data agreement from data attribute
+	err = deleteDataAgreementIdFromDataAttributes(dataAgreementId, organisationId)
+	if err != nil {
+		m := fmt.Sprintf("Failed to delete data agreement id from data attributes: %v", dataAgreementId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
 
 	_, err = daRepo.Update(currentDataAgreement)
 	if err != nil {
