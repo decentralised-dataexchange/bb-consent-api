@@ -46,11 +46,11 @@ const DeleteIdentityProvider = "/v2/config/idp/open-id"
 const GetIdentityProvider = "/v2/config/idp/open-id"
 
 // Individuals
-const GetOrganizationUsers = "/v2/config/individuals"
-const RegisterUser = "/v2/config/individual"
-const GetUser = "/v2/config/individual/{individualId}"
-const DeleteUser = "/v2/config/individual/{individualId}"
-const UpdateUser = "/v2/config/individual/{individualId}"
+const ConfigCreateIndividual = "/v2/config/individual"
+const ConfigReadIndividual = "/v2/config/individual/{individualId}"
+const ConfigUpdateIndividual = "/v2/config/individual/{individualId}"
+const ConfigDeleteIndividual = "/v2/config/individual/{individualId}"
+const ConfigListIndividuals = "/v2/config/individuals"
 
 // Api key
 const CreateAPIKey = "/v2/config/admin/apikey"

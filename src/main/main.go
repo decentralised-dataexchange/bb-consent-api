@@ -17,6 +17,7 @@ import (
 	v1Handlers "github.com/bb-consent/api/src/v1/handler"
 	v1HttpPaths "github.com/bb-consent/api/src/v1/http_path"
 	v2Handlers "github.com/bb-consent/api/src/v2/handler"
+	individualHandler "github.com/bb-consent/api/src/v2/handler/individual"
 	v2HttpPaths "github.com/bb-consent/api/src/v2/http_path"
 	"github.com/bb-consent/api/src/webhookdispatcher"
 	"github.com/bb-consent/api/src/webhooks"
@@ -63,6 +64,7 @@ func main() {
 
 			v1Handlers.IamInit(loadedConfig)
 			v2Handlers.IamInit(loadedConfig)
+			individualHandler.IamInit(loadedConfig)
 			log.Println("Iam initialized")
 
 			email.Init(loadedConfig)

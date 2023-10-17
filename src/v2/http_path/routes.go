@@ -5,6 +5,7 @@ import (
 	v2Handler "github.com/bb-consent/api/src/v2/handler"
 	dataAgreementHandler "github.com/bb-consent/api/src/v2/handler/dataagreement"
 	dataAttributeHandler "github.com/bb-consent/api/src/v2/handler/dataattribute"
+	individualHandler "github.com/bb-consent/api/src/v2/handler/individual"
 	policyHandler "github.com/bb-consent/api/src/v2/handler/policy"
 	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
@@ -58,11 +59,11 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(GetIdentityProvider, m.Chain(v2Handler.GetIdentityProvider, m.Logger(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Individual related api(s)
-	r.Handle(GetOrganizationUsers, m.Chain(v2Handler.GetOrganizationUsers, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(RegisterUser, m.Chain(v2Handler.RegisterUser, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
-	r.Handle(GetUser, m.Chain(v2Handler.GetUser, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(DeleteUser, m.Chain(v2Handler.DeleteUser, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("DELETE")
-	r.Handle(UpdateUser, m.Chain(v2Handler.UpdateUser, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
+	r.Handle(ConfigReadIndividual, m.Chain(individualHandler.ConfigReadIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ConfigCreateIndividual, m.Chain(individualHandler.ConfigCreateIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	r.Handle(ConfigUpdateIndividual, m.Chain(individualHandler.ConfigUpdateIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
+	r.Handle(ConfigDeleteIndividual, m.Chain(individualHandler.ConfigDeleteIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("DELETE")
+	r.Handle(ConfigListIndividuals, m.Chain(individualHandler.ConfigListIndividuals, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Api key related api(s)
 	r.Handle(CreateAPIKey, m.Chain(v2Handler.CreateAPIKey, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
