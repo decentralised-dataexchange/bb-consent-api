@@ -20,6 +20,10 @@ type orgUpdateReq struct {
 	PolicyURL   string `json:"policyUrl"`
 }
 
+type updateOrgResp struct {
+	Organization organizationResp `json:"organisation"`
+}
+
 // UpdateOrganization Updates an organization
 func UpdateOrganization(w http.ResponseWriter, r *http.Request) {
 	var orgUpReq orgUpdateReq
@@ -71,6 +75,6 @@ func UpdateOrganization(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
-	response, _ := json.Marshal(oResp)
+	response, _ := json.Marshal(updateOrgResp{oResp})
 	w.Write(response)
 }
