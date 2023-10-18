@@ -28,16 +28,17 @@ const ConfigDeleteDataAttribute = "/v2/config/data-agreements/data-attribute/{da
 const ConfigListDataAttributes = "/v2/config/data-agreements/data-attributes"
 
 // Webhooks
-const GetWebhookEventTypes = "/v2/config/webhooks/event-types"
-const GetWebhookPayloadContentTypes = "/v2/config/webhooks/payload/content-types"
-const GetAllWebhooks = "/v2/config/webhooks"
-const CreateWebhook = "/v2/config/webhook"
-const UpdateWebhook = "/v2/config/webhook/{webhookId}"
-const DeleteWebhook = "/v2/config/webhook/{webhookId}"
-const PingWebhook = "/v2/config/webhook/{webhookId}/ping"
-const GetRecentWebhookDeliveries = "/v2/config/webhooks/{webhookId}/delivery"
-const GetRecentWebhookDeliveryById = "/v2/config/webhooks/{webhookId}/delivery/{deliveryId}"
-const RedeliverWebhookPayloadByDeliveryID = "/v2/config/webhooks/{webhookId}/delivery/{deliveryId}/redeliver"
+const ConfigReadWebhook = "/v2/config/webhook/{webhookId}"
+const ConfigCreateWebhook = "/v2/config/webhook"
+const ConfigUpdateWebhook = "/v2/config/webhook/{webhookId}"
+const ConfigDeleteWebhook = "/v2/config/webhook/{webhookId}"
+const ConfigListWebhooks = "/v2/config/webhooks"
+const ConfigPingWebhook = "/v2/config/webhook/{webhookId}/ping"
+const ConfigListRecentWebhookDeliveries = "/v2/config/webhooks/{webhookId}/delivery"
+const ConfigReadRecentWebhookDelivery = "/v2/config/webhooks/{webhookId}/delivery/{deliveryId}"
+const ConfigRedeliverWebhookPayloadByDeliveryID = "/v2/config/webhooks/{webhookId}/delivery/{deliveryId}/redeliver"
+const ConfigListWebhookEventTypes = "/v2/config/webhooks/event-types"
+const ConfigListWebhookPayloadContentTypes = "/v2/config/webhooks/payload/content-types"
 
 // Organisation identity provider related API(s)
 const AddIdentityProvider = "/v2/config/idp/open-id"
