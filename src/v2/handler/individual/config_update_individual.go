@@ -1,14 +1,14 @@
 package individual
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 
+	"github.com/Nerzal/gocloak/v13"
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
@@ -34,37 +34,25 @@ type iamIndividualUpdateReq struct {
 
 // updateIamIndividual Update user info on IAM server end.
 func updateIamIndividual(iamUpdateReq iamIndividualUpdateReq, iamID string) error {
+	client := getClient()
 
-	t, _, _, err := getAdminToken()
+	t, err := getAdminToken(client)
 	if err != nil {
 		log.Printf("Failed to get admin token, user: %v update err:%v", iamUpdateReq.Firstname, err)
 		return err
 	}
-
-	jsonReq, _ := json.Marshal(iamUpdateReq)
-	req, err := http.NewRequest("PUT", iamConfig.URL+"/admin/realms/"+iamConfig.Realm+"/users/"+iamID, bytes.NewBuffer(jsonReq))
-	if err != nil {
-		log.Printf("Failed to form update user request err:%v", err)
-		return err
-	}
-
-	req.Header.Add("Authorization", "Bearer "+t.AccessToken)
-	req.Header.Add(config.ContentTypeHeader, config.ContentTypeJSON)
-
-	client := http.Client{
-		Timeout: timeout,
-	}
-	resp, err := client.Do(req)
+	user, err := client.GetUserByID(context.Background(), t.AccessToken, iamConfig.Realm, iamID)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	user.FirstName = gocloak.StringP(iamUpdateReq.Firstname)
+	user.Username = gocloak.StringP(iamUpdateReq.Username)
+	user.Email = gocloak.StringP(iamUpdateReq.Email)
+	u := *user
 
-	if resp.StatusCode != http.StatusNoContent {
-		log.Printf("Failed to update user with status code: %v", resp.StatusCode)
-		return errors.New("failed to update user")
-	}
-	return nil
+	err = client.UpdateUser(context.Background(), t.AccessToken, iamConfig.Realm, u)
+
+	return err
 }
 
 func updateIamUpdateRequestFromRequestBody(requestBody updateIndividualReq) iamIndividualUpdateReq {
