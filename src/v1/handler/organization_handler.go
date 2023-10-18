@@ -1193,6 +1193,10 @@ func UpdateTemplateByID(w http.ResponseWriter, r *http.Request) {
 			if uReq.PurposeIDs != nil {
 				o.Templates[i].PurposeIDs = uReq.PurposeIDs
 			}
+			if uReq.Description != "" {
+				o.Templates[i].Description = uReq.Description
+			}
+
 		}
 	}
 
