@@ -10,7 +10,7 @@ import (
 
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
-	"github.com/bb-consent/api/src/individual"
+	"github.com/bb-consent/api/src/v2/individual"
 	"github.com/gorilla/mux"
 )
 

@@ -6,9 +6,9 @@ import (
 
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
-	"github.com/bb-consent/api/src/dataagreement"
-	"github.com/bb-consent/api/src/dataattribute"
 	"github.com/bb-consent/api/src/policy"
+	"github.com/bb-consent/api/src/v2/dataagreement"
+	"github.com/bb-consent/api/src/v2/dataattribute"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 

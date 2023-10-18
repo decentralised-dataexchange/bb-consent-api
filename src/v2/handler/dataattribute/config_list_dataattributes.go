@@ -10,9 +10,9 @@ import (
 
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
-	"github.com/bb-consent/api/src/dataattribute"
-	"github.com/bb-consent/api/src/paginate"
-	"github.com/bb-consent/api/src/revision"
+	"github.com/bb-consent/api/src/v2/dataattribute"
+	"github.com/bb-consent/api/src/v2/paginate"
+	"github.com/bb-consent/api/src/v2/revision"
 )
 
 // ListDataAttributesError is an error enumeration for list data attribute API.

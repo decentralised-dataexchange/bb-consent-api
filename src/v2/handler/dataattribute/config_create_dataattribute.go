@@ -10,10 +10,10 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
-	"github.com/bb-consent/api/src/dataagreement"
-	"github.com/bb-consent/api/src/dataattribute"
-	"github.com/bb-consent/api/src/revision"
 	"github.com/bb-consent/api/src/token"
+	"github.com/bb-consent/api/src/v2/dataagreement"
+	"github.com/bb-consent/api/src/v2/dataattribute"
+	"github.com/bb-consent/api/src/v2/revision"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
