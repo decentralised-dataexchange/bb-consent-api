@@ -1,11 +1,11 @@
-package handler
+package webhook
 
 import (
 	"encoding/json"
 	"net/http"
 
 	"github.com/bb-consent/api/src/config"
-	wh "github.com/bb-consent/api/src/webhooks"
+	wh "github.com/bb-consent/api/src/v2/webhook"
 )
 
 // WebhookPayloadContentTypesResp Defines response structure for webhook payload content types
@@ -13,8 +13,8 @@ type WebhookPayloadContentTypesResp struct {
 	ContentTypes []string
 }
 
-// GetWebhookPayloadContentTypes List available webhook payload content types
-func GetWebhookPayloadContentTypes(w http.ResponseWriter, r *http.Request) {
+// ConfigListWebhookPayloadContentTypes List available webhook payload content types
+func ConfigListWebhookPayloadContentTypes(w http.ResponseWriter, r *http.Request) {
 	var webhookPayloadContentTypesResp WebhookPayloadContentTypesResp
 
 	for _, payloadContentTypes := range wh.PayloadContentTypes {
