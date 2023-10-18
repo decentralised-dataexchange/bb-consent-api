@@ -13,6 +13,7 @@ import (
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/kafkaUtils"
 	"github.com/bb-consent/api/src/user"
+	"github.com/bb-consent/api/src/v2/webhook_dispatcher"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
@@ -278,6 +279,8 @@ func TriggerWebhooks(webhookEventData WebhookEventData, webhookEventType string)
 			return
 		}
 
+		go webhook_dispatcher.ProcessWebhooks(webhookEventType, b)
+
 		// Log webhook calls in webhooks category
 		aLog := fmt.Sprintf("Organization webhook: %v triggered by user: %v by event: %v", toBeProcessedWebhook.PayloadURL, u.Email, webhookEventType)
 		actionlog.LogOrgWebhookCalls(u.ID.Hex(), u.Email, webhookEventData.GetOrganisationID(), aLog)
@@ -289,8 +292,7 @@ func TriggerWebhooks(webhookEventData WebhookEventData, webhookEventType string)
 func TriggerOrgSubscriptionWebhookEvent(userID, orgID string, eventType string) {
 
 	// Constructing webhook event data attribute
-	var orgSubscriptionWebhookEvent OrgSubscriptionWebhookEvent
-	orgSubscriptionWebhookEvent = OrgSubscriptionWebhookEvent{
+	orgSubscriptionWebhookEvent := OrgSubscriptionWebhookEvent{
 		OrganisationID: orgID,
 		UserID:         userID,
 	}
@@ -303,8 +305,7 @@ func TriggerOrgSubscriptionWebhookEvent(userID, orgID string, eventType string) 
 func TriggerConsentWebhookEvent(userID, purposeID, consentID, orgID, eventType, timeStamp string, days int, attributes []string) {
 
 	// Constructing webhook event data attribute
-	var consentWebhookEvent ConsentWebhookEvent
-	consentWebhookEvent = ConsentWebhookEvent{
+	consentWebhookEvent := ConsentWebhookEvent{
 		OrganisationID: orgID,
 		UserID:         userID,
 		ConsentID:      consentID,
@@ -322,8 +323,7 @@ func TriggerConsentWebhookEvent(userID, purposeID, consentID, orgID, eventType, 
 func TriggerDataRequestWebhookEvent(userID string, orgID string, dataRequestID string, eventType string) {
 
 	// Constructing webhook event data attribute
-	var dataRequestWebhookEvent DataRequestWebhookEvent
-	dataRequestWebhookEvent = DataRequestWebhookEvent{
+	dataRequestWebhookEvent := DataRequestWebhookEvent{
 		OrganisationID: orgID,
 		UserID:         userID,
 		DataRequestID:  dataRequestID,
@@ -337,8 +337,7 @@ func TriggerDataRequestWebhookEvent(userID string, orgID string, dataRequestID s
 func TriggerDataUpdateRequestWebhookEvent(userID, attributeID, purposeID, consentID, orgID, dataRequestID string, eventType string) {
 
 	// Constructing webhook event data attribute
-	var dataUpdateRequestWebhookEvent DataUpdateRequestWebhookEvent
-	dataUpdateRequestWebhookEvent = DataUpdateRequestWebhookEvent{
+	dataUpdateRequestWebhookEvent := DataUpdateRequestWebhookEvent{
 		OrganisationID: orgID,
 		UserID:         userID,
 		DataRequestID:  dataRequestID,
