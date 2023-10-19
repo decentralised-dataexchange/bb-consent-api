@@ -23,12 +23,11 @@ func SetApplicationMode() Middleware {
 
 		// Define the http.HandlerFunc
 		return func(w http.ResponseWriter, r *http.Request) {
-
 			if ApplicationMode == config.SingleTenant {
 
 				organization, err := org.GetFirstOrganization()
 				if err != nil {
-					m := "failed to find organization"
+					m := "Failed to find organization"
 					common.HandleError(w, http.StatusBadRequest, m, err)
 					return
 				}
