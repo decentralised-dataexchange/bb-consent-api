@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -27,6 +28,7 @@ type listIndividualsResp struct {
 
 // ConfigListIndividuals
 func ConfigListIndividuals(w http.ResponseWriter, r *http.Request) {
+	fmt.Println()
 
 	organisationId := r.Header.Get(config.OrganizationId)
 	organisationId = common.Sanitize(organisationId)

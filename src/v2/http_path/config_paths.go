@@ -42,9 +42,9 @@ const ConfigListWebhookPayloadContentTypes = "/v2/config/webhooks/payload/conten
 
 // Organisation identity provider related API(s)
 const AddIdentityProvider = "/v2/config/idp/open-id"
-const UpdateIdentityProvider = "/v2/config/idp/open-id"
-const DeleteIdentityProvider = "/v2/config/idp/open-id"
-const GetIdentityProvider = "/v2/config/idp/open-id"
+const UpdateIdentityProvider = "/v2/config/idp/open-id/{idpId}"
+const DeleteIdentityProvider = "/v2/config/idp/open-id/{idpId}"
+const GetIdentityProvider = "/v2/config/idp/open-id/{idpId}"
 
 // Individuals
 const ConfigCreateIndividual = "/v2/config/individual"
@@ -54,6 +54,6 @@ const ConfigDeleteIndividual = "/v2/config/individual/{individualId}"
 const ConfigListIndividuals = "/v2/config/individuals"
 
 // Api key
-const CreateAPIKey = "/v2/config/admin/apikey"
-const DeleteAPIKey = "/v2/config/admin/apikey"
-const GetAPIKey = "/v2/config/admin/apikey"
+const ConfigCreateApiKey = "/v2/config/admin/apikey"
+const ConfigUpdateApiKey = "/v2/config/admin/apikey/{apiKeyId}"
+const ConfigDeleteApiKey = "/v2/config/admin/apikey/{apiKeyId}"

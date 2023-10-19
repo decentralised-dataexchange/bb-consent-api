@@ -26,6 +26,8 @@ const (
 	IndividualId          = "individualId"
 	DeliveryId            = "deliveryId"
 	IdpId                 = "idpId"
+	ApiKeyId              = "apiKeyId"
+	IndividualHeaderKey   = "X-ConsentBB-IndividualId"
 )
 
 // Schemas
@@ -47,4 +49,12 @@ const (
 const (
 	Draft    = "draft"
 	Complete = "complete"
+)
+
+// Scopes for api key
+const (
+	Config  = "config"
+	Service = "service"
+	Audit   = "audit"
+	Onboard = "onboard"
 )

@@ -2,6 +2,7 @@ package http_path
 
 import (
 	v2Handler "github.com/bb-consent/api/src/v2/handler"
+	apiKeyHandler "github.com/bb-consent/api/src/v2/handler/apikey"
 	dataAgreementHandler "github.com/bb-consent/api/src/v2/handler/dataagreement"
 	dataAttributeHandler "github.com/bb-consent/api/src/v2/handler/dataattribute"
 	idpHandler "github.com/bb-consent/api/src/v2/handler/idp"
@@ -70,9 +71,9 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(ConfigListIndividuals, m.Chain(individualHandler.ConfigListIndividuals, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Api key related api(s)
-	r.Handle(CreateAPIKey, m.Chain(v2Handler.CreateAPIKey, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
-	r.Handle(DeleteAPIKey, m.Chain(v2Handler.DeleteAPIKey, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("DELETE")
-	r.Handle(GetAPIKey, m.Chain(v2Handler.GetAPIKey, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ConfigCreateApiKey, m.Chain(apiKeyHandler.ConfigCreateApiKey, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	r.Handle(ConfigDeleteApiKey, m.Chain(apiKeyHandler.ConfigDeleteApiKey, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("DELETE")
+	r.Handle(ConfigUpdateApiKey, m.Chain(apiKeyHandler.ConfigUpdateApiKey, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
 
 	// Service api(s)
 

@@ -143,6 +143,9 @@ func SetUserID(r *http.Request, userID string) {
 
 // GetUserID Get UserID from context
 func GetUserID(r *http.Request) string {
+	if context.Get(r, userIDKey) == nil {
+		return ""
+	}
 	return context.Get(r, userIDKey).(string)
 }
 
@@ -175,4 +178,17 @@ func IsOrgAdmin(r *http.Request) bool {
 		}
 	}
 	return false
+}
+
+func SetUserRole(r *http.Request, userRole string) {
+	context.Set(r, UserRoleKey, userRole)
+}
+
+func GetUserRole(r *http.Request) string {
+	return context.Get(r, UserRoleKey).(string)
+}
+
+func SetUserToRequestContext(r *http.Request, userID string, userRole string) {
+	context.Set(r, userIDKey, userID)
+	context.Set(r, UserRoleKey, userRole)
 }
