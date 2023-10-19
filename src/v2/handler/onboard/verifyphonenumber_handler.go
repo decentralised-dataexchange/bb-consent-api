@@ -1,4 +1,4 @@
-package handler
+package onboard
 
 import (
 	"crypto/rand"
@@ -16,6 +16,7 @@ import (
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/otp"
+	"github.com/bb-consent/api/src/v2/sms"
 )
 
 type verifyPhoneNumberReq struct {
@@ -42,7 +43,7 @@ func generateVerificationCode() (code string, err error) {
 }
 
 func sendPhoneVerificationMessage(msgTo string, message string) error {
-	urlStr := "https://api.twilio.com/2010-04-01/Accounts/" + twilioConfig.AccountSid + "/Messages.json"
+	urlStr := "https://api.twilio.com/2010-04-01/Accounts/" + sms.TwilioConfig.AccountSid + "/Messages.json"
 
 	// Pack up the data for our message
 	msgData := url.Values{}
@@ -66,7 +67,7 @@ func sendPhoneVerificationMessage(msgTo string, message string) error {
 	// Create HTTP request client
 	client := &http.Client{}
 	req, _ := http.NewRequest("POST", urlStr, &msgDataReader)
-	req.SetBasicAuth(twilioConfig.AccountSid, twilioConfig.AuthToken)
+	req.SetBasicAuth(sms.TwilioConfig.AccountSid, sms.TwilioConfig.AuthToken)
 	req.Header.Add("Accept", config.ContentTypeJSON)
 	req.Header.Add(config.ContentTypeHeader, config.ContentTypeFormURLEncoded)
 

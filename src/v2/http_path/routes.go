@@ -1,13 +1,15 @@
 package http_path
 
 import (
-	m "github.com/bb-consent/api/src/middleware"
 	v2Handler "github.com/bb-consent/api/src/v2/handler"
 	dataAgreementHandler "github.com/bb-consent/api/src/v2/handler/dataagreement"
 	dataAttributeHandler "github.com/bb-consent/api/src/v2/handler/dataattribute"
+	idpHandler "github.com/bb-consent/api/src/v2/handler/idp"
 	individualHandler "github.com/bb-consent/api/src/v2/handler/individual"
+	onboardHandler "github.com/bb-consent/api/src/v2/handler/onboard"
 	policyHandler "github.com/bb-consent/api/src/v2/handler/policy"
 	webhookHandler "github.com/bb-consent/api/src/v2/handler/webhook"
+	m "github.com/bb-consent/api/src/v2/middleware"
 	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
 )
@@ -55,10 +57,10 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(ConfigListWebhookPayloadContentTypes, m.Chain(webhookHandler.ConfigListWebhookPayloadContentTypes, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Organisation identity provider related API(s)
-	r.Handle(AddIdentityProvider, m.Chain(v2Handler.AddIdentityProvider, m.Logger(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("POST")
-	r.Handle(UpdateIdentityProvider, m.Chain(v2Handler.UpdateIdentityProvider, m.Logger(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("PUT")
-	r.Handle(DeleteIdentityProvider, m.Chain(v2Handler.DeleteIdentityProvider, m.Logger(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("DELETE")
-	r.Handle(GetIdentityProvider, m.Chain(v2Handler.GetIdentityProvider, m.Logger(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(AddIdentityProvider, m.Chain(idpHandler.ConfigCreateIdp, m.Logger(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("POST")
+	r.Handle(UpdateIdentityProvider, m.Chain(idpHandler.UpdateIdentityProvider, m.Logger(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("PUT")
+	r.Handle(DeleteIdentityProvider, m.Chain(idpHandler.DeleteIdentityProvider, m.Logger(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("DELETE")
+	r.Handle(GetIdentityProvider, m.Chain(idpHandler.GetIdentityProvider, m.Logger(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Individual related api(s)
 	r.Handle(ConfigReadIndividual, m.Chain(individualHandler.ConfigReadIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
@@ -106,20 +108,21 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 
 	// Onboard api(s)
 
-	r.Handle(LoginAdminUser, m.Chain(v2Handler.LoginAdminUser, m.LoggerNoAuth(), m.AddContentType())).Methods("POST")
-	r.Handle(LoginUser, m.Chain(v2Handler.LoginUser, m.LoggerNoAuth(), m.AddContentType())).Methods("POST")
+	r.Handle(LoginAdminUser, m.Chain(onboardHandler.LoginAdminUser, m.LoggerNoAuth(), m.AddContentType())).Methods("POST")
+	r.Handle(LoginUser, m.Chain(onboardHandler.LoginUser, m.LoggerNoAuth(), m.AddContentType())).Methods("POST")
 
-	r.Handle(ValidateUserEmail, m.Chain(v2Handler.ValidateUserEmail, m.LoggerNoAuth(), m.AddContentType())).Methods("POST")
-	r.Handle(ValidatePhoneNumber, m.Chain(v2Handler.ValidatePhoneNumber, m.LoggerNoAuth(), m.AddContentType())).Methods("POST")
-	r.Handle(VerifyPhoneNumber, m.Chain(v2Handler.VerifyPhoneNumber, m.LoggerNoAuth(), m.AddContentType())).Methods("POST")
-	r.Handle(VerifyOtp, m.Chain(v2Handler.VerifyOtp, m.LoggerNoAuth(), m.AddContentType())).Methods("POST")
+	r.Handle(ValidateUserEmail, m.Chain(onboardHandler.ValidateUserEmail, m.LoggerNoAuth(), m.AddContentType())).Methods("POST")
+	r.Handle(ValidatePhoneNumber, m.Chain(onboardHandler.ValidatePhoneNumber, m.LoggerNoAuth(), m.AddContentType())).Methods("POST")
+	r.Handle(VerifyPhoneNumber, m.Chain(onboardHandler.VerifyPhoneNumber, m.LoggerNoAuth(), m.AddContentType())).Methods("POST")
+	r.Handle(VerifyOtp, m.Chain(onboardHandler.VerifyOtp, m.LoggerNoAuth(), m.AddContentType())).Methods("POST")
 
-	r.Handle(GetToken, m.Chain(v2Handler.GetToken)).Methods("POST")
+	r.Handle(GetToken, m.Chain(onboardHandler.GetToken)).Methods("POST")
+	r.Handle(ExchangeAuthorizationCode, m.Chain(onboardHandler.ExchangeAuthorizationCode, m.LoggerNoAuth())).Methods("POST")
 
-	r.Handle(GetOrganizationByID, m.Chain(v2Handler.GetOrganizationByID, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(UpdateOrganization, m.Chain(v2Handler.UpdateOrganization, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
-	r.Handle(UpdateOrganizationCoverImage, m.Chain(v2Handler.UpdateOrganizationCoverImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
-	r.Handle(UpdateOrganizationLogoImage, m.Chain(v2Handler.UpdateOrganizationLogoImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
-	r.Handle(GetOrganizationCoverImage, m.Chain(v2Handler.GetOrganizationCoverImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(GetOrganizationLogoImage, m.Chain(v2Handler.GetOrganizationLogoImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(GetOrganizationByID, m.Chain(onboardHandler.GetOrganizationByID, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(UpdateOrganization, m.Chain(onboardHandler.UpdateOrganization, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
+	r.Handle(UpdateOrganizationCoverImage, m.Chain(onboardHandler.UpdateOrganizationCoverImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	r.Handle(UpdateOrganizationLogoImage, m.Chain(onboardHandler.UpdateOrganizationLogoImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	r.Handle(GetOrganizationCoverImage, m.Chain(onboardHandler.GetOrganizationCoverImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(GetOrganizationLogoImage, m.Chain(onboardHandler.GetOrganizationLogoImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 }

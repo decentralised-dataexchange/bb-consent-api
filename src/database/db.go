@@ -147,6 +147,11 @@ func Init(config *config.Configuration) error {
 		return err
 	}
 
+	err = initCollection("identityProviders", []string{"id"}, true)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

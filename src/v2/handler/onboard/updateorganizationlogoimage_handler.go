@@ -1,4 +1,4 @@
-package handler
+package onboard
 
 import (
 	"bytes"
@@ -13,13 +13,13 @@ import (
 	"github.com/bb-consent/api/src/org"
 )
 
-type coverImageResp struct {
-	CoverImageId  string `json:"coverImageId"`
-	CoverImageUrl string `json:"coverImageUrl"`
+type logoImageResp struct {
+	LogoImageId  string `json:"logoImageId"`
+	LogoImageUrl string `json:"logoImageUrl"`
 }
 
-// UpdateOrganizationCoverImage Inserts the image and update the id to user
-func UpdateOrganizationCoverImage(w http.ResponseWriter, r *http.Request) {
+// UpdateOrganizationLogoImage Inserts the image and update the id to user
+func UpdateOrganizationLogoImage(w http.ResponseWriter, r *http.Request) {
 	organizationID := r.Header.Get(config.OrganizationId)
 
 	file, _, err := r.FormFile("orgimage")
@@ -46,15 +46,16 @@ func UpdateOrganizationCoverImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	imageURL := "https://" + r.Host + "/v1/organizations/" + organizationID + "/image/" + imageID
-	o, err := org.UpdateCoverImage(organizationID, imageID, imageURL)
+	o, err := org.UpdateLogoImage(organizationID, imageID, imageURL)
 	if err != nil {
 		m := fmt.Sprintf("Failed to update organization: %v with image: %v details", organizationID, imageID)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
-	respBody := coverImageResp{
-		CoverImageId:  o.CoverImageID,
-		CoverImageUrl: o.CoverImageURL,
+
+	respBody := logoImageResp{
+		LogoImageId:  o.LogoImageID,
+		LogoImageUrl: o.LogoImageURL,
 	}
 
 	response, _ := json.Marshal(respBody)

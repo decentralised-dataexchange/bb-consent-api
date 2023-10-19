@@ -12,20 +12,13 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
+	"github.com/bb-consent/api/src/v2/iam"
 	"github.com/bb-consent/api/src/v2/individual"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var iamConfig config.Iam
-
-// IamInit Initialize the IAM handler
-func IamInit(config *config.Configuration) {
-	iamConfig = config.Iam
-
-}
-
 func getClient() *gocloak.GoCloak {
-	client := gocloak.NewClient(iamConfig.URL)
+	client := gocloak.NewClient(iam.IamConfig.URL)
 	return client
 }
 
@@ -40,7 +33,7 @@ func getToken(username string, password string, realm string, client *gocloak.Go
 }
 
 func getAdminToken(client *gocloak.GoCloak) (*gocloak.JWT, error) {
-	t, err := getToken(iamConfig.AdminUser, iamConfig.AdminPassword, "master", client)
+	t, err := getToken(iam.IamConfig.AdminUser, iam.IamConfig.AdminPassword, "master", client)
 	return t, err
 }
 
@@ -53,7 +46,7 @@ func registerUser(iamRegReq iamIndividualRegisterReq, adminToken string, client 
 		Username:  &iamRegReq.Email,
 	}
 
-	iamId, err := client.CreateUser(context.Background(), adminToken, iamConfig.Realm, user)
+	iamId, err := client.CreateUser(context.Background(), adminToken, iam.IamConfig.Realm, user)
 	if err != nil {
 		return "", err
 	}
@@ -152,12 +145,13 @@ func ConfigCreateIndividual(w http.ResponseWriter, r *http.Request) {
 	newIndividual = updateIndividualFromRequestBody(individualReq, newIndividual)
 	newIndividual.OrganisationId = organisationId
 	newIndividual.IsDeleted = false
+	newIndividual.IsOnboardedFromId = false
 
 	// Repository
 	individualRepo := individual.IndividualRepository{}
 	individualRepo.Init(organisationId)
 
-	// Save the data attribute to db
+	// Save the individual to db
 	savedIndividual, err := individualRepo.Add(newIndividual)
 	if err != nil {
 		m := fmt.Sprintf("Failed to create new individual: %v", newIndividual.Name)
