@@ -11,13 +11,15 @@ import (
 	"github.com/bb-consent/api/src/email"
 	"github.com/bb-consent/api/src/firebaseUtils"
 	"github.com/bb-consent/api/src/notifications"
-	"github.com/bb-consent/api/src/token"
+	v1token "github.com/bb-consent/api/src/token"
 	v1Handlers "github.com/bb-consent/api/src/v1/handler"
 	v1HttpPaths "github.com/bb-consent/api/src/v1/http_path"
+	"github.com/bb-consent/api/src/v2/apikey"
 	v2HttpPaths "github.com/bb-consent/api/src/v2/http_path"
 	"github.com/bb-consent/api/src/v2/iam"
 	"github.com/bb-consent/api/src/v2/middleware"
 	"github.com/bb-consent/api/src/v2/sms"
+	v2token "github.com/bb-consent/api/src/v2/token"
 	"github.com/bb-consent/api/src/webhooks"
 	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
@@ -63,7 +65,8 @@ func startAPICmdHandlerfunc(cmd *cobra.Command, args []string) {
 	log.Println("Email initialized")
 
 	// Token
-	token.Init(loadedConfig)
+	v1token.Init(loadedConfig)
+	v2token.Init(loadedConfig)
 	log.Println("Token initialized")
 
 	// Notifications
@@ -80,6 +83,8 @@ func startAPICmdHandlerfunc(cmd *cobra.Command, args []string) {
 	middleware.ApplicationModeInit(loadedConfig)
 	log.Println("Application mode initialized")
 
+	apikey.Init(loadedConfig)
+	log.Println("Api key initialized")
 	// Setup Casbin auth rules
 	authEnforcer, err := casbin.NewEnforcer("/opt/bb-consent/api/config/auth_model.conf", "/opt/bb-consent/api/config/rbac_policy.csv")
 	if err != nil {

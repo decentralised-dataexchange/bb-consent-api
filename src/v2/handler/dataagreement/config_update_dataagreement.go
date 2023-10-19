@@ -10,9 +10,9 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
-	"github.com/bb-consent/api/src/token"
 	"github.com/bb-consent/api/src/v2/dataagreement"
 	"github.com/bb-consent/api/src/v2/revision"
+	"github.com/bb-consent/api/src/v2/token"
 	"github.com/gorilla/mux"
 )
 

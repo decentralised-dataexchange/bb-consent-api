@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bb-consent/api/src/token"
+	"github.com/bb-consent/api/src/v2/token"
 )
 
 // Logger logs all requests with its path and the time it took to process
@@ -20,7 +20,12 @@ func Logger() Middleware {
 			// Do middleware things
 			start := time.Now()
 			defer func() {
-				log.Println("name:", token.GetUserName(r), "id:", token.GetUserID(r), time.Since(start), r.Method, r.URL.Path)
+				if token.GetUserID(r) != "" {
+					log.Println("name:", token.GetUserName(r), "id:", token.GetUserID(r), time.Since(start), r.Method, r.URL.Path)
+				} else {
+					log.Println(time.Since(start), r.Method, r.URL.Path)
+				}
+
 			}()
 
 			// Call the next middleware/handler in chain

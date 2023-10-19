@@ -9,7 +9,7 @@ import (
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/consent"
 	"github.com/bb-consent/api/src/org"
-	"github.com/bb-consent/api/src/token"
+	"github.com/bb-consent/api/src/v2/token"
 )
 
 func ServiceListIndividualRecordList(w http.ResponseWriter, r *http.Request) {

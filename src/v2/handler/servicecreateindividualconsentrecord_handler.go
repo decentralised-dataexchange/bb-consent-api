@@ -16,7 +16,7 @@ import (
 	"github.com/bb-consent/api/src/consent"
 	"github.com/bb-consent/api/src/consenthistory"
 	"github.com/bb-consent/api/src/org"
-	"github.com/bb-consent/api/src/token"
+	"github.com/bb-consent/api/src/v2/token"
 	"github.com/bb-consent/api/src/webhooks"
 	"github.com/gorilla/mux"
 )

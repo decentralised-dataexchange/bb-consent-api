@@ -3,16 +3,18 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"strings"
 
-	"github.com/bb-consent/api/src/apikey"
+	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/org"
-	"github.com/bb-consent/api/src/token"
+	"github.com/bb-consent/api/src/rbac"
 	"github.com/bb-consent/api/src/user"
-	v1Handlers "github.com/bb-consent/api/src/v1/handler"
+	"github.com/bb-consent/api/src/v2/apikey"
 	"github.com/bb-consent/api/src/v2/error_handler"
 	"github.com/bb-consent/api/src/v2/iam"
 	"github.com/bb-consent/api/src/v2/idp"
 	"github.com/bb-consent/api/src/v2/individual"
+	"github.com/bb-consent/api/src/v2/token"
 	"github.com/coreos/go-oidc/v3/oidc"
 )
 
@@ -92,7 +94,7 @@ func verifyTokenAndIdentifyRole(accessToken string, r *http.Request) error {
 		}
 
 		// Set user Id and user roles to request context
-		token.SetUserID(r, individual.Id)
+		token.SetUserToRequestContext(r, individual.Id, rbac.ROLE_USER)
 
 		return nil
 
@@ -112,13 +114,14 @@ func verifyTokenAndIdentifyRole(accessToken string, r *http.Request) error {
 		}
 
 		// Set user Id and user roles to request context
-		token.SetUserID(r, individual.Id)
+		token.SetUserToRequestContext(r, individual.Id, rbac.ROLE_USER)
 	}
 
 	// Set user Id and user roles to request context
 	if len(user.Roles) > 0 {
-		token.SetUserID(r, user.ID.Hex())
-		token.SetUserRoles(r, v1Handlers.GetUserRoles(user.Roles))
+		token.SetUserToRequestContext(r, user.ID.Hex(), rbac.ROLE_ADMIN)
+	} else {
+		token.SetUserToRequestContext(r, user.ID.Hex(), rbac.ROLE_ADMIN)
 	}
 
 	return nil
@@ -136,21 +139,15 @@ func decodeApiKey(headerValue string, w http.ResponseWriter) apikey.Claims {
 }
 
 func performAPIKeyAuthentication(claims apikey.Claims, w http.ResponseWriter, r *http.Request) {
-	// TODO: Update this with v2 logic for Api keys
-	u, err := v1Handlers.GetUser(claims.UserID)
-	if err != nil {
-		m := "Invalid API Key, Authorization failed"
-		error_handler.Exit(http.StatusUnauthorized, m)
-	}
+	individualId := r.Header.Get(config.IndividualHeaderKey)
 
 	t := token.AccessToken{}
-	t.IamID = u.IamID
-	t.Name = u.Name
-	t.Email = u.Email
-
 	token.Set(r, t)
-	token.SetUserID(r, u.ID.Hex())
-	token.SetUserRoles(r, v1Handlers.GetUserRoles(u.Roles))
+	if len(strings.TrimSpace(individualId)) != 0 {
+		token.SetUserToRequestContext(r, individualId, rbac.ROLE_USER)
+	} else {
+		token.SetUserToRequestContext(r, claims.OrganisationAdminId, rbac.ROLE_ADMIN)
+	}
 }
 
 // Authenticate Validates the token and sets the token to the context.

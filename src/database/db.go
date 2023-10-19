@@ -152,6 +152,11 @@ func Init(config *config.Configuration) error {
 		return err
 	}
 
+	err = initCollection("apiKeys", []string{"id"}, true)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

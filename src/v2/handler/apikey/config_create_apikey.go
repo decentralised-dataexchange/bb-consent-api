@@ -1,0 +1,88 @@
+package apikey
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"time"
+
+	"github.com/bb-consent/api/src/common"
+	"github.com/bb-consent/api/src/config"
+	"github.com/bb-consent/api/src/org"
+	"github.com/bb-consent/api/src/v2/apikey"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+type addApiKeyReq struct {
+	Apikey apikey.ApiKey `json:"apiKey" valid:"required"`
+}
+
+type addApiKeyResp struct {
+	Apikey apikey.ApiKey `json:"apiKey" valid:"required"`
+}
+
+// ConfigCreateApiKey
+func ConfigCreateApiKey(w http.ResponseWriter, r *http.Request) {
+
+	// Headers
+	organisationId := r.Header.Get(config.OrganizationId)
+	organisationId = common.Sanitize(organisationId)
+
+	o, err := org.Get(organisationId)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch organisation: %v", organisationId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+	organisationAdminId := o.Admins[0].UserID
+
+	// Request body
+	var apiKeyReq addApiKeyReq
+	b, _ := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	json.Unmarshal(b, &apiKeyReq)
+
+	// Repository
+	apiKeyRepo := apikey.ApiKeyRepository{}
+	apiKeyRepo.Init(organisationId)
+
+	expiryAt := int64(apiKeyReq.Apikey.ExpiryInDays)
+	if expiryAt <= 0 {
+		//Default apikey expiry 1 month
+		expiryAt = time.Now().Unix() + 60*60*24*30
+		apiKeyReq.Apikey.ExpiryInDays = 30
+	} else {
+		expiryAt = time.Now().Unix() + int64(apiKeyReq.Apikey.ExpiryInDays)*60*60*24
+	}
+
+	key, err := apikey.Create(apiKeyReq.Apikey.Scopes, expiryAt, organisationId, organisationAdminId)
+	if err != nil {
+		m := "Failed to create apiKey"
+		common.HandleError(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	var newApiKey apikey.ApiKey
+	newApiKey.Id = primitive.NewObjectID()
+	newApiKey.Scopes = apiKeyReq.Apikey.Scopes
+	newApiKey.Apikey = key
+	newApiKey.ExpiryInDays = apiKeyReq.Apikey.ExpiryInDays
+	newApiKey.OrganisationId = organisationId
+	newApiKey.IsDeleted = false
+
+	apiKey, err := apiKeyRepo.Add(newApiKey)
+	if err != nil {
+		m := fmt.Sprintf("Failed to add api key: %v", organisationId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	resp := addApiKeyResp{
+		Apikey: apiKey,
+	}
+	response, _ := json.Marshal(resp)
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}

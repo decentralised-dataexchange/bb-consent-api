@@ -100,6 +100,7 @@ type Configuration struct {
 	Organization    Organization
 	Type            OrgType
 	User            User
+	ApiSecretKey    string
 	Iam             Iam
 	Twilio          Twilio
 	Firebase        Firebase
