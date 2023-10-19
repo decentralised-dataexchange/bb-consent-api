@@ -7,6 +7,7 @@ import (
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/database"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -15,15 +16,15 @@ func Collection() *mongo.Collection {
 }
 
 type DataAttribute struct {
-	Id             string   `json:"id" bson:"_id,omitempty"`
-	Version        string   `json:"version"`
-	AgreementIds   []string `json:"agreementIds"`
-	Name           string   `json:"name" valid:"required"`
-	Description    string   `json:"description" valid:"required"`
-	Sensitivity    bool     `json:"sensitivity"`
-	Category       string   `json:"category"`
-	OrganisationId string   `json:"-"`
-	IsDeleted      bool     `json:"-"`
+	Id             primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Version        string             `json:"version"`
+	AgreementIds   []string           `json:"agreementIds"`
+	Name           string             `json:"name" valid:"required"`
+	Description    string             `json:"description" valid:"required"`
+	Sensitivity    bool               `json:"sensitivity"`
+	Category       string             `json:"category"`
+	OrganisationId string             `json:"-"`
+	IsDeleted      bool               `json:"-"`
 }
 
 type DataAttributeRepository struct {
@@ -47,12 +48,16 @@ func (dataAttributeRepo *DataAttributeRepository) Add(dataAttribute DataAttribut
 }
 
 // Get Gets a single data attribute by given id
-func (dataAttributeRepo *DataAttributeRepository) Get(dataAttributeId string) (DataAttribute, error) {
+func (dataAttributeRepo *DataAttributeRepository) Get(dataAttributeID string) (DataAttribute, error) {
+	var result DataAttribute
+	dataAttributeId, err := primitive.ObjectIDFromHex(dataAttributeID)
+	if err != nil {
+		return result, err
+	}
 
 	filter := common.CombineFilters(dataAttributeRepo.DefaultFilter, bson.M{"_id": dataAttributeId})
 
-	var result DataAttribute
-	err := Collection().FindOne(context.TODO(), filter).Decode(&result)
+	err = Collection().FindOne(context.TODO(), filter).Decode(&result)
 
 	return result, err
 }

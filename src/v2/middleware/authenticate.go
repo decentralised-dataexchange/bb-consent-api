@@ -94,7 +94,7 @@ func verifyTokenAndIdentifyRole(accessToken string, r *http.Request) error {
 		}
 
 		// Set user Id and user roles to request context
-		token.SetUserToRequestContext(r, individual.Id, rbac.ROLE_USER)
+		token.SetUserToRequestContext(r, individual.Id.Hex(), rbac.ROLE_USER)
 
 		return nil
 
@@ -114,7 +114,7 @@ func verifyTokenAndIdentifyRole(accessToken string, r *http.Request) error {
 		}
 
 		// Set user Id and user roles to request context
-		token.SetUserToRequestContext(r, individual.Id, rbac.ROLE_USER)
+		token.SetUserToRequestContext(r, individual.Id.Hex(), rbac.ROLE_USER)
 	}
 
 	// Set user Id and user roles to request context

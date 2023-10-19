@@ -7,6 +7,7 @@ import (
 	"github.com/bb-consent/api/src/database"
 	"github.com/bb-consent/api/src/policy"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -15,20 +16,20 @@ func Collection() *mongo.Collection {
 }
 
 type Signature struct {
-	Id                           string `json:"id"`
-	Payload                      string `json:"payload"`
-	Signature                    string `json:"signature"`
-	VerificationMethod           string `json:"verificationMethod"`
-	VerificationPayload          string `json:"verificationPayload"`
-	VerificationPayloadHash      string `json:"verificationPayloadHash"`
-	VerificationArtifact         string `json:"verificationArtifact"`
-	VerificationSignedBy         string `json:"verificationSignedBy"`
-	VerificationSignedAs         string `json:"verificationSignedAs"`
-	VerificationJwsHeader        string `json:"verificationJwsHeader"`
-	Timestamp                    string `json:"timestamp"`
-	SignedWithoutObjectReference bool   `json:"signedWithoutObjectReference"`
-	ObjectType                   string `json:"objectType"`
-	ObjectReference              string `json:"objectReference"`
+	Id                           primitive.ObjectID `json:"id"`
+	Payload                      string             `json:"payload"`
+	Signature                    string             `json:"signature"`
+	VerificationMethod           string             `json:"verificationMethod"`
+	VerificationPayload          string             `json:"verificationPayload"`
+	VerificationPayloadHash      string             `json:"verificationPayloadHash"`
+	VerificationArtifact         string             `json:"verificationArtifact"`
+	VerificationSignedBy         string             `json:"verificationSignedBy"`
+	VerificationSignedAs         string             `json:"verificationSignedAs"`
+	VerificationJwsHeader        string             `json:"verificationJwsHeader"`
+	Timestamp                    string             `json:"timestamp"`
+	SignedWithoutObjectReference bool               `json:"signedWithoutObjectReference"`
+	ObjectType                   string             `json:"objectType"`
+	ObjectReference              string             `json:"objectReference"`
 }
 
 type PolicyForDataAgreement struct {
@@ -37,7 +38,7 @@ type PolicyForDataAgreement struct {
 }
 
 type DataAgreement struct {
-	Id                      string                 `json:"id" bson:"_id,omitempty"`
+	Id                      primitive.ObjectID     `json:"id" bson:"_id,omitempty"`
 	Version                 string                 `json:"version"`
 	ControllerId            string                 `json:"controllerId"`
 	ControllerUrl           string                 `json:"controllerUrl" valid:"required"`
@@ -79,12 +80,16 @@ func (darepo *DataAgreementRepository) Add(dataAgreement DataAgreement) (DataAgr
 }
 
 // Get Gets a single data agreement by given id
-func (darepo *DataAgreementRepository) Get(dataAgreementId string) (DataAgreement, error) {
+func (darepo *DataAgreementRepository) Get(dataAgreementID string) (DataAgreement, error) {
+	dataAgreementId, err := primitive.ObjectIDFromHex(dataAgreementID)
+	if err != nil {
+		return DataAgreement{}, err
+	}
 
 	filter := common.CombineFilters(darepo.DefaultFilter, bson.M{"_id": dataAgreementId})
 
 	var result DataAgreement
-	err := Collection().FindOne(context.TODO(), filter).Decode(&result)
+	err = Collection().FindOne(context.TODO(), filter).Decode(&result)
 	return result, err
 }
 
@@ -102,11 +107,16 @@ func (darepo *DataAgreementRepository) Update(dataAgreement DataAgreement) (Data
 }
 
 // IsDataAgreementExist Check if data agreement with given id exists
-func (darepo *DataAgreementRepository) IsDataAgreementExist(dataAgreementId string) (int64, error) {
+func (darepo *DataAgreementRepository) IsDataAgreementExist(dataAgreementID string) (int64, error) {
+	var exists int64
+	dataAgreementId, err := primitive.ObjectIDFromHex(dataAgreementID)
+	if err != nil {
+		return exists, err
+	}
 
 	filter := common.CombineFilters(darepo.DefaultFilter, bson.M{"_id": dataAgreementId})
 
-	exists, err := Collection().CountDocuments(context.TODO(), filter)
+	exists, err = Collection().CountDocuments(context.TODO(), filter)
 	if err != nil {
 		return exists, err
 	}

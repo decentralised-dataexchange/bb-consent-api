@@ -138,7 +138,7 @@ func createIndividualFromIdp(email string, externalId string, organisationId str
 	individualRepo.Init(organisationId)
 
 	var newIndividual individual.Individual
-	newIndividual.Id = primitive.NewObjectID().Hex()
+	newIndividual.Id = primitive.NewObjectID()
 	newIndividual.Email = email
 	newIndividual.ExternalId = externalId
 	newIndividual.OrganisationId = organisationId

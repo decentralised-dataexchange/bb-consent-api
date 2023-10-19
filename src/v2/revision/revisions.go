@@ -14,24 +14,24 @@ import (
 
 // Revision
 type Revision struct {
-	Id                       string `json:"id" bson:"_id,omitempty"`
-	SchemaName               string `json:"schemaName"`
-	ObjectId                 string `json:"objectId"`
-	SignedWithoutObjectId    bool   `json:"signedWithoutObjectId"`
-	Timestamp                string `json:"timestamp"`
-	AuthorizedByIndividualId string `json:"authorizedByIndividualId"`
-	AuthorizedByOtherId      string `json:"authorizedByOtherId"`
-	PredecessorHash          string `json:"predecessorHash"`
-	PredecessorSignature     string `json:"predecessorSignature"`
-	ObjectData               string `json:"objectData"`
-	SuccessorId              string `json:"-"`
-	SerializedHash           string `json:"-"`
-	SerializedSnapshot       string `json:"-"`
+	Id                       primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	SchemaName               string             `json:"schemaName"`
+	ObjectId                 string             `json:"objectId"`
+	SignedWithoutObjectId    bool               `json:"signedWithoutObjectId"`
+	Timestamp                string             `json:"timestamp"`
+	AuthorizedByIndividualId string             `json:"authorizedByIndividualId"`
+	AuthorizedByOtherId      string             `json:"authorizedByOtherId"`
+	PredecessorHash          string             `json:"predecessorHash"`
+	PredecessorSignature     string             `json:"predecessorSignature"`
+	ObjectData               string             `json:"objectData"`
+	SuccessorId              string             `json:"-"`
+	SerializedHash           string             `json:"-"`
+	SerializedSnapshot       string             `json:"-"`
 }
 
 // Init
 func (r *Revision) Init(objectId string, authorisedByOtherId string, schemaName string) {
-	r.Id = primitive.NewObjectID().Hex()
+	r.Id = primitive.NewObjectID()
 	r.SchemaName = schemaName
 	r.ObjectId = objectId
 	r.SignedWithoutObjectId = false
@@ -82,7 +82,7 @@ func (r *Revision) CreateRevision(objectData interface{}) error {
 // UpdateRevision
 func (r *Revision) UpdateRevision(previousRevision *Revision, objectData interface{}) error {
 	// Update successor for previous revision
-	previousRevision.updateSuccessorId(r.Id)
+	previousRevision.updateSuccessorId(r.Id.Hex())
 
 	// Predecessor hash
 	r.updatePredecessorHash(previousRevision.SerializedHash)
@@ -229,7 +229,7 @@ type dataAgreementForObjectData struct {
 func CreateRevisionForDataAgreement(newDataAgreement dataagreement.DataAgreement, orgAdminId string) (Revision, error) {
 	// Object data
 	objectData := dataAgreementForObjectData{
-		Id:                      newDataAgreement.Id,
+		Id:                      newDataAgreement.Id.Hex(),
 		Version:                 newDataAgreement.Version,
 		ControllerId:            newDataAgreement.ControllerId,
 		ControllerUrl:           newDataAgreement.ControllerUrl,
@@ -259,7 +259,7 @@ func CreateRevisionForDataAgreement(newDataAgreement dataagreement.DataAgreement
 func UpdateRevisionForDataAgreement(updatedDataAgreement dataagreement.DataAgreement, previousRevision *Revision, orgAdminId string) (Revision, error) {
 	// Object data
 	objectData := dataAgreementForObjectData{
-		Id:                      updatedDataAgreement.Id,
+		Id:                      updatedDataAgreement.Id.Hex(),
 		Version:                 updatedDataAgreement.Version,
 		ControllerId:            updatedDataAgreement.ControllerId,
 		ControllerUrl:           updatedDataAgreement.ControllerUrl,
@@ -318,7 +318,7 @@ type dataAttributeForObjectData struct {
 func CreateRevisionForDataAttribute(newDataAttribute dataattribute.DataAttribute, orgAdminId string) (Revision, error) {
 	// Object data
 	objectData := dataAttributeForObjectData{
-		Id:           newDataAttribute.Id,
+		Id:           newDataAttribute.Id.Hex(),
 		Version:      newDataAttribute.Version,
 		AgreementIds: newDataAttribute.AgreementIds,
 		Name:         newDataAttribute.Name,
@@ -339,7 +339,7 @@ func CreateRevisionForDataAttribute(newDataAttribute dataattribute.DataAttribute
 func UpdateRevisionForDataAttribute(updatedDataAttribute dataattribute.DataAttribute, previousRevision *Revision, orgAdminId string) (Revision, error) {
 	// Object data
 	objectData := dataAttributeForObjectData{
-		Id:           updatedDataAttribute.Id,
+		Id:           updatedDataAttribute.Id.Hex(),
 		Version:      updatedDataAttribute.Version,
 		AgreementIds: updatedDataAttribute.AgreementIds,
 		Name:         updatedDataAttribute.Name,

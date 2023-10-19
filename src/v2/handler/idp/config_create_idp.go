@@ -55,7 +55,7 @@ func ConfigCreateIdp(w http.ResponseWriter, r *http.Request) {
 	var newIdentityProvider idp.IdentityProvider
 
 	// OpenID config
-	newIdentityProvider.Id = primitive.NewObjectID().Hex()
+	newIdentityProvider.Id = primitive.NewObjectID()
 	newIdentityProvider.AuthorizationURL = idpReq.Idp.AuthorizationURL
 	newIdentityProvider.TokenURL = idpReq.Idp.TokenURL
 	newIdentityProvider.LogoutURL = idpReq.Idp.LogoutURL

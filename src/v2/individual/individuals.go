@@ -6,6 +6,7 @@ import (
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/database"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -14,17 +15,17 @@ func Collection() *mongo.Collection {
 }
 
 type Individual struct {
-	Id                 string `json:"id" bson:"_id,omitempty"`
-	ExternalId         string `json:"externalId"`
-	ExternalIdType     string `json:"externalIdType"`
-	IdentityProviderId string `json:"identityProviderId"`
-	Name               string `json:"name" valid:"required"`
-	IamId              string `json:"iamId"`
-	Email              string `json:"email" valid:"required"`
-	Phone              string `json:"phone" valid:"required"`
-	IsOnboardedFromId  bool   `json:"-"`
-	OrganisationId     string `json:"-"`
-	IsDeleted          bool   `json:"-"`
+	Id                 primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	ExternalId         string             `json:"externalId"`
+	ExternalIdType     string             `json:"externalIdType"`
+	IdentityProviderId string             `json:"identityProviderId"`
+	Name               string             `json:"name" valid:"required"`
+	IamId              string             `json:"iamId"`
+	Email              string             `json:"email" valid:"required"`
+	Phone              string             `json:"phone" valid:"required"`
+	IsOnboardedFromId  bool               `json:"-"`
+	OrganisationId     string             `json:"-"`
+	IsDeleted          bool               `json:"-"`
 }
 
 type IndividualRepository struct {
@@ -48,12 +49,16 @@ func (iRepo *IndividualRepository) Add(individual Individual) (Individual, error
 }
 
 // Get Gets a single individual by given id
-func (iRepo *IndividualRepository) Get(individualId string) (Individual, error) {
+func (iRepo *IndividualRepository) Get(individualID string) (Individual, error) {
+	var result Individual
+	individualId, err := primitive.ObjectIDFromHex(individualID)
+	if err != nil {
+		return result, err
+	}
 
 	filter := common.CombineFilters(iRepo.DefaultFilter, bson.M{"_id": individualId})
 
-	var result Individual
-	err := Collection().FindOne(context.TODO(), filter).Decode(&result)
+	err = Collection().FindOne(context.TODO(), filter).Decode(&result)
 
 	return result, err
 }

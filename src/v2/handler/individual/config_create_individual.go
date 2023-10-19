@@ -140,7 +140,7 @@ func ConfigCreateIndividual(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var newIndividual individual.Individual
-	newIndividual.Id = primitive.NewObjectID().Hex()
+	newIndividual.Id = primitive.NewObjectID()
 	newIndividual.IamId = iamId
 	newIndividual = updateIndividualFromRequestBody(individualReq, newIndividual)
 	newIndividual.OrganisationId = organisationId

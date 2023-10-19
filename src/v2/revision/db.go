@@ -5,6 +5,7 @@ import (
 
 	"github.com/bb-consent/api/src/database"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -69,10 +70,14 @@ func ListAllByPolicyId(policyId string) ([]Revision, error) {
 }
 
 // GetByRevisionId Get revision by id
-func GetByRevisionId(revisionId string) (Revision, error) {
-
+func GetByRevisionId(revisionID string) (Revision, error) {
 	var result Revision
-	err := Collection().FindOne(context.TODO(), bson.M{"_id": revisionId}).Decode(&result)
+	revisionId, err := primitive.ObjectIDFromHex(revisionID)
+	if err != nil {
+		return result, err
+	}
+
+	err = Collection().FindOne(context.TODO(), bson.M{"_id": revisionId}).Decode(&result)
 	if err != nil {
 		return Revision{}, err
 	}
