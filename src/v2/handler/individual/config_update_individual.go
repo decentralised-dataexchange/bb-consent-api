@@ -12,6 +12,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
+	"github.com/bb-consent/api/src/v2/iam"
 	"github.com/bb-consent/api/src/v2/individual"
 	"github.com/gorilla/mux"
 )
@@ -41,7 +42,7 @@ func updateIamIndividual(iamUpdateReq iamIndividualUpdateReq, iamID string) erro
 		log.Printf("Failed to get admin token, user: %v update err:%v", iamUpdateReq.Firstname, err)
 		return err
 	}
-	user, err := client.GetUserByID(context.Background(), t.AccessToken, iamConfig.Realm, iamID)
+	user, err := client.GetUserByID(context.Background(), t.AccessToken, iam.IamConfig.Realm, iamID)
 	if err != nil {
 		return err
 	}
@@ -50,7 +51,7 @@ func updateIamIndividual(iamUpdateReq iamIndividualUpdateReq, iamID string) erro
 	user.Email = gocloak.StringP(iamUpdateReq.Email)
 	u := *user
 
-	err = client.UpdateUser(context.Background(), t.AccessToken, iamConfig.Realm, u)
+	err = client.UpdateUser(context.Background(), t.AccessToken, iam.IamConfig.Realm, u)
 
 	return err
 }

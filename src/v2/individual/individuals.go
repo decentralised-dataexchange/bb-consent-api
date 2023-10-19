@@ -22,6 +22,7 @@ type Individual struct {
 	IamId              string `json:"iamId"`
 	Email              string `json:"email" valid:"required"`
 	Phone              string `json:"phone" valid:"required"`
+	IsOnboardedFromId  bool   `json:"-"`
 	OrganisationId     string `json:"-"`
 	IsDeleted          bool   `json:"-"`
 }
@@ -68,4 +69,15 @@ func (iRepo *IndividualRepository) Update(individual Individual) (Individual, er
 		return individual, err
 	}
 	return individual, nil
+}
+
+// Get Gets a single individual by given external id
+func (iRepo *IndividualRepository) GetByExternalId(externalId string) (Individual, error) {
+
+	filter := common.CombineFilters(iRepo.DefaultFilter, bson.M{"externalid": externalId})
+
+	var result Individual
+	err := Collection().FindOne(context.TODO(), filter).Decode(&result)
+
+	return result, err
 }

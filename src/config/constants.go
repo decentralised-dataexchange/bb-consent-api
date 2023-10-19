@@ -25,6 +25,7 @@ const (
 	DataAgreementRecordId = "dataAgreementRecordId"
 	IndividualId          = "individualId"
 	DeliveryId            = "deliveryId"
+	IdpId                 = "idpId"
 )
 
 // Schemas

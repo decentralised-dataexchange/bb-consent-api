@@ -1,4 +1,4 @@
-package handler
+package onboard
 
 import (
 	"encoding/json"
@@ -11,6 +11,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
+	"github.com/bb-consent/api/src/v2/iam"
 )
 
 type tokenReq struct {
@@ -39,7 +40,7 @@ func GetToken(w http.ResponseWriter, r *http.Request) {
 	data.Add("client_id", tReq.ClientID)
 	data.Add("grant_type", "refresh_token")
 
-	resp, err := http.PostForm(iamConfig.URL+"/realms/"+iamConfig.Realm+"/protocol/openid-connect/token", data)
+	resp, err := http.PostForm(iam.IamConfig.URL+"/realms/"+iam.IamConfig.Realm+"/protocol/openid-connect/token", data)
 	if err != nil {
 		//m := fmt.Sprintf("Failed to get token from refresh token for user:%v", token.GetUserName(r))
 		m := fmt.Sprintf("Failed to get token from refresh token")
@@ -56,7 +57,7 @@ func GetToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		var e iamError
+		var e iam.IamError
 		json.Unmarshal(body, &e)
 		response, _ := json.Marshal(e)
 		w.WriteHeader(resp.StatusCode)
@@ -65,7 +66,7 @@ func GetToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var tok iamToken
+	var tok iam.IamToken
 	json.Unmarshal(body, &tok)
 	tResp := tokenResp{
 		AccessToken:      tok.AccessToken,

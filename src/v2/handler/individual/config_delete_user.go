@@ -10,13 +10,14 @@ import (
 	"github.com/Nerzal/gocloak/v13"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
+	"github.com/bb-consent/api/src/v2/iam"
 	"github.com/bb-consent/api/src/v2/individual"
 	"github.com/gorilla/mux"
 )
 
 // unregisterUser Unregisters an existing user
 func unregisterUser(iamUserID string, adminToken string, client *gocloak.GoCloak) error {
-	err := client.DeleteUser(context.Background(), adminToken, iamConfig.Realm, iamUserID)
+	err := client.DeleteUser(context.Background(), adminToken, iam.IamConfig.Realm, iamUserID)
 	return err
 }
 
