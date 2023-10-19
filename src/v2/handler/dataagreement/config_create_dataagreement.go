@@ -127,7 +127,7 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 
 	// Initialise data agreement
 	var newDataAgreement dataagreement.DataAgreement
-	newDataAgreement.Id = primitive.NewObjectID().Hex()
+	newDataAgreement.Id = primitive.NewObjectID()
 	// Update data agreement from request body
 	newDataAgreement = updateDataAgreementFromAddDataAgreementRequestBody(dataAgreementReq, newDataAgreement)
 	newDataAgreement.OrganisationId = organisationId

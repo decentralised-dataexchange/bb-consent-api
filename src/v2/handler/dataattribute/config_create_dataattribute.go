@@ -87,7 +87,7 @@ func ConfigCreateDataAttribute(w http.ResponseWriter, r *http.Request) {
 
 	// Initialise data attribute
 	var newDataAttribute dataattribute.DataAttribute
-	newDataAttribute.Id = primitive.NewObjectID().Hex()
+	newDataAttribute.Id = primitive.NewObjectID()
 	// Update data attribute from request body
 	newDataAttribute = updateDataAttributeFromAddDataAttributeRequestBody(dataAttributeReq, newDataAttribute)
 	newDataAttribute.OrganisationId = organisationId

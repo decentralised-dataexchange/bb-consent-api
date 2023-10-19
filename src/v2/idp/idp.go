@@ -6,6 +6,7 @@ import (
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/database"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -14,18 +15,18 @@ func Collection() *mongo.Collection {
 }
 
 type IdentityProvider struct {
-	Id               string `json:"id" bson:"_id,omitempty"`
-	IssuerUrl        string `json:"issuerUrl"`
-	AuthorizationURL string `json:"authorizationUrl" valid:"required"`
-	TokenURL         string `json:"tokenUrl" valid:"required"`
-	LogoutURL        string `json:"logoutUrl" valid:"required"`
-	ClientID         string `json:"clientId" valid:"required"`
-	ClientSecret     string `json:"clientSecret" valid:"required"`
-	JWKSURL          string `json:"jwksUrl" valid:"required"`
-	UserInfoURL      string `json:"userInfoUrl" valid:"required"`
-	DefaultScope     string `json:"defaultScope" valid:"required"`
-	OrganisationId   string `json:"-"`
-	IsDeleted        bool   `json:"-"`
+	Id               primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	IssuerUrl        string             `json:"issuerUrl"`
+	AuthorizationURL string             `json:"authorizationUrl" valid:"required"`
+	TokenURL         string             `json:"tokenUrl" valid:"required"`
+	LogoutURL        string             `json:"logoutUrl" valid:"required"`
+	ClientID         string             `json:"clientId" valid:"required"`
+	ClientSecret     string             `json:"clientSecret" valid:"required"`
+	JWKSURL          string             `json:"jwksUrl" valid:"required"`
+	UserInfoURL      string             `json:"userInfoUrl" valid:"required"`
+	DefaultScope     string             `json:"defaultScope" valid:"required"`
+	OrganisationId   string             `json:"-"`
+	IsDeleted        bool               `json:"-"`
 }
 
 type IdentityProviderRepository struct {
@@ -74,12 +75,16 @@ func (idpRepo *IdentityProviderRepository) Update(idp IdentityProvider) (Identit
 }
 
 // Get Gets a single identity provider by given id
-func (idpRepo *IdentityProviderRepository) Get(idpId string) (IdentityProvider, error) {
+func (idpRepo *IdentityProviderRepository) Get(idpID string) (IdentityProvider, error) {
+	var result IdentityProvider
+	idpId, err := primitive.ObjectIDFromHex(idpID)
+	if err != nil {
+		return result, err
+	}
 
 	filter := common.CombineFilters(idpRepo.DefaultFilter, bson.M{"_id": idpId})
 
-	var result IdentityProvider
-	err := Collection().FindOne(context.TODO(), filter).Decode(&result)
+	err = Collection().FindOne(context.TODO(), filter).Decode(&result)
 
 	return result, err
 }
