@@ -87,3 +87,15 @@ type IamError struct {
 	ErrorType string `json:"error"`
 	Error     string `json:"error_description"`
 }
+
+func ResetPassword(userId string, password string) error {
+	client := GetClient()
+
+	token, err := GetAdminToken(IamConfig.AdminUser, IamConfig.AdminPassword, "master", client)
+	if err != nil {
+		return err
+	}
+
+	err = client.SetPassword(context.Background(), token.AccessToken, userId, IamConfig.Realm, password, false)
+	return err
+}
