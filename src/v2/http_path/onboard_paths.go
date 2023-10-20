@@ -4,6 +4,8 @@ package http_path
 const LoginAdminUser = "/v2/onboard/admin/login"
 const LoginUser = "/v2/onboard/individual/login"
 
+const OnboardResetPassword = "/v2/onboard/password/reset"
+
 const ValidateUserEmail = "/v2/onboard/validate/email"
 const ValidatePhoneNumber = "/v2/onboard/validate/phone"
 const VerifyPhoneNumber = "/v2/onboard/verify/phone"
