@@ -23,6 +23,7 @@ type ExternalIdentityProvidersConfiguration struct {
 type Iam struct {
 	URL                                    string
 	Realm                                  string
+	ClientId                               string
 	Jwks                                   JSONWebKeys
 	AdminUser                              string
 	AdminPassword                          string
