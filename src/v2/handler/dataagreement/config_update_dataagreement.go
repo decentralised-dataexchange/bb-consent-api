@@ -63,7 +63,6 @@ func updateDataAgreementFromRequestBody(requestBody updateDataAgreementReq, toBe
 	toBeUpdatedDataAgreement.Active = requestBody.DataAgreement.Active
 	toBeUpdatedDataAgreement.Forgettable = requestBody.DataAgreement.Forgettable
 	toBeUpdatedDataAgreement.CompatibleWithVersionId = requestBody.DataAgreement.CompatibleWithVersionId
-	toBeUpdatedDataAgreement.Lifecycle = requestBody.DataAgreement.Lifecycle
 
 	return toBeUpdatedDataAgreement
 }
@@ -119,6 +118,9 @@ func ConfigUpdateDataAgreement(w http.ResponseWriter, r *http.Request) {
 	// Update data agreement from request body
 	toBeUpdatedDataAgreement = updateDataAgreementFromRequestBody(dataAgreementReq, toBeUpdatedDataAgreement)
 
+	// Update life cycle based on active field
+	lifecycle := setDataAgreementLifecycle(dataAgreementReq.DataAgreement.Active)
+
 	// Bump major version for policy
 	updatedVersion, err := common.BumpMajorVersion(toBeUpdatedDataAgreement.Version)
 	if err != nil {
@@ -129,6 +131,7 @@ func ConfigUpdateDataAgreement(w http.ResponseWriter, r *http.Request) {
 	toBeUpdatedDataAgreement.Version = updatedVersion
 	toBeUpdatedDataAgreement.ControllerName = o.Name
 	toBeUpdatedDataAgreement.ControllerUrl = o.EulaURL
+	toBeUpdatedDataAgreement.Lifecycle = lifecycle
 
 	// Update revision
 	newRevision, err := revision.UpdateRevisionForDataAgreement(toBeUpdatedDataAgreement, &currentRevision, orgAdminId)
