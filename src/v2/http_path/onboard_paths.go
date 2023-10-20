@@ -18,3 +18,6 @@ const UpdateOrganizationCoverImage = "/v2/onboard/organisation/coverimage"
 const UpdateOrganizationLogoImage = "/v2/onboard/organisation/logoimage"
 const GetOrganizationCoverImage = "/v2/onboard/organisation/coverimage"
 const GetOrganizationLogoImage = "/v2/onboard/organisation/logoimage"
+
+const OnboardReadOrganisationAdmin = "/v2/onboard/admin"
+const OnboardUpdateOrganisationAdmin = "/v2/onboard/admin"
