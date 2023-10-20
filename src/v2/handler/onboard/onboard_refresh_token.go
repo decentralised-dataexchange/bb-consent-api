@@ -1,6 +1,7 @@
 package onboard
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -9,8 +10,47 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
+	"github.com/bb-consent/api/src/org"
 	"github.com/bb-consent/api/src/v2/iam"
+	"github.com/bb-consent/api/src/v2/idp"
+	"github.com/coreos/go-oidc/v3/oidc"
+	"golang.org/x/oauth2"
 )
+
+func refreshTokenForExternalIdpIssuedToken(refreshToken string) (*oauth2.Token, error) {
+	var token *oauth2.Token
+	// Get organisation
+	organisation, err := org.GetFirstOrganization()
+	if err != nil {
+		return token, err
+	}
+
+	// Repository
+	idpRepo := idp.IdentityProviderRepository{}
+	idpRepo.Init(organisation.ID.Hex())
+
+	// Fetch IDP details based on org Id
+	idp, err := idpRepo.GetByOrgId()
+	if err != nil {
+		return token, err
+	}
+
+	provider, err := oidc.NewProvider(context.Background(), idp.IssuerUrl)
+	if err != nil {
+		return token, err
+	}
+
+	// Initialize the OAuth2 configuration
+	oauth2Config := &oauth2.Config{
+		ClientID:     idp.ClientID,
+		ClientSecret: idp.ClientSecret,
+		Endpoint:     provider.Endpoint(),
+	}
+
+	ts := oauth2Config.TokenSource(context.Background(), &oauth2.Token{RefreshToken: refreshToken})
+	tok, err := ts.Token()
+	return tok, err
+}
 
 type tokenReq struct {
 	RefreshToken string `valid:"required" json:"refreshToken"`
@@ -37,25 +77,46 @@ func OnboardRefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	if !valid {
 		log.Printf("Failed to refresh token")
-		common.HandleError(w, http.StatusBadRequest, err.Error(), err)
+		common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
 		return
 	}
 
-	client := iam.GetClient()
+	var resp refreshTokenResp
+	if tReq.ClientID == iam.IamConfig.ClientId {
+		// Refresh token for consent bb users
+		client := iam.GetClient()
 
-	t, err := iam.RefreshToken(tReq.ClientID, tReq.RefreshToken, iam.IamConfig.Realm, client)
-	if err != nil {
-		m := "failed to get token from refresh token"
-		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
-		return
+		t, err := iam.RefreshToken(tReq.ClientID, tReq.RefreshToken, iam.IamConfig.Realm, client)
+		if err != nil {
+			log.Printf("Failed to refresh token")
+			common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
+			return
+		}
+		resp = refreshTokenResp{
+			AccessToken:      t.AccessToken,
+			ExpiresIn:        t.ExpiresIn,
+			RefreshExpiresIn: t.RefreshExpiresIn,
+			RefreshToken:     t.RefreshToken,
+			TokenType:        t.TokenType,
+		}
+
+	} else {
+		// Refresh Token For External Idp issued Token
+		t, err := refreshTokenForExternalIdpIssuedToken(tReq.RefreshToken)
+		if err != nil {
+			log.Printf("Failed to refresh token for external idp")
+			common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
+			return
+		}
+		resp = refreshTokenResp{
+			AccessToken:      t.AccessToken,
+			ExpiresIn:        t.Expiry.Second(),
+			RefreshExpiresIn: t.Expiry.Second(),
+			RefreshToken:     t.RefreshToken,
+			TokenType:        t.TokenType,
+		}
 	}
-	resp := refreshTokenResp{
-		AccessToken:      t.AccessToken,
-		ExpiresIn:        t.ExpiresIn,
-		RefreshExpiresIn: t.RefreshExpiresIn,
-		RefreshToken:     t.RefreshToken,
-		TokenType:        t.TokenType,
-	}
+
 	response, _ := json.Marshal(resp)
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
