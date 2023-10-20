@@ -10,6 +10,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
+	"github.com/bb-consent/api/src/org"
 	"github.com/bb-consent/api/src/v2/dataagreement"
 	"github.com/bb-consent/api/src/v2/revision"
 	"github.com/bb-consent/api/src/v2/token"
@@ -83,8 +84,6 @@ func validateAddDataAgreementRequestBody(dataAgreementReq addDataAgreementReq) e
 
 func updateDataAgreementFromAddDataAgreementRequestBody(requestBody addDataAgreementReq, newDataAgreement dataagreement.DataAgreement) dataagreement.DataAgreement {
 
-	newDataAgreement.ControllerUrl = requestBody.DataAgreement.ControllerUrl
-	newDataAgreement.ControllerName = requestBody.DataAgreement.ControllerName
 	newDataAgreement.Policy = requestBody.DataAgreement.Policy
 	newDataAgreement.Purpose = requestBody.DataAgreement.Purpose
 	newDataAgreement.PurposeDescription = requestBody.DataAgreement.PurposeDescription
@@ -123,6 +122,13 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	o, err := org.Get(organisationId)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get organization by ID :%v", organisationId)
+		common.HandleErrorV2(w, http.StatusNotFound, m, err)
+		return
+	}
+
 	version := common.IntegerToSemver(1)
 
 	// Initialise data agreement
@@ -132,6 +138,8 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 	newDataAgreement = updateDataAgreementFromAddDataAgreementRequestBody(dataAgreementReq, newDataAgreement)
 	newDataAgreement.OrganisationId = organisationId
 	newDataAgreement.ControllerId = organisationId
+	newDataAgreement.ControllerName = o.Name
+	newDataAgreement.ControllerUrl = o.EulaURL
 	newDataAgreement.IsDeleted = false
 	newDataAgreement.Version = version
 
