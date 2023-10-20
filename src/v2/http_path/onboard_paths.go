@@ -5,6 +5,7 @@ const LoginAdminUser = "/v2/onboard/admin/login"
 const LoginUser = "/v2/onboard/individual/login"
 
 const OnboardResetPassword = "/v2/onboard/password/reset"
+const OnboardForgotPassword = "/v2/onboard/password/forgot"
 
 const ValidateUserEmail = "/v2/onboard/validate/email"
 const ValidatePhoneNumber = "/v2/onboard/validate/phone"
@@ -23,5 +24,5 @@ const GetOrganizationLogoImage = "/v2/onboard/organisation/logoimage"
 
 const OnboardReadOrganisationAdmin = "/v2/onboard/admin"
 const OnboardUpdateOrganisationAdmin = "/v2/onboard/admin"
-
-const OnboardForgotPassword = "/v2/onboard/password/forgot"
+const OnboardReadOrganisationAdminAvatar = "/v2/onboard/admin/avatarimage"
+const OnboardUpdateOrganisationAdminAvatar = "/v2/onboard/admin/avatarimage"
