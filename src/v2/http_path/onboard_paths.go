@@ -21,3 +21,5 @@ const GetOrganizationLogoImage = "/v2/onboard/organisation/logoimage"
 
 const OnboardReadOrganisationAdmin = "/v2/onboard/admin"
 const OnboardUpdateOrganisationAdmin = "/v2/onboard/admin"
+
+const OnboardForgotPassword = "/v2/onboard/password/forgot"

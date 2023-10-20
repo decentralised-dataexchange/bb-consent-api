@@ -49,6 +49,23 @@ func RefreshToken(clientId string, refreshToken string, realm string, client *go
 	return token, err
 }
 
+func ForgotPassword(iamId string) error {
+	client := GetClient()
+	token, err := GetAdminToken(IamConfig.AdminUser, IamConfig.AdminPassword, "master", client)
+	if err != nil {
+		return err
+	}
+	params := gocloak.ExecuteActionsEmail{
+		UserID: &iamId,
+		Actions: &[]string{
+			"UPDATE_PASSWORD",
+		},
+	}
+
+	err = client.ExecuteActionsEmail(context.Background(), token.AccessToken, IamConfig.Realm, params)
+	return err
+}
+
 func GetClient() *gocloak.GoCloak {
 	client := gocloak.NewClient(IamConfig.URL)
 	return client
