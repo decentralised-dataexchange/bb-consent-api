@@ -15,6 +15,7 @@ type organizationResp struct {
 	ID            primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	Name          string             `json:"name"`
 	Description   string             `json:"description"`
+	Sector        string             `json:"sector"`
 	Location      string             `json:"location"`
 	PolicyURL     string             `json:"policyUrl"`
 	CoverImageID  string             `json:"coverImageId"`
@@ -27,8 +28,8 @@ type getOrgResp struct {
 	Organization organizationResp `json:"organisation"`
 }
 
-// GetOrganizationByID Gets a single organization by given id
-func GetOrganizationByID(w http.ResponseWriter, r *http.Request) {
+// OnboardReadOrganisation Gets a single organisation by given id
+func OnboardReadOrganisation(w http.ResponseWriter, r *http.Request) {
 	organizationID := r.Header.Get(config.OrganizationId)
 	o, err := org.Get(organizationID)
 	if err != nil {
@@ -41,6 +42,7 @@ func GetOrganizationByID(w http.ResponseWriter, r *http.Request) {
 		ID:            o.ID,
 		Name:          o.Name,
 		Description:   o.Description,
+		Sector:        o.Type.Type,
 		Location:      o.Location,
 		PolicyURL:     o.PolicyURL,
 		CoverImageID:  o.CoverImageID,
