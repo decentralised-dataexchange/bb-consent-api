@@ -54,6 +54,27 @@ func GetClient() *gocloak.GoCloak {
 	return client
 }
 
+// UpdateIamUser Update user info on IAM server end.
+func UpdateIamUser(Name string, iamID string) error {
+	user := gocloak.User{
+		ID:        &iamID,
+		FirstName: &Name,
+	}
+
+	client := GetClient()
+
+	token, err := GetAdminToken(IamConfig.AdminUser, IamConfig.AdminPassword, "master", client)
+	if err != nil {
+		return err
+	}
+
+	err = client.UpdateUser(context.Background(), token.AccessToken, IamConfig.Realm, user)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 type IamToken struct {
 	AccessToken      string `json:"access_token"`
 	ExpiresIn        int    `json:"expires_in"`
