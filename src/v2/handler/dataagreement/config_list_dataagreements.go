@@ -13,6 +13,7 @@ import (
 	"github.com/bb-consent/api/src/v2/dataagreement"
 	"github.com/bb-consent/api/src/v2/paginate"
 	"github.com/bb-consent/api/src/v2/revision"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // ListDataAgreementsError is an error enumeration for list data agreement API.
@@ -21,6 +22,7 @@ type ListDataAgreementsError int
 const (
 	// ErrRevisionIDIsMissing indicates that the revisionId query param is missing.
 	RevisionIDIsMissingError ListDataAgreementsError = iota
+	LifecycleIsMissingError
 )
 
 // Error returns the string representation of the error.
@@ -28,6 +30,8 @@ func (e ListDataAgreementsError) Error() string {
 	switch e {
 	case RevisionIDIsMissingError:
 		return "Query param revisionId is missing!"
+	case LifecycleIsMissingError:
+		return "Query param lifecycle is missing!"
 	default:
 		return "Unknown error!"
 	}
@@ -43,6 +47,18 @@ func ParseListDataAgreementsQueryParams(r *http.Request) (revisionId string, err
 	}
 
 	return "", RevisionIDIsMissingError
+}
+
+// ParseListDataAgreementsLifecycleQueryParams parses query params for listing data agreements.
+func ParseListDataAgreementsLifecycleQueryParams(r *http.Request) (lifecycle string, err error) {
+	query := r.URL.Query()
+
+	// Check if revisionId query param is provided.
+	if r, ok := query["lifecycle"]; ok && len(r) > 0 {
+		return r[0], nil
+	}
+
+	return "", LifecycleIsMissingError
 }
 
 type listDataAgreementsResp struct {
@@ -71,40 +87,78 @@ func ConfigListDataAgreements(w http.ResponseWriter, r *http.Request) {
 	revisionId, err := ParseListDataAgreementsQueryParams(r)
 	revisionId = common.Sanitize(revisionId)
 	if err != nil && errors.Is(err, RevisionIDIsMissingError) {
+		lifecycle, err := ParseListDataAgreementsLifecycleQueryParams(r)
+		lifecycle = common.Sanitize(lifecycle)
 
 		darepo := dataagreement.DataAgreementRepository{}
 		darepo.Init(organisationId)
-		// Return all data agreements
-		var dataAgreements []dataagreement.DataAgreement
-		query := paginate.PaginateDBObjectsQuery{
-			Filter:     darepo.DefaultFilter,
-			Collection: dataagreement.Collection(),
-			Context:    context.Background(),
-			Limit:      limit,
-			Offset:     offset,
-		}
-		result, err := paginate.PaginateDBObjects(query, &dataAgreements)
-		if err != nil {
-			if errors.Is(err, paginate.EmptyDBError) {
-				emptyDataAgreements := make([]interface{}, 0)
-				resp = listDataAgreementsResp{
-					DataAgreements: emptyDataAgreements,
-					Pagination:     result.Pagination,
-				}
-				returnHTTPResponse(resp, w)
-				return
-			}
-			m := "Failed to paginate data agreement"
-			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-			return
 
+		if err != nil && errors.Is(err, LifecycleIsMissingError) {
+
+			// Return all data agreements
+			var dataAgreements []dataagreement.DataAgreement
+			query := paginate.PaginateDBObjectsQuery{
+				Filter:     darepo.DefaultFilter,
+				Collection: dataagreement.Collection(),
+				Context:    context.Background(),
+				Limit:      limit,
+				Offset:     offset,
+			}
+			result, err := paginate.PaginateDBObjects(query, &dataAgreements)
+			if err != nil {
+				if errors.Is(err, paginate.EmptyDBError) {
+					emptyDataAgreements := make([]interface{}, 0)
+					resp = listDataAgreementsResp{
+						DataAgreements: emptyDataAgreements,
+						Pagination:     result.Pagination,
+					}
+					returnHTTPResponse(resp, w)
+					return
+				}
+				m := "Failed to paginate data agreement"
+				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+				return
+
+			}
+			resp = listDataAgreementsResp{
+				DataAgreements: result.Items,
+				Pagination:     result.Pagination,
+			}
+			returnHTTPResponse(resp, w)
+			return
+		} else {
+			// Return liecycle filtered data agreements
+			var dataAgreements []dataagreement.DataAgreement
+			query := paginate.PaginateDBObjectsQuery{
+				Filter:     common.CombineFilters(darepo.DefaultFilter, bson.M{"lifecycle": lifecycle}),
+				Collection: dataagreement.Collection(),
+				Context:    context.Background(),
+				Limit:      limit,
+				Offset:     offset,
+			}
+			result, err := paginate.PaginateDBObjects(query, &dataAgreements)
+			if err != nil {
+				if errors.Is(err, paginate.EmptyDBError) {
+					emptyDataAgreements := make([]interface{}, 0)
+					resp = listDataAgreementsResp{
+						DataAgreements: emptyDataAgreements,
+						Pagination:     result.Pagination,
+					}
+					returnHTTPResponse(resp, w)
+					return
+				}
+				m := "Failed to paginate data agreement"
+				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+				return
+
+			}
+			resp = listDataAgreementsResp{
+				DataAgreements: result.Items,
+				Pagination:     result.Pagination,
+			}
+			returnHTTPResponse(resp, w)
+			return
 		}
-		resp = listDataAgreementsResp{
-			DataAgreements: result.Items,
-			Pagination:     result.Pagination,
-		}
-		returnHTTPResponse(resp, w)
-		return
 
 	} else {
 		// Fetch revision by id
