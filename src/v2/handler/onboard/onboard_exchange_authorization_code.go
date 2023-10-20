@@ -107,7 +107,7 @@ func ExchangeAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			// Create individual if not present
-			createIndividualFromIdp(individualEmail, individualExternalId, organisationId)
+			createIndividualFromIdp(individualEmail, individualExternalId, organisationId, idp.Id.Hex())
 		} else {
 			m := fmt.Sprintf("Failed to fetch individual: %v", individualExternalId)
 			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
@@ -133,7 +133,7 @@ func ExchangeAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
-func createIndividualFromIdp(email string, externalId string, organisationId string) error {
+func createIndividualFromIdp(email string, externalId string, organisationId string, idpId string) error {
 	individualRepo := individual.IndividualRepository{}
 	individualRepo.Init(organisationId)
 
@@ -144,6 +144,7 @@ func createIndividualFromIdp(email string, externalId string, organisationId str
 	newIndividual.OrganisationId = organisationId
 	newIndividual.IsDeleted = false
 	newIndividual.IsOnboardedFromId = true
+	newIndividual.IdentityProviderId = idpId
 
 	_, err := individualRepo.Add(newIndividual)
 	if err != nil {
