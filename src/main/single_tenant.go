@@ -12,14 +12,21 @@ import (
 )
 
 func createOrganisationAdmin(config *config.Configuration) user.User {
-	u, err := user.GetByEmail(config.User.Username)
-	if err != nil {
+	organization, _ := org.GetFirstOrganization()
+	if len(organization.Admins) == 0 {
 		log.Println("Failed to get user, creating new user.")
-		u, err = user.RegisterUser(config.User, config.Iam)
+		u, err := user.RegisterUser(config.User, config.Iam)
 		if err != nil {
 			log.Println("failed to create user")
 			panic(err)
 		}
+		return u
+	}
+
+	u, err := user.Get(organization.Admins[0].UserID)
+	if err != nil {
+		log.Println("failed to find organisation admin")
+		panic(err)
 	}
 
 	return u
