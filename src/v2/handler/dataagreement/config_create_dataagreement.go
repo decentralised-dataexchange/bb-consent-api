@@ -45,6 +45,24 @@ var LawfulBasisOfProcessingMappings = []LawfulBasisOfProcessingMapping{
 	},
 }
 
+type MethodOfUseMapping struct {
+	Str string
+}
+
+// MethodOfUseMappings List of available method of use
+var MethodOfUseMappings = []MethodOfUseMapping{
+	{
+		"null",
+	},
+	{
+		"data_source",
+	},
+	{
+
+		"data_using_service",
+	},
+}
+
 type addDataAgreementReq struct {
 	DataAgreement dataagreement.DataAgreement `json:"dataAgreement" valid:"required"`
 }
@@ -67,6 +85,19 @@ func isValidLawfulBasisOfProcessing(lawfulBasis string) bool {
 	return isFound
 }
 
+// Check if the method of use provided is valid
+func isValidMethodOfUse(methodOfUse string) bool {
+	isFound := false
+	for _, MethodOfUseMapping := range MethodOfUseMappings {
+		if MethodOfUseMapping.Str == methodOfUse {
+			isFound = true
+			break
+		}
+	}
+
+	return isFound
+}
+
 func validateAddDataAgreementRequestBody(dataAgreementReq addDataAgreementReq) error {
 	// validating request payload
 	valid, err := govalidator.ValidateStruct(dataAgreementReq)
@@ -77,6 +108,11 @@ func validateAddDataAgreementRequestBody(dataAgreementReq addDataAgreementReq) e
 	// Proceed if lawful basis provided is valid
 	if !isValidLawfulBasisOfProcessing(dataAgreementReq.DataAgreement.LawfulBasis) {
 		return errors.New("invalid lawful basis provided")
+	}
+
+	// Proceed if method of use is valid
+	if !isValidMethodOfUse(dataAgreementReq.DataAgreement.MethodOfUse) {
+		return errors.New("invalid method of use provided")
 	}
 
 	return nil
