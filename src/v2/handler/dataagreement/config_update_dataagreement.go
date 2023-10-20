@@ -10,6 +10,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
+	"github.com/bb-consent/api/src/org"
 	"github.com/bb-consent/api/src/v2/dataagreement"
 	"github.com/bb-consent/api/src/v2/revision"
 	"github.com/bb-consent/api/src/v2/token"
@@ -46,8 +47,6 @@ func validateUpdateDataAgreementRequestBody(dataAgreementReq updateDataAgreement
 
 func updateDataAgreementFromRequestBody(requestBody updateDataAgreementReq, toBeUpdatedDataAgreement dataagreement.DataAgreement) dataagreement.DataAgreement {
 
-	toBeUpdatedDataAgreement.ControllerUrl = requestBody.DataAgreement.ControllerUrl
-	toBeUpdatedDataAgreement.ControllerName = requestBody.DataAgreement.ControllerName
 	toBeUpdatedDataAgreement.Policy = requestBody.DataAgreement.Policy
 	toBeUpdatedDataAgreement.Purpose = requestBody.DataAgreement.Purpose
 	toBeUpdatedDataAgreement.PurposeDescription = requestBody.DataAgreement.PurposeDescription
@@ -89,6 +88,12 @@ func ConfigUpdateDataAgreement(w http.ResponseWriter, r *http.Request) {
 		common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
 		return
 	}
+	o, err := org.Get(organisationId)
+	if err != nil {
+		m := fmt.Sprintf("Failed to get organization by ID :%v", organisationId)
+		common.HandleErrorV2(w, http.StatusNotFound, m, err)
+		return
+	}
 
 	// Repository
 	daRepo := dataagreement.DataAgreementRepository{}
@@ -117,6 +122,8 @@ func ConfigUpdateDataAgreement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	toBeUpdatedDataAgreement.Version = updatedVersion
+	toBeUpdatedDataAgreement.ControllerName = o.Name
+	toBeUpdatedDataAgreement.ControllerUrl = o.EulaURL
 
 	// Update revision
 	newRevision, err := revision.UpdateRevisionForDataAgreement(toBeUpdatedDataAgreement, &currentRevision, orgAdminId)
