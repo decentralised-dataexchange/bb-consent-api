@@ -118,6 +118,16 @@ func validateAddDataAgreementRequestBody(dataAgreementReq addDataAgreementReq) e
 	return nil
 }
 
+func setDataAgreementLifecycle(active bool) string {
+	var lifecycle string
+	if active == true {
+		lifecycle = "complete"
+	} else {
+		lifecycle = "draft"
+	}
+	return lifecycle
+}
+
 func updateDataAgreementFromAddDataAgreementRequestBody(requestBody addDataAgreementReq, newDataAgreement dataagreement.DataAgreement) dataagreement.DataAgreement {
 
 	newDataAgreement.Policy = requestBody.DataAgreement.Policy
@@ -131,7 +141,6 @@ func updateDataAgreementFromAddDataAgreementRequestBody(requestBody addDataAgree
 	newDataAgreement.Active = requestBody.DataAgreement.Active
 	newDataAgreement.Forgettable = requestBody.DataAgreement.Forgettable
 	newDataAgreement.CompatibleWithVersionId = requestBody.DataAgreement.CompatibleWithVersionId
-	newDataAgreement.Lifecycle = requestBody.DataAgreement.Lifecycle
 
 	return newDataAgreement
 }
@@ -166,6 +175,8 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 	}
 
 	version := common.IntegerToSemver(1)
+	// Add life cycle based on active field
+	lifecycle := setDataAgreementLifecycle(dataAgreementReq.DataAgreement.Active)
 
 	// Initialise data agreement
 	var newDataAgreement dataagreement.DataAgreement
@@ -178,6 +189,7 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 	newDataAgreement.ControllerUrl = o.EulaURL
 	newDataAgreement.IsDeleted = false
 	newDataAgreement.Version = version
+	newDataAgreement.Lifecycle = lifecycle
 
 	// Create new revision
 	newRevision, err := revision.CreateRevisionForDataAgreement(newDataAgreement, orgAdminId)
