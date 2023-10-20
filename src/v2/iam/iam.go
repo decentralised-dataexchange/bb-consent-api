@@ -17,9 +17,31 @@ func Init(config *config.Configuration) {
 	Timeout = time.Duration(time.Duration(IamConfig.Timeout) * time.Second)
 }
 
-func GetToken(username string, password string, realm string, client *gocloak.GoCloak) (*gocloak.JWT, error) {
+func GetAdminToken(username string, password string, realm string, client *gocloak.GoCloak) (*gocloak.JWT, error) {
 	ctx := context.Background()
 	token, err := client.LoginAdmin(ctx, username, password, realm)
+	if err != nil {
+		return token, err
+	}
+
+	return token, err
+}
+func GetToken(username string, password string, realm string, client *gocloak.GoCloak) (*gocloak.JWT, error) {
+	ctx := context.Background()
+	clientId := "igrant-ios-app"
+	grantType := "password"
+	token, err := client.GetToken(ctx, realm, gocloak.TokenOptions{Username: &username, Password: &password, ClientID: &clientId, GrantType: &grantType})
+	if err != nil {
+		return token, err
+	}
+
+	return token, err
+}
+
+func RefreshToken(clientId string, refreshToken string, realm string, client *gocloak.GoCloak) (*gocloak.JWT, error) {
+	ctx := context.Background()
+	grantType := "refresh_token"
+	token, err := client.GetToken(ctx, realm, gocloak.TokenOptions{RefreshToken: &refreshToken, ClientID: &clientId, GrantType: &grantType})
 	if err != nil {
 		return token, err
 	}

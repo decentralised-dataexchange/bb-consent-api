@@ -117,7 +117,7 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(VerifyPhoneNumber, m.Chain(onboardHandler.VerifyPhoneNumber, m.LoggerNoAuth(), m.AddContentType())).Methods("POST")
 	r.Handle(VerifyOtp, m.Chain(onboardHandler.VerifyOtp, m.LoggerNoAuth(), m.AddContentType())).Methods("POST")
 
-	r.Handle(GetToken, m.Chain(onboardHandler.GetToken)).Methods("POST")
+	r.Handle(OnboardRefreshToken, m.Chain(onboardHandler.OnboardRefreshToken, m.AddContentType())).Methods("POST")
 	r.Handle(ExchangeAuthorizationCode, m.Chain(onboardHandler.ExchangeAuthorizationCode, m.LoggerNoAuth())).Methods("POST")
 
 	r.Handle(GetOrganizationByID, m.Chain(onboardHandler.GetOrganizationByID, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
