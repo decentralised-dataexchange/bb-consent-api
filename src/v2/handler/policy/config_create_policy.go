@@ -67,6 +67,7 @@ func updatePolicyFromAddPolicyRequestBody(requestBody addPolicyReq, newPolicy po
 	newPolicy.DataRetentionPeriodDays = requestBody.Policy.DataRetentionPeriodDays
 	newPolicy.GeographicRestriction = requestBody.Policy.GeographicRestriction
 	newPolicy.StorageLocation = requestBody.Policy.StorageLocation
+	newPolicy.ThirdPartyDataSharing = requestBody.Policy.ThirdPartyDataSharing
 	return newPolicy
 }
 
