@@ -4,8 +4,8 @@ package http_path
 const ServiceReadDataAgreement = "/v2/service/data-agreement/{dataAgreementId}"
 const ServiceListDataAgreements = "/v2/service/data-agreements"
 
-// Global policy configuration
-const ServicePolicyRead = "/service/policy/{policyId}/"
+// Policy
+const ServiceReadPolicy = "/v2/service/policy/{policyId}"
 
 // Data attributes
 const ServiceListDataAttributesForDataAgreement = "/v2/service/data-agreement/{dataAgreementId}/data-attributes"
