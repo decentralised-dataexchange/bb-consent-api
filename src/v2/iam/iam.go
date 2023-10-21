@@ -116,3 +116,25 @@ func ResetPassword(userId string, password string) error {
 	err = client.SetPassword(context.Background(), token.AccessToken, userId, IamConfig.Realm, password, false)
 	return err
 }
+
+func RegisterUser(email string, name string) (string, error) {
+	user := gocloak.User{
+		FirstName: &name,
+		Email:     &email,
+		Username:  &email,
+	}
+
+	client := GetClient()
+
+	token, err := GetAdminToken(IamConfig.AdminUser, IamConfig.AdminPassword, "master", client)
+	if err != nil {
+		return "", err
+	}
+
+	iamId, err := client.CreateUser(context.Background(), token.AccessToken, IamConfig.Realm, user)
+	if err != nil {
+		return "", err
+	}
+
+	return iamId, nil
+}
