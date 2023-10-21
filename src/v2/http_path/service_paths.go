@@ -19,3 +19,6 @@ const ServiceCreateIndividualConsentRecord = "/v2/service/individual/data-agreem
 const ServiceUpdateIndividualConsentRecord = "/v2/service/individual/data-agreement/{dataAgreementId}"
 const ServiceListIndividualRecordList = "/v2/service/individual/record/data-agreement/"
 const ServiceReadIndividualRecordRead = "/v2/service/individual/record/data-agreement/{dataAgreementId}/"
+
+// Idp
+const ServiceReadIdp = "/service/idp/open-id/{idpId}"
