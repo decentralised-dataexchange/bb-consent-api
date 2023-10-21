@@ -12,6 +12,7 @@ import (
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/policy"
+	m "github.com/bb-consent/api/src/v2/middleware"
 	"github.com/bb-consent/api/src/v2/revision"
 	"github.com/bb-consent/api/src/v2/token"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -80,6 +81,19 @@ func ConfigCreatePolicy(w http.ResponseWriter, r *http.Request) {
 	organisationId := r.Header.Get(config.OrganizationId)
 	organisationId = common.Sanitize(organisationId)
 
+	// Repository
+	prepo := policy.PolicyRepository{}
+	prepo.Init(organisationId)
+
+	if m.ApplicationMode == config.SingleTenant {
+		policyCount, _ := prepo.GetPolicyCountByOrganisation()
+		if policyCount >= 1 {
+			m := "Only one policy allowed for an organisation"
+			common.HandleErrorV2(w, http.StatusBadRequest, m, errors.New("policy already exists"))
+			return
+		}
+	}
+
 	// Request body
 	var policyReq addPolicyReq
 	b, _ := io.ReadAll(r.Body)
@@ -111,10 +125,6 @@ func ConfigCreatePolicy(w http.ResponseWriter, r *http.Request) {
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
-
-	// Repository
-	prepo := policy.PolicyRepository{}
-	prepo.Init(organisationId)
 
 	// Save the policy to db
 	savedPolicy, err := prepo.Add(newPolicy)

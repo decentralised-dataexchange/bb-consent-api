@@ -81,3 +81,13 @@ func (prepo *PolicyRepository) Update(policy Policy) (Policy, error) {
 	}
 	return policy, err
 }
+
+// Get Gets count of policy for organisation
+func (prepo *PolicyRepository) GetPolicyCountByOrganisation() (int64, error) {
+
+	filter := prepo.DefaultFilter
+
+	count, err := Collection().CountDocuments(context.TODO(), filter)
+
+	return count, err
+}
