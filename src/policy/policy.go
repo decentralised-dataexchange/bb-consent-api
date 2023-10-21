@@ -24,6 +24,7 @@ type Policy struct {
 	DataRetentionPeriodDays int                `json:"dataRetentionPeriod"`
 	GeographicRestriction   string             `json:"geographicRestriction"`
 	StorageLocation         string             `json:"storageLocation"`
+	ThirdPartyDataSharing   string             `json:"thirdPartyDataSharing"`
 	OrganisationId          string             `json:"-"`
 	IsDeleted               bool               `json:"-"`
 }
