@@ -6,4 +6,4 @@ const AuditAgreementList = "/v2/audit/agreements/"
 const AuditReadRecord = "/v2/audit/agreement/{agreementId}/"
 
 // organization action logs
-const GetOrgLogs = "/v2/audit/admin/logs"
+const AuditGetOrgLogs = "/v2/audit/admin/logs"
