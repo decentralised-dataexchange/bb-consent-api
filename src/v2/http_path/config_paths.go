@@ -52,6 +52,7 @@ const ConfigReadIndividual = "/v2/config/individual/{individualId}"
 const ConfigUpdateIndividual = "/v2/config/individual/{individualId}"
 const ConfigDeleteIndividual = "/v2/config/individual/{individualId}"
 const ConfigListIndividuals = "/v2/config/individuals"
+const ConfigCreateIndividualsInBulk = "/v2/config/individual/upload"
 
 // Api key
 const ConfigCreateApiKey = "/v2/config/admin/apikey"
