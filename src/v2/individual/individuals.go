@@ -86,3 +86,13 @@ func (iRepo *IndividualRepository) GetByExternalId(externalId string) (Individua
 
 	return result, err
 }
+
+func (iRepo *IndividualRepository) GetIndividualByEmail(email string) (Individual, error) {
+
+	filter := common.CombineFilters(iRepo.DefaultFilter, bson.M{"email": email})
+
+	var result Individual
+	err := Collection().FindOne(context.TODO(), filter).Decode(&result)
+
+	return result, err
+}
