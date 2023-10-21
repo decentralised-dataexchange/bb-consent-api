@@ -1,13 +1,14 @@
 package http_path
 
 // Data agreements
-const ServiceDataAgreementRead = "/v2/service/data-agreement/{dataAgreementId}/"
+const ServiceReadDataAgreement = "/v2/service/data-agreement/{dataAgreementId}"
+const ServiceListDataAgreements = "/v2/service/data-agreements"
 
 // Global policy configuration
 const ServicePolicyRead = "/service/policy/{policyId}/"
 
 // Data attributes
-const ServiceGetDataAttributes = "/v2/service/data-agreements/data-attributes"
+const ServiceListDataAttributesForDataAgreement = "/v2/service/data-agreement/{dataAgreementId}/data-attributes"
 
 // Verification mechanisms
 const ServiceVerificationAgreementList = "/v2/service/verification/data-agreements/"
