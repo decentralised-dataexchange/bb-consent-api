@@ -27,6 +27,24 @@ type DataAttribute struct {
 	IsDeleted      bool               `json:"-"`
 }
 
+type DataAgreementForDataAttribute struct {
+	Id      string `json:"id" bson:"_id,omitempty"`
+	Purpose string `json:"purpose"`
+}
+
+type DataAttributeForLists struct {
+	Id             primitive.ObjectID              `json:"id" bson:"_id,omitempty"`
+	Version        string                          `json:"version"`
+	AgreementIds   string                          `json:"-"`
+	Name           string                          `json:"name" valid:"required"`
+	Description    string                          `json:"description" valid:"required"`
+	Sensitivity    bool                            `json:"sensitivity"`
+	Category       string                          `json:"category"`
+	OrganisationId string                          `json:"-"`
+	IsDeleted      bool                            `json:"-"`
+	DataAgreements interface{}                     `json:"agreementIds"`
+	AgreementData  []DataAgreementForDataAttribute `json:"agreements"`
+}
 type DataAttributeRepository struct {
 	DefaultFilter bson.M
 }
@@ -142,4 +160,41 @@ func (dataAttributeRepo *DataAttributeRepository) DeleteDataAttributesIfDataAgre
 	}
 
 	return nil
+}
+
+// ListDataAttributesBasedOnMethodOfUse lists data attributes based on method of use
+func ListDataAttributesBasedOnMethodOfUse(methodOfUse string, organisationId string) ([]DataAttributeForLists, error) {
+	var results []DataAttributeForLists
+
+	pipeline := []bson.M{
+		{"$match": bson.M{"organisationid": organisationId, "isdeleted": false}},
+		{"$addFields": bson.M{"dataAgreements": "$agreementids"}},
+		{"$unwind": "$agreementids"},
+		{"$lookup": bson.M{
+			"from": "dataAgreements",
+			"let":  bson.M{"localId": "$agreementids"},
+			"pipeline": bson.A{
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$eq": []interface{}{"$_id", bson.M{"$toObjectId": "$$localId"}},
+						},
+					},
+				},
+			},
+			"as": "agreementData",
+		}},
+		{"$match": bson.M{"agreementData.methodofuse": methodOfUse}},
+	}
+
+	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return results, err
+	}
+	defer cursor.Close(context.TODO())
+
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return results, err
+	}
+	return results, nil
 }
