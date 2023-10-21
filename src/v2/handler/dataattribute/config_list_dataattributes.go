@@ -21,6 +21,7 @@ type ListDataAttributesError int
 const (
 	// ErrRevisionIDIsMissing indicates that the revisionId query param is missing.
 	RevisionIDIsMissingError ListDataAttributesError = iota
+	MethodOfUseIsMissingError
 )
 
 // Error returns the string representation of the error.
@@ -28,6 +29,8 @@ func (e ListDataAttributesError) Error() string {
 	switch e {
 	case RevisionIDIsMissingError:
 		return "Query param revisionId is missing!"
+	case MethodOfUseIsMissingError:
+		return "Query param method of use is missing!"
 	default:
 		return "Unknown error!"
 	}
@@ -45,6 +48,26 @@ func ParseListDataAttributesQueryParams(r *http.Request) (revisionId string, err
 	return "", RevisionIDIsMissingError
 }
 
+// ParseMethodOfUseDataAttributesQueryParam parses query method of use param for listing data attributes.
+func ParseMethodOfUseDataAttributesQueryParams(r *http.Request) (methodOfUse string, err error) {
+	query := r.URL.Query()
+
+	// Check if revisionId query param is provided.
+	if r, ok := query["methodOfUse"]; ok && len(r) > 0 {
+		return r[0], nil
+	}
+
+	return "", MethodOfUseIsMissingError
+}
+
+func dataAttributesToInterfaceSlice(dataAttributes []dataattribute.DataAttributeForLists) []interface{} {
+	interfaceSlice := make([]interface{}, len(dataAttributes))
+	for i, r := range dataAttributes {
+		interfaceSlice[i] = r
+	}
+	return interfaceSlice
+}
+
 func returnHTTPResponse(resp interface{}, w http.ResponseWriter) {
 	response, _ := json.Marshal(resp)
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
@@ -59,6 +82,7 @@ type listDataAttributesResp struct {
 
 // ConfigListDataAttributes
 func ConfigListDataAttributes(w http.ResponseWriter, r *http.Request) {
+
 	// Headers
 	organisationId := r.Header.Get(config.OrganizationId)
 	organisationId = common.Sanitize(organisationId)
@@ -70,42 +94,69 @@ func ConfigListDataAttributes(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Offset: %v and limit: %v\n", offset, limit)
 	revisionId, err := ParseListDataAttributesQueryParams(r)
 	revisionId = common.Sanitize(revisionId)
-	if err != nil && errors.Is(err, RevisionIDIsMissingError) {
-		// Repository
-		dataAttributeRepo := dataattribute.DataAttributeRepository{}
-		dataAttributeRepo.Init(organisationId)
 
-		// Return all data attributes
-		var dataAttributes []dataattribute.DataAttribute
-		query := paginate.PaginateDBObjectsQuery{
-			Filter:     dataAttributeRepo.DefaultFilter,
-			Collection: dataattribute.Collection(),
-			Context:    context.Background(),
-			Limit:      limit,
-			Offset:     offset,
-		}
-		result, err := paginate.PaginateDBObjects(query, &dataAttributes)
-		if err != nil {
-			if errors.Is(err, paginate.EmptyDBError) {
-				emptyDataAttributes := make([]interface{}, 0)
-				resp = listDataAttributesResp{
-					DataAttributes: emptyDataAttributes,
-					Pagination:     result.Pagination,
-				}
-				returnHTTPResponse(resp, w)
-				return
+	if err != nil && errors.Is(err, RevisionIDIsMissingError) {
+
+		methodOfUse, err := ParseMethodOfUseDataAttributesQueryParams(r)
+		if err != nil && errors.Is(err, MethodOfUseIsMissingError) {
+			// Repository
+			dataAttributeRepo := dataattribute.DataAttributeRepository{}
+			dataAttributeRepo.Init(organisationId)
+
+			// Return all data attributes
+			var dataAttributes []dataattribute.DataAttribute
+			query := paginate.PaginateDBObjectsQuery{
+				Filter:     dataAttributeRepo.DefaultFilter,
+				Collection: dataattribute.Collection(),
+				Context:    context.Background(),
+				Limit:      limit,
+				Offset:     offset,
 			}
-			m := "Failed to paginate data attribute"
-			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			result, err := paginate.PaginateDBObjects(query, &dataAttributes)
+			if err != nil {
+				if errors.Is(err, paginate.EmptyDBError) {
+					emptyDataAttributes := make([]interface{}, 0)
+					resp = listDataAttributesResp{
+						DataAttributes: emptyDataAttributes,
+						Pagination:     result.Pagination,
+					}
+					returnHTTPResponse(resp, w)
+					return
+				}
+				m := "Failed to paginate data attribute"
+				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+				return
+
+			}
+			resp = listDataAttributesResp{
+				DataAttributes: result.Items,
+				Pagination:     result.Pagination,
+			}
+			returnHTTPResponse(resp, w)
 			return
 
+		} else {
+			// List by method of use
+			res, err := dataattribute.ListDataAttributesBasedOnMethodOfUse(methodOfUse, organisationId)
+			if err != nil {
+				m := fmt.Sprintf("Failed to fetch data attribute by method of use: %v", methodOfUse)
+				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+				return
+			}
+
+			query := paginate.PaginateObjectsQuery{
+				Limit:  limit,
+				Offset: offset,
+			}
+			interfaceSlice := dataAttributesToInterfaceSlice(res)
+			result := paginate.PaginateObjects(query, interfaceSlice)
+			resp = listDataAttributesResp{
+				DataAttributes: result.Items,
+				Pagination:     result.Pagination,
+			}
+			returnHTTPResponse(resp, w)
+			return
 		}
-		resp = listDataAttributesResp{
-			DataAttributes: result.Items,
-			Pagination:     result.Pagination,
-		}
-		returnHTTPResponse(resp, w)
-		return
 
 	} else {
 		// Fetch revision by id
