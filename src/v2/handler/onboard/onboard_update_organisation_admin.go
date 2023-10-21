@@ -30,6 +30,7 @@ type updateOrgAdminResp struct {
 	Name           string `json:"name"`
 	AvatarImageId  string `json:"avatarImageId"`
 	AvatarImageUrl string `json:"avatarImageUrl"`
+	LastVisited    string `json:"lastVisited"`
 }
 
 // OnboardUpdateOrganisationAdmin
@@ -90,6 +91,7 @@ func OnboardUpdateOrganisationAdmin(w http.ResponseWriter, r *http.Request) {
 		Name:           u.Name,
 		AvatarImageId:  u.ImageID,
 		AvatarImageUrl: u.ImageURL,
+		LastVisited:    u.LastVisit,
 	}
 
 	response, _ := json.Marshal(resp)

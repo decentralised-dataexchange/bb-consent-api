@@ -18,6 +18,7 @@ type readOrgAdminResp struct {
 	Name           string `json:"name"`
 	AvatarImageId  string `json:"avatarImageId"`
 	AvatarImageUrl string `json:"avatarImageUrl"`
+	LastVisited    string `json:"lastVisited"`
 }
 
 // OnboardReadOrganisationAdmin
@@ -44,6 +45,7 @@ func OnboardReadOrganisationAdmin(w http.ResponseWriter, r *http.Request) {
 		Name:           u.Name,
 		AvatarImageId:  u.ImageID,
 		AvatarImageUrl: u.ImageURL,
+		LastVisited:    u.LastVisit,
 	}
 
 	response, _ := json.Marshal(resp)
