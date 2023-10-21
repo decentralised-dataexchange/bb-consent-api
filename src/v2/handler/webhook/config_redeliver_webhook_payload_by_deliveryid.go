@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/bb-consent/api/src/actionlog"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/user"
+	"github.com/bb-consent/api/src/v2/actionlog"
 	wh "github.com/bb-consent/api/src/v2/webhook"
 	"github.com/gorilla/mux"
 )

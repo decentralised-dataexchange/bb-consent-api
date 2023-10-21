@@ -3,6 +3,7 @@ package http_path
 import (
 	v2Handler "github.com/bb-consent/api/src/v2/handler"
 	apiKeyHandler "github.com/bb-consent/api/src/v2/handler/apikey"
+	auditHandler "github.com/bb-consent/api/src/v2/handler/audit"
 	dataAgreementHandler "github.com/bb-consent/api/src/v2/handler/dataagreement"
 	dataAttributeHandler "github.com/bb-consent/api/src/v2/handler/dataattribute"
 	idpHandler "github.com/bb-consent/api/src/v2/handler/idp"
@@ -105,7 +106,7 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(AuditReadRecord, m.Chain(v2Handler.AuditReadRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// organization action logs
-	r.Handle(GetOrgLogs, m.Chain(v2Handler.GetOrgLogs, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(AuditGetOrgLogs, m.Chain(auditHandler.AuditGetOrgLogs, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Onboard api(s)
 
