@@ -1,7 +1,6 @@
 package http_path
 
 import (
-	v2Handler "github.com/bb-consent/api/src/v2/handler"
 	apiKeyHandler "github.com/bb-consent/api/src/v2/handler/apikey"
 	auditHandler "github.com/bb-consent/api/src/v2/handler/audit"
 	dataAgreementHandler "github.com/bb-consent/api/src/v2/handler/dataagreement"
@@ -10,6 +9,7 @@ import (
 	individualHandler "github.com/bb-consent/api/src/v2/handler/individual"
 	onboardHandler "github.com/bb-consent/api/src/v2/handler/onboard"
 	policyHandler "github.com/bb-consent/api/src/v2/handler/policy"
+	serviceHandler "github.com/bb-consent/api/src/v2/handler/service"
 	webhookHandler "github.com/bb-consent/api/src/v2/handler/webhook"
 	m "github.com/bb-consent/api/src/v2/middleware"
 	"github.com/casbin/casbin/v2"
@@ -34,8 +34,6 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(ConfigDeleteDataAgreement, m.Chain(dataAgreementHandler.ConfigDeleteDataAgreement, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("DELETE")
 	r.Handle(ConfigListDataAgreements, m.Chain(dataAgreementHandler.ConfigListDataAgreements, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 	r.Handle(ConfigListDataAttributesForDataAgreement, m.Chain(dataAgreementHandler.ConfigListDataAttributesForDataAgreement, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-
-	r.Handle(ReadDataAgreementRevision, m.Chain(v2Handler.ReadDataAgreementRevision, m.Logger(), m.SetApplicationMode(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Data attribute
 	r.Handle(ConfigReadDataAttribute, m.Chain(dataAttributeHandler.ConfigReadDataAttribute, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
@@ -88,22 +86,22 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(ServiceGetDataAttributes, m.Chain(dataAttributeHandler.ConfigListDataAttributes, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Verification mechanisms
-	r.Handle(ServiceVerificationAgreementList, m.Chain(v2Handler.ServiceVerificationAgreementList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(ServiceVerificationAgreementConsentRecordRead, m.Chain(v2Handler.ServiceVerificationAgreementConsentRecordRead, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(ServiceVerificationConsentRecordList, m.Chain(v2Handler.ServiceVerificationConsentRecordList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ServiceVerificationAgreementList, m.Chain(serviceHandler.ServiceVerificationAgreementList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ServiceVerificationAgreementConsentRecordRead, m.Chain(serviceHandler.ServiceVerificationAgreementConsentRecordRead, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ServiceVerificationConsentRecordList, m.Chain(serviceHandler.ServiceVerificationConsentRecordList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Recording consent
-	r.Handle(ServiceCreateIndividualConsentRecord, m.Chain(v2Handler.ServiceCreateIndividualConsentRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
-	r.Handle(ServiceUpdateIndividualConsentRecord, m.Chain(v2Handler.ServiceCreateIndividualConsentRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
-	r.Handle(ServiceListIndividualRecordList, m.Chain(v2Handler.ServiceListIndividualRecordList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(ServiceReadIndividualRecordRead, m.Chain(v2Handler.ServiceReadIndividualRecordRead, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ServiceCreateIndividualConsentRecord, m.Chain(serviceHandler.ServiceCreateIndividualConsentRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	r.Handle(ServiceUpdateIndividualConsentRecord, m.Chain(serviceHandler.ServiceCreateIndividualConsentRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
+	r.Handle(ServiceListIndividualRecordList, m.Chain(serviceHandler.ServiceListIndividualRecordList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ServiceReadIndividualRecordRead, m.Chain(serviceHandler.ServiceReadIndividualRecordRead, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Audit api(s)
 
-	r.Handle(AuditConsentRecordList, m.Chain(v2Handler.AuditConsentRecordList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(AuditConsentRecordRead, m.Chain(v2Handler.AuditConsentRecordRead, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(AuditAgreementList, m.Chain(v2Handler.AuditAgreementList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(AuditReadRecord, m.Chain(v2Handler.AuditReadRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(AuditConsentRecordList, m.Chain(auditHandler.AuditConsentRecordList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(AuditConsentRecordRead, m.Chain(auditHandler.AuditConsentRecordRead, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(AuditAgreementList, m.Chain(auditHandler.AuditAgreementList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(AuditReadRecord, m.Chain(auditHandler.AuditReadRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// organization action logs
 	r.Handle(AuditGetOrgLogs, m.Chain(auditHandler.AuditGetOrgLogs, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")

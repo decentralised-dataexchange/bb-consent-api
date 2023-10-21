@@ -1,4 +1,4 @@
-package handler
+package service
 
 import (
 	"net/http"
@@ -6,7 +6,7 @@ import (
 	"github.com/bb-consent/api/src/config"
 )
 
-func AuditConsentRecordList(w http.ResponseWriter, r *http.Request) {
+func ServiceVerificationAgreementList(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
