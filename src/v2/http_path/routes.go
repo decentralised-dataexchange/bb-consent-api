@@ -92,15 +92,25 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(ServiceListDataAttributesForDataAgreement, m.Chain(serviceHandler.ServiceListDataAttributesForDataAgreement, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Verification mechanisms
-	r.Handle(ServiceVerificationAgreementList, m.Chain(serviceHandler.ServiceVerificationAgreementList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(ServiceVerificationAgreementConsentRecordRead, m.Chain(serviceHandler.ServiceVerificationAgreementConsentRecordRead, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(ServiceVerificationConsentRecordList, m.Chain(serviceHandler.ServiceVerificationConsentRecordList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+
+	r.Handle(ServiceVerificationFetchAllDataAgreementRecords, m.Chain(serviceHandler.ServiceFetchDataAgreementRecords, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ServiceVerificationFetchDataAgreementRecord, m.Chain(serviceHandler.ServiceVerificationFetchDataAgreementRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ServiceVerificationFetchDataAgreementRecords, m.Chain(serviceHandler.ServiceVerificationFetchDataAgreementRecords, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Recording consent
-	r.Handle(ServiceCreateIndividualConsentRecord, m.Chain(serviceHandler.ServiceCreateIndividualConsentRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
-	r.Handle(ServiceUpdateIndividualConsentRecord, m.Chain(serviceHandler.ServiceCreateIndividualConsentRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
-	r.Handle(ServiceListIndividualRecordList, m.Chain(serviceHandler.ServiceListIndividualRecordList, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(ServiceReadIndividualRecordRead, m.Chain(serviceHandler.ServiceReadIndividualRecordRead, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ServiceCreateDraftConsentRecord, m.Chain(serviceHandler.ServiceCreateDraftConsentRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	r.Handle(ServiceCreateDataAgreementRecord, m.Chain(serviceHandler.ServiceCreateDataAgreementRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	r.Handle(ServiceUpdateDataAgreementRecord, m.Chain(serviceHandler.ServiceUpdateDataAgreementRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
+	r.Handle(ServiceDeleteIndividualDataAgreementRecords, m.Chain(serviceHandler.ServiceDeleteIndividualDataAgreementRecords, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
+	r.Handle(ServiceCreatePairedDataAgreementRecord, m.Chain(serviceHandler.ServiceCreatePairedDataAgreementRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	r.Handle(ServiceUpdateSignatureObject, m.Chain(serviceHandler.ServiceUpdateSignatureObject, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
+	r.Handle(ServiceCreateBlankSignature, m.Chain(serviceHandler.ServiceCreateBlankSignature, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
+
+	r.Handle(ServiceReadDataAgreementRecord, m.Chain(serviceHandler.ServiceReadDataAgreementRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ServiceFetchIndividualDataAgreementRecords, m.Chain(serviceHandler.ServiceFetchIndividualDataAgreementRecords, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ServiceFetchRecordsForDataAgreement, m.Chain(serviceHandler.ServiceFetchRecordsForDataAgreement, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+
+	r.Handle(ServiceFetchRecordsHistory, m.Chain(serviceHandler.ServiceFetchRecordsHistory, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Audit api(s)
 

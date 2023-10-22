@@ -146,3 +146,33 @@ func ListAllByDataAttributeId(dataAttributeId string) ([]Revision, error) {
 
 	return results, err
 }
+
+// GetByRevisionIdAndSchema gets revision by id and schema
+func GetByRevisionIdAndSchema(revisionID string, schemaName string) (Revision, error) {
+	var result Revision
+
+	revisionId, err := primitive.ObjectIDFromHex(revisionID)
+	if err != nil {
+		return result, err
+	}
+
+	err = Collection().FindOne(context.TODO(), bson.M{"_id": revisionId, "schemaname": schemaName}).Decode(&result)
+	if err != nil {
+		return result, err
+	}
+
+	return result, err
+}
+
+// Get Gets revision by object id
+func GetLatestByObjectId(objectId string) (Revision, error) {
+
+	var result Revision
+	opts := options.FindOne().SetSort(bson.M{"timestamp": -1})
+	err := Collection().FindOne(context.TODO(), bson.M{"objectid": objectId}, opts).Decode(&result)
+	if err != nil {
+		return Revision{}, err
+	}
+
+	return result, err
+}

@@ -11,15 +11,25 @@ const ServiceReadPolicy = "/v2/service/policy/{policyId}"
 const ServiceListDataAttributesForDataAgreement = "/v2/service/data-agreement/{dataAgreementId}/data-attributes"
 
 // Verification mechanisms
-const ServiceVerificationAgreementList = "/v2/service/verification/data-agreements/"
-const ServiceVerificationAgreementConsentRecordRead = "/v2/service/verification/data-agreement/"
-const ServiceVerificationConsentRecordList = "/v2/service/verification/records"
+const ServiceVerificationFetchAllDataAgreementRecords = "/v2/service/verification/data-agreements"
+const ServiceVerificationFetchDataAgreementRecord = "/v2/service/verification/data-agreement/{dataAgreementId}"
+const ServiceVerificationFetchDataAgreementRecords = "/v2/service/verification/data-agreement-records"
 
 // Recording consent
-const ServiceCreateIndividualConsentRecord = "/v2/service/individual/data-agreement/{dataAgreementId}/record"
-const ServiceUpdateIndividualConsentRecord = "/v2/service/individual/data-agreement/{dataAgreementId}"
-const ServiceListIndividualRecordList = "/v2/service/individual/record/data-agreement/"
-const ServiceReadIndividualRecordRead = "/v2/service/individual/record/data-agreement/{dataAgreementId}/"
+const ServiceCreateDraftConsentRecord = "/v2/service/individual/record/data-agreement-record/draft"
+const ServiceCreateDataAgreementRecord = "/v2/service/individual/record/data-agreement/{dataAgreementId}"
+const ServiceReadDataAgreementRecord = "/v2/service/individual/record/data-agreement/{dataAgreementId}"
+const ServiceUpdateDataAgreementRecord = "/v2/service/individual/record/data-agreement-record/{dataAgreementRecordId}"
+const ServiceDeleteIndividualDataAgreementRecords = "/v2/service/individual/record/data-agreement-record"
+const ServiceCreatePairedDataAgreementRecord = "/v2/service/individual/record/data-agreement-record"
+
+const ServiceCreateBlankSignature = "/v2/service/individual/record/data-agreement-record/{dataAgreementRecordId}/signature"
+const ServiceUpdateSignatureObject = "/v2/service/individual/record/data-agreement-record/{dataAgreementRecordId}/signature"
+
+const ServiceFetchIndividualDataAgreementRecords = "/v2/service/individual/record/data-agreement-record"
+const ServiceFetchRecordsForDataAgreement = "/v2/service/individual/record/data-agreement/{dataAgreementId}/all"
+
+const ServiceFetchRecordsHistory = "/v2/service/individual/record/data-agreement-record/history"
 
 // Idp
-const ServiceReadIdp = "/service/idp/open-id/{idpId}"
+const ServiceReadIdp = "/v2/service/idp/open-id/{idpId}"

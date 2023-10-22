@@ -28,6 +28,7 @@ const (
 	IdpId                 = "idpId"
 	ApiKeyId              = "apiKeyId"
 	IndividualHeaderKey   = "X-ConsentBB-IndividualId"
+	RevisionId            = "revisionId"
 )
 
 // Schemas
@@ -57,4 +58,10 @@ const (
 	Service = "service"
 	Audit   = "audit"
 	Onboard = "onboard"
+)
+
+// Data agreement record state
+const (
+	Unsigned = "unsigned"
+	Signed   = "signed"
 )

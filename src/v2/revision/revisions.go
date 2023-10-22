@@ -8,6 +8,7 @@ import (
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/policy"
 	"github.com/bb-consent/api/src/v2/dataagreement"
+	daRecord "github.com/bb-consent/api/src/v2/dataagreement_record"
 	"github.com/bb-consent/api/src/v2/dataattribute"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -373,4 +374,62 @@ func RecreateDataAttributeFromRevision(revision Revision) (dataattribute.DataAtt
 	}
 
 	return da, nil
+}
+
+type dataAgreementRecordForObjectData struct {
+	Id                        primitive.ObjectID                             `json:"id" bson:"_id,omitempty"`
+	DataAgreementId           string                                         `json:"dataAgreementId"`
+	DataAgreementRevisionId   string                                         `json:"dataAgreementRevisionId"`
+	DataAgreementRevisionHash string                                         `json:"dataAgreementRevisionHash"`
+	DataAttributes            []daRecord.DataAttributeForDataAgreementRecord `json:"dataAttributes"`
+	IndividualId              string                                         `json:"individualId"`
+	OptIn                     bool                                           `json:"optIn"`
+	State                     string                                         `json:"state" valid:"required"`
+	SignatureId               string                                         `json:"signatureId"`
+}
+
+// CreateRevisionForDataAgreementRecord
+func CreateRevisionForDataAgreementRecord(newDataAgreementRecord daRecord.DataAgreementRecord, orgAdminId string) (Revision, error) {
+	// Object data
+	objectData := dataAgreementRecordForObjectData{
+		Id:                        newDataAgreementRecord.Id,
+		DataAgreementId:           newDataAgreementRecord.DataAgreementId,
+		DataAgreementRevisionId:   newDataAgreementRecord.DataAgreementRevisionId,
+		DataAgreementRevisionHash: newDataAgreementRecord.DataAgreementRevisionHash,
+		DataAttributes:            newDataAgreementRecord.DataAttributes,
+		IndividualId:              newDataAgreementRecord.IndividualId,
+		OptIn:                     newDataAgreementRecord.OptIn,
+		State:                     newDataAgreementRecord.State,
+		SignatureId:               newDataAgreementRecord.SignatureId,
+	}
+
+	// Create revision
+	revision := Revision{}
+	revision.Init(objectData.Id.Hex(), orgAdminId, config.DataAgreementRecord)
+	err := revision.CreateRevision(objectData)
+
+	return revision, err
+}
+
+// UpdateRevisionForDataAgreementRecord
+func UpdateRevisionForDataAgreementRecord(updatedDataAgreementRecord daRecord.DataAgreementRecord, previousRevision *Revision, orgAdminId string) (Revision, error) {
+	// Object data
+	objectData := dataAgreementRecordForObjectData{
+		Id:                        updatedDataAgreementRecord.Id,
+		DataAgreementId:           updatedDataAgreementRecord.DataAgreementId,
+		DataAgreementRevisionId:   updatedDataAgreementRecord.DataAgreementRevisionId,
+		DataAgreementRevisionHash: updatedDataAgreementRecord.DataAgreementRevisionHash,
+		DataAttributes:            updatedDataAgreementRecord.DataAttributes,
+		IndividualId:              updatedDataAgreementRecord.IndividualId,
+		OptIn:                     updatedDataAgreementRecord.OptIn,
+		State:                     updatedDataAgreementRecord.State,
+		SignatureId:               updatedDataAgreementRecord.SignatureId,
+	}
+
+	// Update revision
+	revision := Revision{}
+	revision.Init(objectData.Id.Hex(), orgAdminId, config.DataAgreementRecord)
+	err := revision.UpdateRevision(previousRevision, objectData)
+
+	return revision, err
 }
