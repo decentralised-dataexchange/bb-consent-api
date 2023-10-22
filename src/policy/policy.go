@@ -21,7 +21,7 @@ type Policy struct {
 	Url                     string             `json:"url" valid:"required"`
 	Jurisdiction            string             `json:"jurisdiction"`
 	IndustrySector          string             `json:"industrySector"`
-	DataRetentionPeriodDays int                `json:"dataRetentionPeriod"`
+	DataRetentionPeriodDays int                `json:"dataRetentionPeriodDays"`
 	GeographicRestriction   string             `json:"geographicRestriction"`
 	StorageLocation         string             `json:"storageLocation"`
 	ThirdPartyDataSharing   string             `json:"thirdPartyDataSharing"`
