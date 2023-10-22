@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bb-consent/api/src/config"
 	"github.com/microcosm-cc/bluemonday"
 )
 
@@ -220,4 +221,12 @@ func CalculateSHA1(data string) (string, error) {
 	hashHex := hex.EncodeToString(hashSum)
 
 	return hashHex, err
+}
+
+// Http response
+func ReturnHTTPResponse(resp interface{}, w http.ResponseWriter) {
+	response, _ := json.Marshal(resp)
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
 }

@@ -157,6 +157,21 @@ func Init(config *config.Configuration) error {
 		return err
 	}
 
+	err = initCollection("dataAgreementRecords", []string{"id"}, true)
+	if err != nil {
+		return err
+	}
+
+	err = initCollection("signatures", []string{"id"}, true)
+	if err != nil {
+		return err
+	}
+
+	err = initCollection("dataAgreementRecordsHistories", []string{"id"}, true)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -121,7 +121,7 @@ func verifyTokenAndIdentifyRole(accessToken string, r *http.Request) error {
 	if len(user.Roles) > 0 {
 		token.SetUserToRequestContext(r, user.ID.Hex(), rbac.ROLE_ADMIN)
 	} else {
-		token.SetUserToRequestContext(r, user.ID.Hex(), rbac.ROLE_ADMIN)
+		token.SetUserToRequestContext(r, user.ID.Hex(), rbac.ROLE_USER)
 	}
 
 	return nil
