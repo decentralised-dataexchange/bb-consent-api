@@ -45,6 +45,7 @@ const AddIdentityProvider = "/v2/config/idp/open-id"
 const UpdateIdentityProvider = "/v2/config/idp/open-id/{idpId}"
 const DeleteIdentityProvider = "/v2/config/idp/open-id/{idpId}"
 const GetIdentityProvider = "/v2/config/idp/open-id/{idpId}"
+const ConfigListIdentityProviders = "/v2/config/idp/open-ids"
 
 // Individuals
 const ConfigCreateIndividual = "/v2/config/individual"

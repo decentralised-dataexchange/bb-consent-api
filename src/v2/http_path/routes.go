@@ -61,6 +61,7 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(UpdateIdentityProvider, m.Chain(idpHandler.UpdateIdentityProvider, m.Logger(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("PUT")
 	r.Handle(DeleteIdentityProvider, m.Chain(idpHandler.DeleteIdentityProvider, m.Logger(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("DELETE")
 	r.Handle(GetIdentityProvider, m.Chain(idpHandler.GetIdentityProvider, m.Logger(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ConfigListIdentityProviders, m.Chain(idpHandler.ConfigListIdps, m.Logger(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Individual related api(s)
 	r.Handle(ConfigReadIndividual, m.Chain(individualHandler.ConfigReadIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")

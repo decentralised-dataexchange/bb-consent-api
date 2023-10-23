@@ -17,7 +17,7 @@ func Collection() *mongo.Collection {
 type IdentityProvider struct {
 	Id               primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	IssuerUrl        string             `json:"issuerUrl"`
-	AuthorizationURL string             `json:"authorizationUrl" valid:"required"`
+	AuthorizationURL string             `json:"authorisationUrl" valid:"required"`
 	TokenURL         string             `json:"tokenUrl" valid:"required"`
 	LogoutURL        string             `json:"logoutUrl" valid:"required"`
 	ClientID         string             `json:"clientId" valid:"required"`
