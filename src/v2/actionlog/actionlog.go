@@ -2,6 +2,7 @@ package actionlog
 
 import (
 	"context"
+	"time"
 
 	"github.com/bb-consent/api/src/database"
 	"go.mongodb.org/mongo-driver/bson"
@@ -41,13 +42,14 @@ func GetTypeStr(logType int) string {
 
 // ActionLog All access logs
 type ActionLog struct {
-	ID       primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Type     int                `json:"type"`
-	TypeStr  string             `json:"typeStr"`
-	OrgID    string             `json:"orgId"`
-	UserID   string             `json:"userId"`
-	UserName string             `json:"userName"`
-	Action   string             `json:"action"` //Free string storing the real log
+	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Type      int                `json:"type"`
+	TypeStr   string             `json:"typeStr"`
+	OrgID     string             `json:"orgId"`
+	UserID    string             `json:"userId"`
+	UserName  string             `json:"userName"`
+	Action    string             `json:"action"` //Free string storing the real log
+	Timestamp string             `json:"timestamp"`
 }
 
 type ActionLogRepository struct {
@@ -65,6 +67,7 @@ func Collection() *mongo.Collection {
 
 // Add Adds access log
 func Add(log ActionLog) error {
+	log.Timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 	_, err := Collection().InsertOne(context.TODO(), log)
 	if err != nil {
 		return err
