@@ -33,3 +33,5 @@ const ServiceFetchRecordsHistory = "/v2/service/individual/record/data-agreement
 
 // Idp
 const ServiceReadIdp = "/v2/service/idp/open-id/{idpId}"
+
+const ServiceReadOrganisation = "/v2/service/organisation"
