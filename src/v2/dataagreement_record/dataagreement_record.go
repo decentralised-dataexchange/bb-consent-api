@@ -29,21 +29,26 @@ type DataAttributeForDataAgreementRecord struct {
 }
 
 type DataAgreementForListDataAgreementRecord struct {
-	Id      string `json:"id" bson:"_id,omitempty"`
-	Purpose string `json:"purpose"`
+	Purpose     string `json:"purpose"`
+	LawfulBasis string `json:"lawfulBasis"`
+}
+
+type RevisionForListDataAgreementRecord struct {
+	Timestamp string `json:"timestamp"`
 }
 
 type DataAgreementRecordForAuditList struct {
-	Id                        primitive.ObjectID                        `json:"id" bson:"_id,omitempty"`
-	DataAgreementId           string                                    `json:"dataAgreementId"`
-	DataAgreementRevisionId   string                                    `json:"dataAgreementRevisionId"`
-	DataAgreementRevisionHash string                                    `json:"dataAgreementRevisionHash"`
-	DataAttributes            []DataAttributeForDataAgreementRecord     `json:"dataAttributes"`
-	IndividualId              string                                    `json:"individualId"`
-	OptIn                     bool                                      `json:"optIn"`
-	State                     string                                    `json:"state" valid:"required"`
-	SignatureId               string                                    `json:"signatureId"`
-	AgreementData             []DataAgreementForListDataAgreementRecord `json:"dataAgreement"`
+	Id                        primitive.ObjectID                      `json:"id" bson:"_id,omitempty"`
+	DataAgreementId           string                                  `json:"dataAgreementId"`
+	DataAgreementRevisionId   string                                  `json:"dataAgreementRevisionId"`
+	DataAgreementRevisionHash string                                  `json:"dataAgreementRevisionHash"`
+	DataAttributes            []DataAttributeForDataAgreementRecord   `json:"dataAttributes"`
+	IndividualId              string                                  `json:"individualId"`
+	OptIn                     bool                                    `json:"optIn"`
+	State                     string                                  `json:"state" valid:"required"`
+	SignatureId               string                                  `json:"signatureId"`
+	AgreementData             DataAgreementForListDataAgreementRecord `json:"dataAgreement"`
+	Timestamp                 string                                  `json:"timestamp"`
 }
 
 // DataAgreementRecordError is an error enumeration for create consent record API.

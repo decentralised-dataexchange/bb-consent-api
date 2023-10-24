@@ -70,9 +70,13 @@ func AuditListDataAgreementRecords(w http.ResponseWriter, r *http.Request) {
 		if isNotDataAgreementRecordId {
 			if isNotIndividualId {
 				if isNotDataAgreementId {
-					m := "Query params missing"
-					common.HandleErrorV2(w, http.StatusInternalServerError, m, errors.New("invalid query params"))
-					return
+					// fetch all data agreement records
+					daRecords, err = daRecord.ListsWithDataAgreementAndTimestamp(organisationId)
+					if err != nil {
+						m := "Failed to fetch data agreement records"
+						common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+						return
+					}
 
 				} else {
 					// fetch by data agreement id
