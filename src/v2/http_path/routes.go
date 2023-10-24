@@ -113,6 +113,8 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 
 	r.Handle(ServiceFetchRecordsHistory, m.Chain(serviceHandler.ServiceFetchRecordsHistory, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
+	r.Handle(ServiceReadOrganisation, m.Chain(serviceHandler.ServiceReadOrganisation, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+
 	// Audit api(s)
 
 	r.Handle(AuditListDataAgreementRecords, m.Chain(auditHandler.AuditListDataAgreementRecords, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
