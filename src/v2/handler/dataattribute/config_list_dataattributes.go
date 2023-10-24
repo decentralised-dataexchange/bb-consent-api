@@ -1,7 +1,6 @@
 package dataattribute
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
+	"github.com/bb-consent/api/src/v2/dataagreement"
 	"github.com/bb-consent/api/src/v2/dataattribute"
 	"github.com/bb-consent/api/src/v2/paginate"
 	"github.com/bb-consent/api/src/v2/revision"
@@ -99,65 +99,39 @@ func ConfigListDataAttributes(w http.ResponseWriter, r *http.Request) {
 
 		methodOfUse, err := ParseMethodOfUseDataAttributesQueryParams(r)
 		methodOfUse = common.Sanitize(methodOfUse)
+		var res []dataattribute.DataAttributeForLists
 		if err != nil && errors.Is(err, MethodOfUseIsMissingError) {
-			// Repository
-			dataAttributeRepo := dataattribute.DataAttributeRepository{}
-			dataAttributeRepo.Init(organisationId)
 
 			// Return all data attributes
-			var dataAttributes []dataattribute.DataAttribute
-			query := paginate.PaginateDBObjectsQuery{
-				Filter:     dataAttributeRepo.DefaultFilter,
-				Collection: dataattribute.Collection(),
-				Context:    context.Background(),
-				Limit:      limit,
-				Offset:     offset,
-			}
-			result, err := paginate.PaginateDBObjects(query, &dataAttributes)
-			if err != nil {
-				if errors.Is(err, paginate.EmptyDBError) {
-					emptyDataAttributes := make([]interface{}, 0)
-					resp = listDataAttributesResp{
-						DataAttributes: emptyDataAttributes,
-						Pagination:     result.Pagination,
-					}
-					returnHTTPResponse(resp, w)
-					return
-				}
-				m := "Failed to paginate data attribute"
-				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-				return
-
-			}
-			resp = listDataAttributesResp{
-				DataAttributes: result.Items,
-				Pagination:     result.Pagination,
-			}
-			returnHTTPResponse(resp, w)
-			return
-
-		} else {
-			// List by method of use
-			res, err := dataattribute.ListDataAttributesBasedOnMethodOfUse(methodOfUse, organisationId)
+			res, err = dataattribute.ListDataAttributesWithDataAgreement(organisationId)
 			if err != nil {
 				m := fmt.Sprintf("Failed to fetch data attribute by method of use: %v", methodOfUse)
 				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 				return
 			}
 
-			query := paginate.PaginateObjectsQuery{
-				Limit:  limit,
-				Offset: offset,
+		} else {
+			// List by method of use
+			res, err = dataattribute.ListDataAttributesBasedOnMethodOfUse(methodOfUse, organisationId)
+			if err != nil {
+				m := fmt.Sprintf("Failed to fetch data attribute by method of use: %v", methodOfUse)
+				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+				return
 			}
-			interfaceSlice := dataAttributesToInterfaceSlice(res)
-			result := paginate.PaginateObjects(query, interfaceSlice)
-			resp = listDataAttributesResp{
-				DataAttributes: result.Items,
-				Pagination:     result.Pagination,
-			}
-			returnHTTPResponse(resp, w)
-			return
+
 		}
+		query := paginate.PaginateObjectsQuery{
+			Limit:  limit,
+			Offset: offset,
+		}
+		interfaceSlice := dataAttributesToInterfaceSlice(res)
+		result := paginate.PaginateObjects(query, interfaceSlice)
+		resp = listDataAttributesResp{
+			DataAttributes: result.Items,
+			Pagination:     result.Pagination,
+		}
+		returnHTTPResponse(resp, w)
+		return
 
 	} else {
 		// Fetch revision by id
@@ -175,6 +149,26 @@ func ConfigListDataAttributes(w http.ResponseWriter, r *http.Request) {
 			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 			return
 		}
+		// Repository
+		darepo := dataagreement.DataAgreementRepository{}
+		darepo.Init(organisationId)
+
+		var dataAgreements []dataattribute.DataAgreementForDataAttribute
+		for _, a := range da.AgreementIds {
+			var dA dataattribute.DataAgreementForDataAttribute
+			dataAgreement, err := darepo.Get(a)
+			if err != nil {
+				m := fmt.Sprintf("Failed to fetch data agreement by revision: %v", revisionId)
+				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+				return
+			}
+			dA.Id = dataAgreement.Id.Hex()
+			dA.Purpose = dataAgreement.Purpose
+			dataAgreements = append(dataAgreements, dA)
+		}
+
+		var dataAttributes dataattribute.DataAttributeForLists
+		dataAttributes.AgreementData = dataAgreements
 
 		interfaceSlice := make([]interface{}, 0)
 		interfaceSlice = append(interfaceSlice, da)

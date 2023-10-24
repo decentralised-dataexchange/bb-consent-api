@@ -35,15 +35,14 @@ type DataAgreementForDataAttribute struct {
 type DataAttributeForLists struct {
 	Id             primitive.ObjectID              `json:"id" bson:"_id,omitempty"`
 	Version        string                          `json:"version"`
-	AgreementIds   string                          `json:"-"`
+	AgreementIds   []string                        `json:"agreementIds"`
 	Name           string                          `json:"name" valid:"required"`
 	Description    string                          `json:"description" valid:"required"`
 	Sensitivity    bool                            `json:"sensitivity"`
 	Category       string                          `json:"category"`
 	OrganisationId string                          `json:"-"`
 	IsDeleted      bool                            `json:"-"`
-	DataAgreements interface{}                     `json:"agreementIds"`
-	AgreementData  []DataAgreementForDataAttribute `json:"agreements"`
+	AgreementData  []DataAgreementForDataAttribute `json:"dataAgreements"`
 }
 type DataAttributeRepository struct {
 	DefaultFilter bson.M
@@ -168,16 +167,18 @@ func ListDataAttributesBasedOnMethodOfUse(methodOfUse string, organisationId str
 
 	pipeline := []bson.M{
 		{"$match": bson.M{"organisationid": organisationId, "isdeleted": false}},
-		{"$addFields": bson.M{"dataAgreements": "$agreementids"}},
-		{"$unwind": "$agreementids"},
 		{"$lookup": bson.M{
 			"from": "dataAgreements",
-			"let":  bson.M{"localId": "$agreementids"},
+			"let":  bson.M{"localIds": "$agreementids"},
 			"pipeline": bson.A{
 				bson.M{
 					"$match": bson.M{
 						"$expr": bson.M{
-							"$eq": []interface{}{"$_id", bson.M{"$toObjectId": "$$localId"}},
+							"$in": bson.A{"$_id", bson.M{"$map": bson.M{
+								"input": "$$localIds",
+								"as":    "r",
+								"in":    bson.M{"$toObjectId": "$$r"},
+							}}},
 						},
 					},
 				},
@@ -185,6 +186,44 @@ func ListDataAttributesBasedOnMethodOfUse(methodOfUse string, organisationId str
 			"as": "agreementData",
 		}},
 		{"$match": bson.M{"agreementData.methodofuse": methodOfUse}},
+	}
+
+	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return results, err
+	}
+	defer cursor.Close(context.TODO())
+
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return results, err
+	}
+	return results, nil
+}
+
+// ListDataAttributesWithDataAgreement lists data attributes with data agreements
+func ListDataAttributesWithDataAgreement(organisationId string) ([]DataAttributeForLists, error) {
+	var results []DataAttributeForLists
+
+	pipeline := []bson.M{
+		{"$match": bson.M{"organisationid": organisationId, "isdeleted": false}},
+		{"$lookup": bson.M{
+			"from": "dataAgreements",
+			"let":  bson.M{"localIds": "$agreementids"},
+			"pipeline": bson.A{
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$in": bson.A{"$_id", bson.M{"$map": bson.M{
+								"input": "$$localIds",
+								"as":    "r",
+								"in":    bson.M{"$toObjectId": "$$r"},
+							}}},
+						},
+					},
+				},
+			},
+			"as": "agreementData",
+		}},
 	}
 
 	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
