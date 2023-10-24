@@ -28,6 +28,24 @@ type DataAttributeForDataAgreementRecord struct {
 	OptIn                     bool   `json:"optIn"`
 }
 
+type DataAgreementForListDataAgreementRecord struct {
+	Id      string `json:"id" bson:"_id,omitempty"`
+	Purpose string `json:"purpose"`
+}
+
+type DataAgreementRecordForAuditList struct {
+	Id                        primitive.ObjectID                        `json:"id" bson:"_id,omitempty"`
+	DataAgreementId           string                                    `json:"dataAgreementId"`
+	DataAgreementRevisionId   string                                    `json:"dataAgreementRevisionId"`
+	DataAgreementRevisionHash string                                    `json:"dataAgreementRevisionHash"`
+	DataAttributes            []DataAttributeForDataAgreementRecord     `json:"dataAttributes"`
+	IndividualId              string                                    `json:"individualId"`
+	OptIn                     bool                                      `json:"optIn"`
+	State                     string                                    `json:"state" valid:"required"`
+	SignatureId               string                                    `json:"signatureId"`
+	AgreementData             []DataAgreementForListDataAgreementRecord `json:"dataAgreement"`
+}
+
 // DataAgreementRecordError is an error enumeration for create consent record API.
 type DataAgreementRecordError int
 
@@ -36,6 +54,8 @@ const (
 	IndividualIdIsMissingError DataAgreementRecordError = iota
 	DataAgreementIdIsMissingError
 	RevisionIdIsMissingError
+	DataAgreementRecordIdIsMissingError
+	LawfulBasisIsMissingError
 )
 
 // Error returns the string representation of the error.
@@ -47,6 +67,10 @@ func (e DataAgreementRecordError) Error() string {
 		return "Query param  dataAgreementId is missing!"
 	case RevisionIdIsMissingError:
 		return "Query param revisionId is missing!"
+	case DataAgreementRecordIdIsMissingError:
+		return "Query param dataAgreementRecordId is missing!"
+	case LawfulBasisIsMissingError:
+		return "Query param lawfulbasis is missing!"
 	default:
 		return "Unknown error!"
 	}

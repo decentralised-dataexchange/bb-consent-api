@@ -29,6 +29,7 @@ const (
 	ApiKeyId              = "apiKeyId"
 	IndividualHeaderKey   = "X-ConsentBB-IndividualId"
 	RevisionId            = "revisionId"
+	LawfulBasis           = "lawfulBasis"
 )
 
 // Schemas

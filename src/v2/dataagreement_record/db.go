@@ -89,3 +89,243 @@ func (darRepo *DataAgreementRecordRepository) DeleteAllRecordsForIndividual(indi
 
 	return err
 }
+
+// ListByIdIncludingDataAgreement lists data agreement record by id
+func ListByIdIncludingDataAgreement(dataAgreementRecordID string, organisationId string) ([]DataAgreementRecordForAuditList, error) {
+	var results []DataAgreementRecordForAuditList
+
+	dataAgreementRecordId, err := primitive.ObjectIDFromHex(dataAgreementRecordID)
+	if err != nil {
+		return results, err
+	}
+
+	pipeline := []bson.M{
+		{"$match": bson.M{"organisationid": organisationId, "isdeleted": false, "_id": dataAgreementRecordId}},
+		{"$lookup": bson.M{
+			"from": "dataAgreements",
+			"let":  bson.M{"localId": "$dataagreementid"},
+			"pipeline": bson.A{
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$eq": []interface{}{"$_id", bson.M{"$toObjectId": "$$localId"}},
+						},
+					},
+				},
+			},
+			"as": "agreementData",
+		}},
+	}
+
+	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return results, err
+	}
+	defer cursor.Close(context.TODO())
+
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return results, err
+	}
+	return results, nil
+}
+
+// ListByIdAndLawfulBasis lists data attributes based on data agreement record and lawfulbasis
+func ListByIdAndLawfulBasis(dataAgreementRecordID string, organisationId string, lawfulBasis string) ([]DataAgreementRecordForAuditList, error) {
+	var results []DataAgreementRecordForAuditList
+
+	dataAgreementRecordId, err := primitive.ObjectIDFromHex(dataAgreementRecordID)
+	if err != nil {
+		return results, err
+	}
+
+	pipeline := []bson.M{
+		{"$match": bson.M{"organisationid": organisationId, "isdeleted": false, "_id": dataAgreementRecordId}},
+		{"$lookup": bson.M{
+			"from": "dataAgreements",
+			"let":  bson.M{"localId": "$dataagreementid"},
+			"pipeline": bson.A{
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$eq": []interface{}{"$_id", bson.M{"$toObjectId": "$$localId"}},
+						},
+					},
+				},
+			},
+			"as": "agreementData",
+		}},
+		{
+			"$match": bson.M{
+				"agreementData": bson.M{
+					"$elemMatch": bson.M{
+						"lawfulbasis": lawfulBasis,
+					},
+				},
+			},
+		},
+	}
+
+	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return results, err
+	}
+	defer cursor.Close(context.TODO())
+
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return results, err
+	}
+	return results, nil
+}
+
+// ListByDataAgreementIdIncludingDataAgreement lists data agreement record based on data agreement id
+func ListByDataAgreementIdIncludingDataAgreement(dataAgreementId string, organisationId string) ([]DataAgreementRecordForAuditList, error) {
+	var results []DataAgreementRecordForAuditList
+
+	pipeline := []bson.M{
+		{"$match": bson.M{"organisationid": organisationId, "isdeleted": false, "dataagreementid": dataAgreementId}},
+		{"$lookup": bson.M{
+			"from": "dataAgreements",
+			"let":  bson.M{"localId": "$dataagreementid"},
+			"pipeline": bson.A{
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$eq": []interface{}{"$_id", bson.M{"$toObjectId": "$$localId"}},
+						},
+					},
+				},
+			},
+			"as": "agreementData",
+		}},
+	}
+
+	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return results, err
+	}
+	defer cursor.Close(context.TODO())
+
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return results, err
+	}
+	return results, nil
+}
+
+// ListByDataAgreementIdAndLawfulBasis lists data agreement record based on data agreement id and lawful basis
+func ListByDataAgreementIdAndLawfulBasis(dataAgreementId string, organisationId string, lawfulBasis string) ([]DataAgreementRecordForAuditList, error) {
+	var results []DataAgreementRecordForAuditList
+
+	pipeline := []bson.M{
+		{"$match": bson.M{"organisationid": organisationId, "isdeleted": false, "dataagreementid": dataAgreementId}},
+		{"$lookup": bson.M{
+			"from": "dataAgreements",
+			"let":  bson.M{"localId": "$dataagreementid"},
+			"pipeline": bson.A{
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$eq": []interface{}{"$_id", bson.M{"$toObjectId": "$$localId"}},
+						},
+					},
+				},
+			},
+			"as": "agreementData",
+		}},
+		{
+			"$match": bson.M{
+				"agreementData": bson.M{
+					"$elemMatch": bson.M{
+						"lawfulbasis": lawfulBasis,
+					},
+				},
+			},
+		},
+	}
+
+	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return results, err
+	}
+	defer cursor.Close(context.TODO())
+
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return results, err
+	}
+	return results, nil
+}
+
+// ListByIndividualIdIncludingDataAgreement
+func ListByIndividualIdIncludingDataAgreement(individualId string, organisationId string) ([]DataAgreementRecordForAuditList, error) {
+	var results []DataAgreementRecordForAuditList
+
+	pipeline := []bson.M{
+		{"$match": bson.M{"organisationid": organisationId, "isdeleted": false, "individualid": individualId}},
+		{"$lookup": bson.M{
+			"from": "dataAgreements",
+			"let":  bson.M{"localId": "$dataagreementid"},
+			"pipeline": bson.A{
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$eq": []interface{}{"$_id", bson.M{"$toObjectId": "$$localId"}},
+						},
+					},
+				},
+			},
+			"as": "agreementData",
+		}},
+	}
+
+	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return results, err
+	}
+	defer cursor.Close(context.TODO())
+
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return results, err
+	}
+	return results, nil
+}
+
+func ListByIndividualIdAndLawfulBasis(individualId string, organisationId string, lawfulBasis string) ([]DataAgreementRecordForAuditList, error) {
+	var results []DataAgreementRecordForAuditList
+
+	pipeline := []bson.M{
+		{"$match": bson.M{"organisationid": organisationId, "isdeleted": false, "individualid": individualId}},
+		{"$lookup": bson.M{
+			"from": "dataAgreements",
+			"let":  bson.M{"localId": "$dataagreementid"},
+			"pipeline": bson.A{
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$eq": []interface{}{"$_id", bson.M{"$toObjectId": "$$localId"}},
+						},
+					},
+				},
+			},
+			"as": "agreementData",
+		}},
+		{
+			"$match": bson.M{
+				"agreementData": bson.M{
+					"$elemMatch": bson.M{
+						"lawfulbasis": lawfulBasis,
+					},
+				},
+			},
+		},
+	}
+
+	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return results, err
+	}
+	defer cursor.Close(context.TODO())
+
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return results, err
+	}
+	return results, nil
+}
