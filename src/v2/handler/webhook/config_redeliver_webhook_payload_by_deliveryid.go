@@ -10,6 +10,7 @@ import (
 	"github.com/bb-consent/api/src/user"
 	"github.com/bb-consent/api/src/v2/actionlog"
 	wh "github.com/bb-consent/api/src/v2/webhook"
+	"github.com/bb-consent/api/src/v2/webhook_dispatcher"
 	"github.com/gorilla/mux"
 )
 
@@ -61,7 +62,7 @@ func ConfigRedeliverWebhookPayloadByDeliveryID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	go wh.PushWebhookEventToKafkaTopic(webhookDelivery.WebhookEventType, webhookPayloadBytes, wh.WebhooksConfiguration.KafkaConfig.Topic)
+	go webhook_dispatcher.ProcessWebhooks(webhookDelivery.WebhookEventType, webhookPayloadBytes)
 
 	// Log webhook calls in webhooks category
 	aLog := fmt.Sprintf("Organization webhook: %v triggered by user: %v by event: %v", webhook.PayloadURL, u.Email, webhookDelivery.WebhookEventType)

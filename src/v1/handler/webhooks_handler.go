@@ -748,7 +748,7 @@ func ReDeliverWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Converting the webhook payload to bytes
-	webhookPayloadBytes, err := json.Marshal(webhookDelivery.RequestPayload)
+	_, err = json.Marshal(webhookDelivery.RequestPayload)
 	if err != nil {
 		m := fmt.Sprintf("Failed to convert webhook event data to bytes, error:%v; Failed to redeliver payload for webhook for event:<%s>, user:<%s>, org:<%s>", err.Error(), webhookDelivery.WebhookEventType, webhookDelivery.UserID, organizationID)
 		common.HandleError(w, http.StatusInternalServerError, m, err)
@@ -763,7 +763,7 @@ func ReDeliverWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go wh.PushWebhookEventToKafkaTopic(webhookDelivery.WebhookEventType, webhookPayloadBytes, wh.WebhooksConfiguration.KafkaConfig.Topic)
+	// go wh.PushWebhookEventToKafkaTopic(webhookDelivery.WebhookEventType, webhookPayloadBytes, wh.WebhooksConfiguration.KafkaConfig.Topic)
 
 	// Log webhook calls in webhooks category
 	aLog := fmt.Sprintf("Organization webhook: %v triggered by user: %v by event: %v", webhook.PayloadURL, u.Email, webhookDelivery.WebhookEventType)

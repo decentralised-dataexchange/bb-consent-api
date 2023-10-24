@@ -10,11 +10,9 @@ import (
 	"time"
 
 	"github.com/bb-consent/api/src/config"
-	"github.com/bb-consent/api/src/kafkaUtils"
 	"github.com/bb-consent/api/src/user"
 	"github.com/bb-consent/api/src/v2/actionlog"
 	"github.com/bb-consent/api/src/v2/webhook_dispatcher"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 // Event type const
@@ -175,36 +173,6 @@ func (e DataUpdateRequestWebhookEvent) GetUserID() string {
 	return e.UserID
 }
 
-func PushWebhookEventToKafkaTopic(webhookEventType string, webhookPayload []byte, kafkaTopicName string) error {
-
-	// Creating a delivery report channel
-	deliveryChan := make(chan kafka.Event)
-
-	// Kafka producer emits messages to producer channel queue and then librdkafka queue, so double queuing
-	// Pushing the webhook event payload to given topic
-	err := kafkaUtils.KafkaProducerClient.Producer.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &kafkaTopicName, Partition: kafka.PartitionAny},
-		Key:            []byte(webhookEventType), // webhook event type ID
-		Value:          webhookPayload,
-	}, deliveryChan)
-	if err != nil {
-		return err
-	}
-
-	e := <-deliveryChan
-	m := e.(*kafka.Message)
-
-	// If the message was not delivered successfully to the kafka topic
-	if m.TopicPartition.Error != nil {
-		return m.TopicPartition.Error
-	}
-
-	close(deliveryChan)
-
-	return nil
-
-}
-
 // PingWebhook Pings webhook payload URL to check the status
 func PingWebhook(webhook Webhook) (req *http.Request, resp *http.Response, executionStartTimeStamp string, executionEndTimeStamp string, err error) {
 	executionStartTimeStamp = strconv.FormatInt(time.Now().UTC().Unix(), 10)
@@ -269,13 +237,6 @@ func TriggerWebhooks(webhookEventData WebhookEventData, webhookEventType string)
 		b, err := json.Marshal(we)
 		if err != nil {
 			log.Printf("Failed to convert webhook event data to bytes, error:%v, Failed to trigger webhook for event:<%s>, user:<%s>, org:<%s>", err.Error(), webhookEventType, u.ID.Hex(), webhookEventData.GetOrganisationID())
-			return
-		}
-
-		// Push the webhook event payload to the kafka topic
-		err = PushWebhookEventToKafkaTopic(webhookEventType, b, WebhooksConfiguration.KafkaConfig.Topic)
-		if err != nil {
-			log.Printf("Failed to push the webhook event to kafka, error:%v, Failed to trigger webhook for event:<%s>, user:<%s>, org:<%s>", err.Error(), webhookEventType, u.ID.Hex(), webhookEventData.GetOrganisationID())
 			return
 		}
 
