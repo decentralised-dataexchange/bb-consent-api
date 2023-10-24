@@ -20,6 +20,7 @@ import (
 	"github.com/bb-consent/api/src/v2/middleware"
 	"github.com/bb-consent/api/src/v2/sms"
 	v2token "github.com/bb-consent/api/src/v2/token"
+	v2wh "github.com/bb-consent/api/src/v2/webhook"
 	"github.com/bb-consent/api/src/webhooks"
 	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
@@ -49,6 +50,7 @@ func startAPICmdHandlerfunc(cmd *cobra.Command, args []string) {
 
 	// Webhooks
 	webhooks.Init(loadedConfig)
+	v2wh.Init(loadedConfig)
 	log.Println("Webhooks configuration initialized")
 
 	// IAM

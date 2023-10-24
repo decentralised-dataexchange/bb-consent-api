@@ -69,7 +69,7 @@ type KafkaConfig struct {
 
 // WebhooksConfig webhooks configuration (kafka broker cluster, topic e.t.c)
 type WebhooksConfig struct {
-	KafkaConfig KafkaConfig
+	Events []string `json:"events"`
 }
 
 // Organization organization data type

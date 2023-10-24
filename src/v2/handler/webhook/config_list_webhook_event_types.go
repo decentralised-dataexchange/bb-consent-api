@@ -10,18 +10,17 @@ import (
 
 // WebhookEventTypesResp Define response structure for webhook event types
 type WebhookEventTypesResp struct {
-	EventTypes []string
+	EventTypes []string `json:"eventTypes"`
 }
 
 // ConfigListWebhookEventTypes List available webhook event types
 func ConfigListWebhookEventTypes(w http.ResponseWriter, r *http.Request) {
-	var webhookEventTypesResp WebhookEventTypesResp
 
-	for _, eventType := range wh.EventTypes {
-		webhookEventTypesResp.EventTypes = append(webhookEventTypesResp.EventTypes, eventType)
+	resp := WebhookEventTypesResp{
+		wh.WebhooksConfiguration.Events,
 	}
 
-	response, _ := json.Marshal(webhookEventTypesResp)
+	response, _ := json.Marshal(resp)
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
