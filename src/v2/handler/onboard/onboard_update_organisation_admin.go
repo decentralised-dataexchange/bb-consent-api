@@ -16,21 +16,21 @@ import (
 	"github.com/bb-consent/api/src/v2/iam"
 )
 
-type updateOrgAdminReq struct {
+type orgAdmin struct {
 	Id             string `json:"id"`
 	Email          string `json:"email"`
 	Name           string `json:"name" valid:"required"`
 	AvatarImageId  string `json:"avatarImageId"`
 	AvatarImageUrl string `json:"avatarImageUrl"`
+	LastVisited    string `json:"lastVisited"`
+}
+
+type updateOrgAdminReq struct {
+	OrganisationAdmin orgAdmin `json:"organisationAdmin"`
 }
 
 type updateOrgAdminResp struct {
-	Id             string `json:"id"`
-	Email          string `json:"email"`
-	Name           string `json:"name"`
-	AvatarImageId  string `json:"avatarImageId"`
-	AvatarImageUrl string `json:"avatarImageUrl"`
-	LastVisited    string `json:"lastVisited"`
+	OrganisationAdmin orgAdmin `json:"organisationAdmin"`
 }
 
 // OnboardUpdateOrganisationAdmin
@@ -66,10 +66,10 @@ func OnboardUpdateOrganisationAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if strings.TrimSpace(upReq.Name) != "" {
-		u.Name = upReq.Name
+	if strings.TrimSpace(upReq.OrganisationAdmin.Name) != "" {
+		u.Name = upReq.OrganisationAdmin.Name
 
-		err = iam.UpdateIamUser(upReq.Name, u.IamID)
+		err = iam.UpdateIamUser(upReq.OrganisationAdmin.Name, u.IamID)
 		if err != nil {
 			m := fmt.Sprintf("Failed to update IAM user by id:%v", u.ID)
 			common.HandleError(w, http.StatusInternalServerError, m, err)
@@ -85,7 +85,7 @@ func OnboardUpdateOrganisationAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := updateOrgAdminResp{
+	orgAdmin := orgAdmin{
 		Id:             u.ID.Hex(),
 		Email:          u.Email,
 		Name:           u.Name,
@@ -94,7 +94,7 @@ func OnboardUpdateOrganisationAdmin(w http.ResponseWriter, r *http.Request) {
 		LastVisited:    u.LastVisit,
 	}
 
-	response, _ := json.Marshal(resp)
+	response, _ := json.Marshal(updateOrgAdminResp{OrganisationAdmin: orgAdmin})
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
