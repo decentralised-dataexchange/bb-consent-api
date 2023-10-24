@@ -115,6 +115,29 @@ func ListByIdIncludingDataAgreement(dataAgreementRecordID string, organisationId
 			},
 			"as": "agreementData",
 		}},
+		{"$unwind": "$agreementData"},
+		{"$lookup": bson.M{
+			"from": "revisions",
+			"let":  bson.M{"localId": "$_id"},
+			"pipeline": bson.A{
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
+						},
+					},
+				},
+			},
+			"as": "revisions",
+		}},
+		{"$unwind": "$revisions"},
+		{
+			"$sort": bson.M{"revisions.timestamp": -1},
+		},
+		{
+			"$limit": 1,
+		},
+		{"$addFields": bson.M{"timestamp": "$revisions.timestamp"}},
 	}
 
 	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
@@ -154,15 +177,34 @@ func ListByIdAndLawfulBasis(dataAgreementRecordID string, organisationId string,
 			},
 			"as": "agreementData",
 		}},
+		{"$unwind": "$agreementData"},
 		{
 			"$match": bson.M{
-				"agreementData": bson.M{
-					"$elemMatch": bson.M{
-						"lawfulbasis": lawfulBasis,
+				"agreementData.lawfulbasis": lawfulBasis,
+			},
+		},
+		{"$lookup": bson.M{
+			"from": "revisions",
+			"let":  bson.M{"localId": "$_id"},
+			"pipeline": bson.A{
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
+						},
 					},
 				},
 			},
+			"as": "revisions",
+		}},
+		{"$unwind": "$revisions"},
+		{
+			"$sort": bson.M{"revisions.timestamp": -1},
 		},
+		{
+			"$limit": 1,
+		},
+		{"$addFields": bson.M{"timestamp": "$revisions.timestamp"}},
 	}
 
 	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
@@ -197,6 +239,29 @@ func ListByDataAgreementIdIncludingDataAgreement(dataAgreementId string, organis
 			},
 			"as": "agreementData",
 		}},
+		{"$unwind": "$agreementData"},
+		{"$lookup": bson.M{
+			"from": "revisions",
+			"let":  bson.M{"localId": "$_id"},
+			"pipeline": bson.A{
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
+						},
+					},
+				},
+			},
+			"as": "revisions",
+		}},
+		{"$unwind": "$revisions"},
+		{
+			"$sort": bson.M{"revisions.timestamp": -1},
+		},
+		{
+			"$limit": 1,
+		},
+		{"$addFields": bson.M{"timestamp": "$revisions.timestamp"}},
 	}
 
 	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
@@ -231,15 +296,34 @@ func ListByDataAgreementIdAndLawfulBasis(dataAgreementId string, organisationId 
 			},
 			"as": "agreementData",
 		}},
+		{"$unwind": "$agreementData"},
 		{
 			"$match": bson.M{
-				"agreementData": bson.M{
-					"$elemMatch": bson.M{
-						"lawfulbasis": lawfulBasis,
+				"agreementData.lawfulbasis": lawfulBasis,
+			},
+		},
+		{"$lookup": bson.M{
+			"from": "revisions",
+			"let":  bson.M{"localId": "$_id"},
+			"pipeline": bson.A{
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
+						},
 					},
 				},
 			},
+			"as": "revisions",
+		}},
+		{"$unwind": "$revisions"},
+		{
+			"$sort": bson.M{"revisions.timestamp": -1},
 		},
+		{
+			"$limit": 1,
+		},
+		{"$addFields": bson.M{"timestamp": "$revisions.timestamp"}},
 	}
 
 	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
@@ -274,6 +358,29 @@ func ListByIndividualIdIncludingDataAgreement(individualId string, organisationI
 			},
 			"as": "agreementData",
 		}},
+		{"$unwind": "$agreementData"},
+		{"$lookup": bson.M{
+			"from": "revisions",
+			"let":  bson.M{"localId": "$_id"},
+			"pipeline": bson.A{
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
+						},
+					},
+				},
+			},
+			"as": "revisions",
+		}},
+		{"$unwind": "$revisions"},
+		{
+			"$sort": bson.M{"revisions.timestamp": -1},
+		},
+		{
+			"$limit": 1,
+		},
+		{"$addFields": bson.M{"timestamp": "$revisions.timestamp"}},
 	}
 
 	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
@@ -307,15 +414,90 @@ func ListByIndividualIdAndLawfulBasis(individualId string, organisationId string
 			},
 			"as": "agreementData",
 		}},
+		{"$unwind": "$agreementData"},
 		{
 			"$match": bson.M{
-				"agreementData": bson.M{
-					"$elemMatch": bson.M{
-						"lawfulbasis": lawfulBasis,
+				"agreementData.lawfulbasis": lawfulBasis,
+			},
+		},
+		{"$lookup": bson.M{
+			"from": "revisions",
+			"let":  bson.M{"localId": "$_id"},
+			"pipeline": bson.A{
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
+						},
 					},
 				},
 			},
+			"as": "revisions",
+		}},
+		{"$unwind": "$revisions"},
+		{
+			"$sort": bson.M{"revisions.timestamp": -1},
 		},
+		{
+			"$limit": 1,
+		},
+		{"$addFields": bson.M{"timestamp": "$revisions.timestamp"}},
+	}
+
+	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return results, err
+	}
+	defer cursor.Close(context.TODO())
+
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return results, err
+	}
+	return results, nil
+}
+
+func ListsWithDataAgreementAndTimestamp(organisationId string) ([]DataAgreementRecordForAuditList, error) {
+	var results []DataAgreementRecordForAuditList
+
+	pipeline := []bson.M{
+		{"$match": bson.M{"organisationid": organisationId, "isdeleted": false}},
+		{"$lookup": bson.M{
+			"from": "dataAgreements",
+			"let":  bson.M{"localId": "$dataagreementid"},
+			"pipeline": bson.A{
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$eq": []interface{}{"$_id", bson.M{"$toObjectId": "$$localId"}},
+						},
+					},
+				},
+			},
+			"as": "agreementData",
+		}},
+		{"$unwind": "$agreementData"},
+		{"$lookup": bson.M{
+			"from": "revisions",
+			"let":  bson.M{"localId": "$_id"},
+			"pipeline": bson.A{
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
+						},
+					},
+				},
+			},
+			"as": "revisions",
+		}},
+		{"$unwind": "$revisions"},
+		{
+			"$sort": bson.M{"revisions.timestamp": -1},
+		},
+		{
+			"$limit": 1,
+		},
+		{"$addFields": bson.M{"timestamp": "$revisions.timestamp"}},
 	}
 
 	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
