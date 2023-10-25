@@ -4,9 +4,10 @@ go 1.18
 
 require (
 	firebase.google.com/go v3.12.1+incompatible
+	github.com/Nerzal/gocloak/v13 v13.8.0
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/casbin/casbin/v2 v2.77.2
-	github.com/confluentinc/confluent-kafka-go v1.4.2
+	github.com/coreos/go-oidc/v3 v3.6.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/mux v1.8.0
@@ -15,6 +16,7 @@ require (
 	github.com/surullabs/lint v0.0.0-20171003141706-f90256a82312
 	go.mongodb.org/mongo-driver v1.12.1
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
+	golang.org/x/oauth2 v0.10.0
 	google.golang.org/api v0.132.0
 )
 
@@ -28,9 +30,7 @@ require (
 	cloud.google.com/go/storage v1.33.0 // indirect
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible // indirect
-	github.com/Nerzal/gocloak/v13 v13.8.0 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
-	github.com/coreos/go-oidc/v3 v3.6.0 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
 	github.com/go-resty/resty/v2 v2.7.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
@@ -62,7 +62,6 @@ require (
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/mod v0.13.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/oauth2 v0.10.0 // indirect
 	golang.org/x/sync v0.4.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
@@ -73,7 +72,7 @@ require (
 	google.golang.org/genproto v0.0.0-20230706204954-ccb25ca9f130 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230706204954-ccb25ca9f130 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230711160842-782d3b101e98 // indirect
-	google.golang.org/grpc v1.56.2 // indirect
+	google.golang.org/grpc v1.56.3 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc // indirect
 )
