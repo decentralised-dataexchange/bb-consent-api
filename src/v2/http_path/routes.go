@@ -9,6 +9,7 @@ import (
 	individualHandler "github.com/bb-consent/api/src/v2/handler/individual"
 	onboardHandler "github.com/bb-consent/api/src/v2/handler/onboard"
 	policyHandler "github.com/bb-consent/api/src/v2/handler/policy"
+	privacyDashboardHandler "github.com/bb-consent/api/src/v2/handler/privacy_dashboard"
 	serviceHandler "github.com/bb-consent/api/src/v2/handler/service"
 	webhookHandler "github.com/bb-consent/api/src/v2/handler/webhook"
 	m "github.com/bb-consent/api/src/v2/middleware"
@@ -77,6 +78,8 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(ConfigListApiKey, m.Chain(apiKeyHandler.ConfigListApiKey, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	r.Handle(ConfigCreateIndividualsInBulk, m.Chain(individualHandler.ConfigCreateIndividualsInBulk, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
+
+	r.Handle(ConfigReadPrivacyDashboard, m.Chain(privacyDashboardHandler.ConfigReadPrivacyDashboard, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Service api(s)
 

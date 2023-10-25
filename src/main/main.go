@@ -18,6 +18,7 @@ import (
 	v2HttpPaths "github.com/bb-consent/api/src/v2/http_path"
 	"github.com/bb-consent/api/src/v2/iam"
 	"github.com/bb-consent/api/src/v2/middleware"
+	pd "github.com/bb-consent/api/src/v2/privacy_dashboard"
 	"github.com/bb-consent/api/src/v2/sms"
 	v2token "github.com/bb-consent/api/src/v2/token"
 	v2wh "github.com/bb-consent/api/src/v2/webhook"
@@ -80,6 +81,10 @@ func startAPICmdHandlerfunc(cmd *cobra.Command, args []string) {
 	// Firebase
 	firebaseUtils.Init(loadedConfig)
 	log.Println("Firebase initialized")
+
+	// Privacy Dashboard
+	pd.Init(loadedConfig)
+	log.Println("Privacy Dashboard initialized")
 
 	// Application mode
 	middleware.ApplicationModeInit(loadedConfig)

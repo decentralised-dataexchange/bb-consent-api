@@ -89,6 +89,11 @@ type User struct {
 	Password string `valid:"required"`
 }
 
+type PrivacyDashboard struct {
+	Hostname string
+	Version  string
+}
+
 // Configuration data type
 type Configuration struct {
 	DataBase struct {
@@ -97,16 +102,17 @@ type Configuration struct {
 		UserName string
 		Password string
 	}
-	ApplicationMode string
-	Organization    Organization
-	Type            OrgType
-	User            User
-	ApiSecretKey    string
-	Iam             Iam
-	Twilio          Twilio
-	Firebase        Firebase
-	Smtp            SmtpConfig
-	Webhooks        WebhooksConfig
+	ApplicationMode  string
+	Organization     Organization
+	Type             OrgType
+	User             User
+	ApiSecretKey     string
+	Iam              Iam
+	Twilio           Twilio
+	PrivacyDashboard PrivacyDashboard
+	Firebase         Firebase
+	Smtp             SmtpConfig
+	Webhooks         WebhooksConfig
 }
 
 // Load the config file
