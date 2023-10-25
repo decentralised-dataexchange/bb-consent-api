@@ -108,8 +108,10 @@ func ConfigUpdateDataAgreement(w http.ResponseWriter, r *http.Request) {
 		common.HandleErrorV2(w, http.StatusInternalServerError, err.Error(), err)
 		return
 	}
+	var currentRevision revision.Revision
+
 	// Get revision from db
-	currentRevision, err := revision.GetLatestByDataAgreementId(dataAgreementId)
+	currentRevision, err = revision.GetLatestByDataAgreementId(dataAgreementId)
 	if err != nil {
 		common.HandleErrorV2(w, http.StatusInternalServerError, err.Error(), err)
 		return
@@ -121,24 +123,43 @@ func ConfigUpdateDataAgreement(w http.ResponseWriter, r *http.Request) {
 	// Update life cycle based on active field
 	lifecycle := setDataAgreementLifecycle(dataAgreementReq.DataAgreement.Active)
 
-	// Bump major version for policy
-	updatedVersion, err := common.BumpMajorVersion(toBeUpdatedDataAgreement.Version)
-	if err != nil {
-		m := fmt.Sprintf("Failed to bump major version for data agreement: %v", dataAgreementId)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
-	toBeUpdatedDataAgreement.Version = updatedVersion
 	toBeUpdatedDataAgreement.ControllerName = o.Name
 	toBeUpdatedDataAgreement.ControllerUrl = o.EulaURL
 	toBeUpdatedDataAgreement.Lifecycle = lifecycle
 
-	// Update revision
-	newRevision, err := revision.UpdateRevisionForDataAgreement(toBeUpdatedDataAgreement, &currentRevision, orgAdminId)
-	if err != nil {
-		m := fmt.Sprintf("Failed to update revision for data agreement: %v", dataAgreementId)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
+	if lifecycle == config.Complete {
+		// Bump major version for policy
+		updatedVersion, err := common.BumpMajorVersion(toBeUpdatedDataAgreement.Version)
+		if err != nil {
+			m := fmt.Sprintf("Failed to bump major version for data agreement: %v", dataAgreementId)
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
+		toBeUpdatedDataAgreement.Version = updatedVersion
+
+		// Update revision
+		newRevision, err := revision.UpdateRevisionForDataAgreement(toBeUpdatedDataAgreement, &currentRevision, orgAdminId)
+		if err != nil {
+			m := fmt.Sprintf("Failed to update revision for data agreement: %v", dataAgreementId)
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
+
+		// Save the previous revision to db
+		updatedRevision, err := revision.Update(currentRevision)
+		if err != nil {
+			m := fmt.Sprintf("Failed to update revision: %v", updatedRevision.Id)
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
+
+		// Save the revision to db
+		currentRevision, err = revision.Add(newRevision)
+		if err != nil {
+			m := fmt.Sprintf("Failed to create new data agreement: %v", newRevision.Id)
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
 	}
 
 	// Save the data agreement to db
@@ -149,28 +170,12 @@ func ConfigUpdateDataAgreement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Save the previous revision to db
-	updatedRevision, err := revision.Update(currentRevision)
-	if err != nil {
-		m := fmt.Sprintf("Failed to update revision: %v", updatedRevision.Id)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
-
-	// Save the revision to db
-	savedRevision, err := revision.Add(newRevision)
-	if err != nil {
-		m := fmt.Sprintf("Failed to create new data agreement: %v", newRevision.Id)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
-
 	// Constructing the response
 	var resp updateDataAgreementResp
 	resp.DataAgreement = savedDataAgreement
 
 	var revisionForHTTPResponse revision.RevisionForHTTPResponse
-	revisionForHTTPResponse.Init(savedRevision)
+	revisionForHTTPResponse.Init(currentRevision)
 	resp.Revision = revisionForHTTPResponse
 
 	response, _ := json.Marshal(resp)
