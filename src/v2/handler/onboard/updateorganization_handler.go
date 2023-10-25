@@ -66,6 +66,7 @@ func UpdateOrganization(w http.ResponseWriter, r *http.Request) {
 		ID:            orgResp.ID,
 		Name:          orgResp.Name,
 		Description:   orgResp.Description,
+		Sector:        orgResp.Type.Type,
 		Location:      orgResp.Location,
 		PolicyURL:     orgResp.PolicyURL,
 		CoverImageID:  orgResp.CoverImageID,
