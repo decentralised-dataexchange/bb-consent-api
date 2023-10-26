@@ -293,13 +293,13 @@ func Update(org Organization) (Organization, error) {
 }
 
 // UpdateCoverImage Update the organization image
-func UpdateCoverImage(organizationID string, imageID string, imageURL string) (Organization, error) {
+func UpdateCoverImage(organizationID string, imageID string) (Organization, error) {
 	orgID, err := primitive.ObjectIDFromHex(organizationID)
 	if err != nil {
 		return Organization{}, err
 	}
 
-	_, err = collection().UpdateOne(context.TODO(), bson.M{"_id": orgID}, bson.M{"$set": bson.M{"coverimageid": imageID, "coverimageurl": imageURL}})
+	_, err = collection().UpdateOne(context.TODO(), bson.M{"_id": orgID}, bson.M{"$set": bson.M{"coverimageid": imageID}})
 	if err != nil {
 		return Organization{}, err
 	}
@@ -308,13 +308,13 @@ func UpdateCoverImage(organizationID string, imageID string, imageURL string) (O
 }
 
 // UpdateLogoImage Update the organization image
-func UpdateLogoImage(organizationID string, imageID string, imageURL string) (Organization, error) {
+func UpdateLogoImage(organizationID string, imageID string) (Organization, error) {
 	orgID, err := primitive.ObjectIDFromHex(organizationID)
 	if err != nil {
 		return Organization{}, err
 	}
 
-	_, err = collection().UpdateOne(context.TODO(), bson.M{"_id": orgID}, bson.M{"$set": bson.M{"logoimageid": imageID, "logoimageurl": imageURL}})
+	_, err = collection().UpdateOne(context.TODO(), bson.M{"_id": orgID}, bson.M{"$set": bson.M{"logoimageid": imageID}})
 	if err != nil {
 		return Organization{}, err
 	}

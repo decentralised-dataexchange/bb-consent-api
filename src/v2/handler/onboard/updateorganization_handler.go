@@ -63,16 +63,12 @@ func UpdateOrganization(w http.ResponseWriter, r *http.Request) {
 	go user.UpdateOrganizationsSubscribedUsers(orgResp)
 
 	oResp := organizationResp{
-		ID:            orgResp.ID,
-		Name:          orgResp.Name,
-		Description:   orgResp.Description,
-		Sector:        orgResp.Type.Type,
-		Location:      orgResp.Location,
-		PolicyURL:     orgResp.PolicyURL,
-		CoverImageID:  orgResp.CoverImageID,
-		CoverImageURL: orgResp.CoverImageURL,
-		LogoImageID:   orgResp.LogoImageID,
-		LogoImageURL:  orgResp.LogoImageURL,
+		ID:          orgResp.ID,
+		Name:        orgResp.Name,
+		Description: orgResp.Description,
+		Sector:      orgResp.Type.Type,
+		Location:    orgResp.Location,
+		PolicyURL:   orgResp.PolicyURL,
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)

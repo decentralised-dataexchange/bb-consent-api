@@ -12,16 +12,12 @@ import (
 )
 
 type organizationResp struct {
-	ID            primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Name          string             `json:"name"`
-	Description   string             `json:"description"`
-	Sector        string             `json:"sector"`
-	Location      string             `json:"location"`
-	PolicyURL     string             `json:"policyUrl"`
-	CoverImageID  string             `json:"coverImageId"`
-	CoverImageURL string             `json:"coverImageUrl"`
-	LogoImageID   string             `json:"logoImageId"`
-	LogoImageURL  string             `json:"logoImageUrl"`
+	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Name        string             `json:"name"`
+	Description string             `json:"description"`
+	Sector      string             `json:"sector"`
+	Location    string             `json:"location"`
+	PolicyURL   string             `json:"policyUrl"`
 }
 
 type getOrgResp struct {
@@ -39,16 +35,12 @@ func ServiceReadOrganisation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	oResp := organizationResp{
-		ID:            o.ID,
-		Name:          o.Name,
-		Description:   o.Description,
-		Sector:        o.Type.Type,
-		Location:      o.Location,
-		PolicyURL:     o.PolicyURL,
-		CoverImageID:  o.CoverImageID,
-		CoverImageURL: o.CoverImageURL,
-		LogoImageID:   o.LogoImageID,
-		LogoImageURL:  o.LogoImageURL,
+		ID:          o.ID,
+		Name:        o.Name,
+		Description: o.Description,
+		Sector:      o.Type.Type,
+		Location:    o.Location,
+		PolicyURL:   o.PolicyURL,
 	}
 
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)

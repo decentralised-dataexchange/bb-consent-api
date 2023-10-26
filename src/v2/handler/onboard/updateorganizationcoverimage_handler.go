@@ -2,7 +2,6 @@ package onboard
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,11 +11,6 @@ import (
 	"github.com/bb-consent/api/src/image"
 	"github.com/bb-consent/api/src/org"
 )
-
-type coverImageResp struct {
-	CoverImageId  string `json:"coverImageId"`
-	CoverImageUrl string `json:"coverImageUrl"`
-}
 
 // UpdateOrganizationCoverImage Inserts the image and update the id to user
 func UpdateOrganizationCoverImage(w http.ResponseWriter, r *http.Request) {
@@ -45,20 +39,13 @@ func UpdateOrganizationCoverImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	imageURL := "https://" + r.Host + "/v1/organizations/" + organizationID + "/image/" + imageID
-	o, err := org.UpdateCoverImage(organizationID, imageID, imageURL)
+	_, err = org.UpdateCoverImage(organizationID, imageID)
 	if err != nil {
 		m := fmt.Sprintf("Failed to update organization: %v with image: %v details", organizationID, imageID)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
-	respBody := coverImageResp{
-		CoverImageId:  o.CoverImageID,
-		CoverImageUrl: o.CoverImageURL,
-	}
 
-	response, _ := json.Marshal(respBody)
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
-	w.Write(response)
 }
