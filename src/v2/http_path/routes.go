@@ -157,4 +157,6 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(OnboardUpdateOrganisationAdmin, m.Chain(onboardHandler.OnboardUpdateOrganisationAdmin, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
 	r.Handle(OnboardReadOrganisationAdminAvatar, m.Chain(onboardHandler.OnboardReadOrganisationAdminAvatar, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 	r.Handle(OnboardUpdateOrganisationAdminAvatar, m.Chain(onboardHandler.OnboardUpdateOrganisationAdminAvatar, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
+
+	r.Handle(OnboardReadStatus, m.Chain(onboardHandler.OnboardReadStatus, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 }
