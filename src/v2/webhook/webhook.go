@@ -275,9 +275,13 @@ func TriggerConsentWebhookEvent(userID, purposeID, consentID, orgID, eventType, 
 		Days:           days,
 		TimeStamp:      timeStamp,
 	}
+	for _, e := range WebhooksConfiguration.Events {
+		if e == eventType {
+			// triggering the webhook
+			TriggerWebhooks(consentWebhookEvent, eventType)
+		}
 
-	// triggering the webhook
-	TriggerWebhooks(consentWebhookEvent, eventType)
+	}
 }
 
 // TriggerDataRequestWebhookEvent Trigger webhook for user data request events
