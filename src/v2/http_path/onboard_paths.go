@@ -26,3 +26,5 @@ const OnboardReadOrganisationAdmin = "/v2/onboard/admin"
 const OnboardUpdateOrganisationAdmin = "/v2/onboard/admin"
 const OnboardReadOrganisationAdminAvatar = "/v2/onboard/admin/avatarimage"
 const OnboardUpdateOrganisationAdminAvatar = "/v2/onboard/admin/avatarimage"
+
+const OnboardReadStatus = "/v2/onboard/status"
