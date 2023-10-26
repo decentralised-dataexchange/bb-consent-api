@@ -32,6 +32,15 @@ type PaginateDBObjectsQuery struct {
 	Offset     int
 }
 
+// PaginateDBObjectsQuery
+type PaginateDBObjectsQueryUsingPipeline struct {
+	Pipeline   []bson.M
+	Collection *mongo.Collection
+	Context    context.Context
+	Limit      int
+	Offset     int
+}
+
 // PaginatedDBResult
 type PaginatedDBResult struct {
 	Items      interface{} `json:"items"`
@@ -200,6 +209,96 @@ func PaginateObjects(query PaginateObjectsQuery, toBeSortedItems []interface{}) 
 		},
 	}
 
+}
+
+// PaginateDBObjects
+func PaginateDBObjectsUsingPipeline(query PaginateDBObjectsQueryUsingPipeline, resultSlice interface{}) (*PaginatedDBResult, error) {
+
+	// Calculate total items
+	cursor, err := query.Collection.Aggregate(context.TODO(), query.Pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	var dbObjectsForCount []interface{}
+	err = cursor.All(context.TODO(), &dbObjectsForCount)
+	if err != nil {
+		return nil, err
+	}
+
+	totalItems := len(dbObjectsForCount)
+
+	// Ensure offset is not negative and limit is positive
+	if query.Offset < 0 {
+		query.Offset = 0
+	}
+	if query.Limit <= 0 {
+		query.Limit = 1
+	}
+
+	// Ensure offset is within bounds
+	if query.Offset >= int(totalItems) {
+		query.Offset = int(totalItems) - query.Limit
+	}
+
+	// Calculate pages and selected page based on offset and limit
+	totalPages := int(math.Ceil(float64(totalItems) / float64(query.Limit)))
+	currentPage := (query.Offset / query.Limit) + 1
+
+	// Ensure currentPage is within bounds
+	if currentPage < 1 {
+		currentPage = 1
+	} else if currentPage > totalPages {
+		currentPage = totalPages
+	}
+
+	// Initialize pagination structure
+	pagination := Pagination{
+		CurrentPage: currentPage,
+		TotalItems:  int(totalItems),
+		Limit:       query.Limit,
+		TotalPages:  totalPages,
+		HasPrevious: currentPage > 1,
+		HasNext:     currentPage < totalPages,
+	}
+
+	pipelineWithSkipAndLimitStages := append(query.Pipeline, bson.M{"$skip": query.Offset}, bson.M{"$limit": query.Limit})
+
+	// Query the database
+	cursor2, err := query.Collection.Aggregate(context.TODO(), pipelineWithSkipAndLimitStages)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor2.Close(context.TODO())
+
+	// Decode items
+	sliceValue := reflect.ValueOf(resultSlice)
+	if sliceValue.Kind() != reflect.Ptr || sliceValue.Elem().Kind() != reflect.Slice {
+		return nil, errors.New("resultSlice must be a slice pointer")
+	}
+	sliceElem := sliceValue.Elem()
+	itemTyp := sliceElem.Type().Elem()
+
+	for cursor2.Next(query.Context) {
+		itemPtr := reflect.New(itemTyp).Interface()
+		if err := cursor2.Decode(itemPtr); err != nil {
+			return nil, err
+		}
+		sliceElem = reflect.Append(sliceElem, reflect.ValueOf(itemPtr).Elem())
+	}
+	if sliceElem.Len() == 0 {
+		sliceElem = reflect.MakeSlice(sliceElem.Type(), 0, 0)
+	}
+
+	if err := cursor2.Err(); err != nil {
+		return nil, err
+	}
+
+	return &PaginatedDBResult{
+		Items:      sliceElem.Interface(),
+		Pagination: pagination,
+	}, nil
 }
 
 const DEFAULT_LIMIT int = 10
