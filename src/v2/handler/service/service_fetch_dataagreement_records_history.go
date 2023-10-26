@@ -24,15 +24,15 @@ func ServiceFetchRecordsHistory(w http.ResponseWriter, r *http.Request) {
 
 	// Return all data agreement record histories
 	var darH []daRecordHistory.DataAgreementRecordsHistory
-	query := paginate.PaginateDBObjectsQuery{
-		Filter:     bson.M{},
+	query := paginate.PaginateDBObjectsQueryUsingPipeline{
+		Pipeline:   []bson.M{{"$sort": bson.M{"timestamp": -1}}},
 		Collection: daRecordHistory.Collection(),
 		Context:    context.Background(),
 		Limit:      limit,
 		Offset:     offset,
 	}
 	var resp listDataAgreementRecordHistory
-	result, err := paginate.PaginateDBObjects(query, &darH)
+	result, err := paginate.PaginateDBObjectsUsingPipeline(query, &darH)
 	if err != nil {
 		if errors.Is(err, paginate.EmptyDBError) {
 			emptyDarH := make([]interface{}, 0)
