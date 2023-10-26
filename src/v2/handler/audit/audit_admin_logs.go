@@ -75,25 +75,24 @@ func AuditGetOrgLogs(w http.ResponseWriter, r *http.Request) {
 	actionLogRepo := actionlog.ActionLogRepository{}
 	actionLogRepo.Init(organisationId)
 
-	var filter primitive.M
+	var pipeline []primitive.M
 
 	logType, err := ParseListActionLogQueryParams(r)
 	if err != nil && errors.Is(err, ActionLogTypeIsMissingError) {
-		filter = actionLogRepo.DefaultFilter
+		pipeline = []bson.M{{"$sort": bson.M{"timestamp": -1}}}
 	} else {
-		filter = common.CombineFilters(actionLogRepo.DefaultFilter, bson.M{"type": logType})
+		pipeline = []bson.M{{"$match": bson.M{"type": logType}}, {"$sort": bson.M{"timestamp": -1}}}
 	}
-
 	// Return all action logs
 	var actionLogs []actionlog.ActionLog
-	query := paginate.PaginateDBObjectsQuery{
-		Filter:     filter,
+	query := paginate.PaginateDBObjectsQueryUsingPipeline{
+		Pipeline:   pipeline,
 		Collection: actionlog.Collection(),
 		Context:    context.Background(),
 		Limit:      limit,
 		Offset:     offset,
 	}
-	result, err := paginate.PaginateDBObjects(query, &actionLogs)
+	result, err := paginate.PaginateDBObjectsUsingPipeline(query, &actionLogs)
 	if err != nil {
 		if errors.Is(err, paginate.EmptyDBError) {
 			emptyActionLogs := make([]interface{}, 0)
