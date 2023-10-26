@@ -241,6 +241,9 @@ func PaginateDBObjectsUsingPipeline(query PaginateDBObjectsQueryUsingPipeline, r
 	if query.Offset >= int(totalItems) {
 		query.Offset = int(totalItems) - query.Limit
 	}
+	if query.Offset < 0 {
+		query.Offset = 0
+	}
 
 	// Calculate pages and selected page based on offset and limit
 	totalPages := int(math.Ceil(float64(totalItems) / float64(query.Limit)))

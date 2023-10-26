@@ -47,7 +47,7 @@ type DataAgreementRecordForAuditList struct {
 	OptIn                     bool                                    `json:"optIn"`
 	State                     string                                  `json:"state" valid:"required"`
 	SignatureId               string                                  `json:"signatureId"`
-	AgreementData             DataAgreementForListDataAgreementRecord `json:"dataAgreement"`
+	DataAgreements            DataAgreementForListDataAgreementRecord `json:"dataAgreement"`
 	Timestamp                 string                                  `json:"timestamp"`
 }
 
@@ -61,6 +61,7 @@ const (
 	RevisionIdIsMissingError
 	DataAgreementRecordIdIsMissingError
 	LawfulBasisIsMissingError
+	IdIsMissingError
 )
 
 // Error returns the string representation of the error.
@@ -76,6 +77,8 @@ func (e DataAgreementRecordError) Error() string {
 		return "Query param dataAgreementRecordId is missing!"
 	case LawfulBasisIsMissingError:
 		return "Query param lawfulbasis is missing!"
+	case IdIsMissingError:
+		return "Query param id is missing!"
 	default:
 		return "Unknown error!"
 	}

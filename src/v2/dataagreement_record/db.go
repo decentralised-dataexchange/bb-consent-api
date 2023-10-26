@@ -90,424 +90,96 @@ func (darRepo *DataAgreementRecordRepository) DeleteAllRecordsForIndividual(indi
 	return err
 }
 
-// ListByIdIncludingDataAgreement lists data agreement record by id
-func ListByIdIncludingDataAgreement(dataAgreementRecordID string, organisationId string) ([]DataAgreementRecordForAuditList, error) {
-	var results []DataAgreementRecordForAuditList
+// PipelineForList creates pipeline for list data agreement records
+func PipelineForList(organisationId string, id string, lawfulBasis string, isId bool, isLawfulBasis bool) ([]primitive.M, error) {
+	var pipeline []primitive.M
 
-	dataAgreementRecordId, err := primitive.ObjectIDFromHex(dataAgreementRecordID)
-	if err != nil {
-		return results, err
+	var pipelineForIdExists []primitive.M
+	if isId {
+		dataAgreementRecordId, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return []bson.M{}, err
+		}
+
+		pipelineForIdExists = []bson.M{
+			{"$match": bson.M{
+				"$or": []bson.M{
+					{"_id": dataAgreementRecordId},
+					{"dataagreementid": id},
+					{"individualid": id},
+				},
+			},
+			},
+		}
 	}
-
-	pipeline := []bson.M{
-		{"$match": bson.M{"organisationid": organisationId, "isdeleted": false, "_id": dataAgreementRecordId}},
-		{"$lookup": bson.M{
-			"from": "dataAgreements",
-			"let":  bson.M{"localId": "$dataagreementid"},
-			"pipeline": bson.A{
-				bson.M{
-					"$match": bson.M{
-						"$expr": bson.M{
-							"$eq": []interface{}{"$_id", bson.M{"$toObjectId": "$$localId"}},
-						},
+	lookupAgreementStage := bson.M{"$lookup": bson.M{
+		"from": "dataAgreements",
+		"let":  bson.M{"localId": "$dataagreementid"},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$eq": []interface{}{"$_id", bson.M{"$toObjectId": "$$localId"}},
 					},
 				},
 			},
-			"as": "agreementData",
-		}},
-		{"$unwind": "$agreementData"},
-		{"$lookup": bson.M{
-			"from": "revisions",
-			"let":  bson.M{"localId": "$_id"},
-			"pipeline": bson.A{
-				bson.M{
-					"$match": bson.M{
-						"$expr": bson.M{
-							"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
-						},
+		},
+		"as": "dataAgreements",
+	}}
+	unwindStage := bson.M{"$unwind": "$dataAgreements"}
+	lookupRevisionStage := bson.M{"$lookup": bson.M{
+		"from": "revisions",
+		"let":  bson.M{"localId": "$_id"},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
 					},
 				},
 			},
-			"as": "revisions",
-		}},
-		{"$unwind": "$revisions"},
-		{
-			"$sort": bson.M{"revisions.timestamp": -1},
 		},
-		{
-			"$limit": 1,
-		},
-		{"$addFields": bson.M{"timestamp": "$revisions.timestamp"}},
-	}
-
-	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
-	if err != nil {
-		return results, err
-	}
-	defer cursor.Close(context.TODO())
-
-	if err = cursor.All(context.TODO(), &results); err != nil {
-		return results, err
-	}
-	return results, nil
-}
-
-// ListByIdAndLawfulBasis lists data attributes based on data agreement record and lawfulbasis
-func ListByIdAndLawfulBasis(dataAgreementRecordID string, organisationId string, lawfulBasis string) ([]DataAgreementRecordForAuditList, error) {
-	var results []DataAgreementRecordForAuditList
-
-	dataAgreementRecordId, err := primitive.ObjectIDFromHex(dataAgreementRecordID)
-	if err != nil {
-		return results, err
-	}
-
-	pipeline := []bson.M{
-		{"$match": bson.M{"organisationid": organisationId, "isdeleted": false, "_id": dataAgreementRecordId}},
-		{"$lookup": bson.M{
-			"from": "dataAgreements",
-			"let":  bson.M{"localId": "$dataagreementid"},
-			"pipeline": bson.A{
-				bson.M{
-					"$match": bson.M{
-						"$expr": bson.M{
-							"$eq": []interface{}{"$_id", bson.M{"$toObjectId": "$$localId"}},
-						},
+		"as": "Revisions",
+	}}
+	addRevisionFieldStage := bson.M{
+		"$addFields": bson.M{
+			"Revision": bson.M{
+				"$arrayElemAt": []interface{}{
+					bson.M{
+						"$slice": []interface{}{"$Revisions", -1},
 					},
+					0,
 				},
 			},
-			"as": "agreementData",
-		}},
-		{"$unwind": "$agreementData"},
-		{
-			"$match": bson.M{
-				"agreementData.lawfulbasis": lawfulBasis,
-			},
 		},
-		{"$lookup": bson.M{
-			"from": "revisions",
-			"let":  bson.M{"localId": "$_id"},
-			"pipeline": bson.A{
-				bson.M{
-					"$match": bson.M{
-						"$expr": bson.M{
-							"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
-						},
-					},
-				},
-			},
-			"as": "revisions",
-		}},
-		{"$unwind": "$revisions"},
-		{
-			"$sort": bson.M{"revisions.timestamp": -1},
+	}
+	addTimestampFieldStage := bson.M{"$addFields": bson.M{"timestamp": "$Revision.timestamp"}}
+	projectStage := bson.M{
+		"$project": bson.M{
+			"Revisions": 0,
+			"Revision":  0,
 		},
-		{
-			"$limit": 1,
-		},
-		{"$addFields": bson.M{"timestamp": "$revisions.timestamp"}},
 	}
 
-	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
-	if err != nil {
-		return results, err
-	}
-	defer cursor.Close(context.TODO())
-
-	if err = cursor.All(context.TODO(), &results); err != nil {
-		return results, err
-	}
-	return results, nil
-}
-
-// ListByDataAgreementIdIncludingDataAgreement lists data agreement record based on data agreement id
-func ListByDataAgreementIdIncludingDataAgreement(dataAgreementId string, organisationId string) ([]DataAgreementRecordForAuditList, error) {
-	var results []DataAgreementRecordForAuditList
-
-	pipeline := []bson.M{
-		{"$match": bson.M{"organisationid": organisationId, "isdeleted": false, "dataagreementid": dataAgreementId}},
-		{"$lookup": bson.M{
-			"from": "dataAgreements",
-			"let":  bson.M{"localId": "$dataagreementid"},
-			"pipeline": bson.A{
-				bson.M{
-					"$match": bson.M{
-						"$expr": bson.M{
-							"$eq": []interface{}{"$_id", bson.M{"$toObjectId": "$$localId"}},
-						},
-					},
-				},
-			},
-			"as": "agreementData",
-		}},
-		{"$unwind": "$agreementData"},
-		{"$lookup": bson.M{
-			"from": "revisions",
-			"let":  bson.M{"localId": "$_id"},
-			"pipeline": bson.A{
-				bson.M{
-					"$match": bson.M{
-						"$expr": bson.M{
-							"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
-						},
-					},
-				},
-			},
-			"as": "revisions",
-		}},
-		{"$unwind": "$revisions"},
-		{
-			"$sort": bson.M{"revisions.timestamp": -1},
-		},
-		{
-			"$limit": 1,
-		},
-		{"$addFields": bson.M{"timestamp": "$revisions.timestamp"}},
-	}
-
-	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
-	if err != nil {
-		return results, err
-	}
-	defer cursor.Close(context.TODO())
-
-	if err = cursor.All(context.TODO(), &results); err != nil {
-		return results, err
-	}
-	return results, nil
-}
-
-// ListByDataAgreementIdAndLawfulBasis lists data agreement record based on data agreement id and lawful basis
-func ListByDataAgreementIdAndLawfulBasis(dataAgreementId string, organisationId string, lawfulBasis string) ([]DataAgreementRecordForAuditList, error) {
-	var results []DataAgreementRecordForAuditList
-
-	pipeline := []bson.M{
-		{"$match": bson.M{"organisationid": organisationId, "isdeleted": false, "dataagreementid": dataAgreementId}},
-		{"$lookup": bson.M{
-			"from": "dataAgreements",
-			"let":  bson.M{"localId": "$dataagreementid"},
-			"pipeline": bson.A{
-				bson.M{
-					"$match": bson.M{
-						"$expr": bson.M{
-							"$eq": []interface{}{"$_id", bson.M{"$toObjectId": "$$localId"}},
-						},
-					},
-				},
-			},
-			"as": "agreementData",
-		}},
-		{"$unwind": "$agreementData"},
-		{
-			"$match": bson.M{
-				"agreementData.lawfulbasis": lawfulBasis,
-			},
-		},
-		{"$lookup": bson.M{
-			"from": "revisions",
-			"let":  bson.M{"localId": "$_id"},
-			"pipeline": bson.A{
-				bson.M{
-					"$match": bson.M{
-						"$expr": bson.M{
-							"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
-						},
-					},
-				},
-			},
-			"as": "revisions",
-		}},
-		{"$unwind": "$revisions"},
-		{
-			"$sort": bson.M{"revisions.timestamp": -1},
-		},
-		{
-			"$limit": 1,
-		},
-		{"$addFields": bson.M{"timestamp": "$revisions.timestamp"}},
-	}
-
-	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
-	if err != nil {
-		return results, err
-	}
-	defer cursor.Close(context.TODO())
-
-	if err = cursor.All(context.TODO(), &results); err != nil {
-		return results, err
-	}
-	return results, nil
-}
-
-// ListByIndividualIdIncludingDataAgreement
-func ListByIndividualIdIncludingDataAgreement(individualId string, organisationId string) ([]DataAgreementRecordForAuditList, error) {
-	var results []DataAgreementRecordForAuditList
-
-	pipeline := []bson.M{
-		{"$match": bson.M{"organisationid": organisationId, "isdeleted": false, "individualid": individualId}},
-		{"$lookup": bson.M{
-			"from": "dataAgreements",
-			"let":  bson.M{"localId": "$dataagreementid"},
-			"pipeline": bson.A{
-				bson.M{
-					"$match": bson.M{
-						"$expr": bson.M{
-							"$eq": []interface{}{"$_id", bson.M{"$toObjectId": "$$localId"}},
-						},
-					},
-				},
-			},
-			"as": "agreementData",
-		}},
-		{"$unwind": "$agreementData"},
-		{"$lookup": bson.M{
-			"from": "revisions",
-			"let":  bson.M{"localId": "$_id"},
-			"pipeline": bson.A{
-				bson.M{
-					"$match": bson.M{
-						"$expr": bson.M{
-							"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
-						},
-					},
-				},
-			},
-			"as": "revisions",
-		}},
-		{"$unwind": "$revisions"},
-		{
-			"$sort": bson.M{"revisions.timestamp": -1},
-		},
-		{
-			"$limit": 1,
-		},
-		{"$addFields": bson.M{"timestamp": "$revisions.timestamp"}},
-	}
-
-	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
-	if err != nil {
-		return results, err
-	}
-	defer cursor.Close(context.TODO())
-
-	if err = cursor.All(context.TODO(), &results); err != nil {
-		return results, err
-	}
-	return results, nil
-}
-
-func ListByIndividualIdAndLawfulBasis(individualId string, organisationId string, lawfulBasis string) ([]DataAgreementRecordForAuditList, error) {
-	var results []DataAgreementRecordForAuditList
-
-	pipeline := []bson.M{
-		{"$match": bson.M{"organisationid": organisationId, "isdeleted": false, "individualid": individualId}},
-		{"$lookup": bson.M{
-			"from": "dataAgreements",
-			"let":  bson.M{"localId": "$dataagreementid"},
-			"pipeline": bson.A{
-				bson.M{
-					"$match": bson.M{
-						"$expr": bson.M{
-							"$eq": []interface{}{"$_id", bson.M{"$toObjectId": "$$localId"}},
-						},
-					},
-				},
-			},
-			"as": "agreementData",
-		}},
-		{"$unwind": "$agreementData"},
-		{
-			"$match": bson.M{
-				"agreementData.lawfulbasis": lawfulBasis,
-			},
-		},
-		{"$lookup": bson.M{
-			"from": "revisions",
-			"let":  bson.M{"localId": "$_id"},
-			"pipeline": bson.A{
-				bson.M{
-					"$match": bson.M{
-						"$expr": bson.M{
-							"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
-						},
-					},
-				},
-			},
-			"as": "revisions",
-		}},
-		{"$unwind": "$revisions"},
-		{
-			"$sort": bson.M{"revisions.timestamp": -1},
-		},
-		{
-			"$limit": 1,
-		},
-		{"$addFields": bson.M{"timestamp": "$revisions.timestamp"}},
-	}
-
-	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
-	if err != nil {
-		return results, err
-	}
-	defer cursor.Close(context.TODO())
-
-	if err = cursor.All(context.TODO(), &results); err != nil {
-		return results, err
-	}
-	return results, nil
-}
-
-func ListsWithDataAgreementAndTimestamp(organisationId string) ([]DataAgreementRecordForAuditList, error) {
-	var results []DataAgreementRecordForAuditList
-
-	pipeline := []bson.M{
+	pipelineForIdNotExists := []bson.M{
 		{"$match": bson.M{"organisationid": organisationId, "isdeleted": false}},
-		{"$lookup": bson.M{
-			"from": "dataAgreements",
-			"let":  bson.M{"localId": "$dataagreementid"},
-			"pipeline": bson.A{
-				bson.M{
-					"$match": bson.M{
-						"$expr": bson.M{
-							"$eq": []interface{}{"$_id", bson.M{"$toObjectId": "$$localId"}},
-						},
-					},
-				},
-			},
-			"as": "agreementData",
-		}},
-		{"$unwind": "$agreementData"},
-		{"$lookup": bson.M{
-			"from": "revisions",
-			"let":  bson.M{"localId": "$_id"},
-			"pipeline": bson.A{
-				bson.M{
-					"$match": bson.M{
-						"$expr": bson.M{
-							"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
-						},
-					},
-				},
-			},
-			"as": "revisions",
-		}},
-		{"$unwind": "$revisions"},
-		{
-			"$sort": bson.M{"revisions.timestamp": -1},
-		},
-		{
-			"$limit": 1,
-		},
-		{"$addFields": bson.M{"timestamp": "$revisions.timestamp"}},
 	}
 
-	cursor, err := Collection().Aggregate(context.TODO(), pipeline)
-	if err != nil {
-		return results, err
+	lawfulBasisMatch := bson.M{
+		"$match": bson.M{
+			"dataAgreements.lawfulbasis": lawfulBasis,
+		},
 	}
-	defer cursor.Close(context.TODO())
+	if isId && isLawfulBasis {
+		pipeline = append(pipelineForIdExists, lookupAgreementStage, unwindStage, lookupRevisionStage, addRevisionFieldStage, addTimestampFieldStage, projectStage, lawfulBasisMatch)
+	} else if isId && !isLawfulBasis {
+		pipeline = append(pipelineForIdExists, lookupAgreementStage, unwindStage, lookupRevisionStage, addRevisionFieldStage, addTimestampFieldStage, projectStage)
 
-	if err = cursor.All(context.TODO(), &results); err != nil {
-		return results, err
+	} else if isLawfulBasis && !isId {
+		pipeline = append(pipelineForIdNotExists, lookupAgreementStage, unwindStage, lookupRevisionStage, addRevisionFieldStage, addTimestampFieldStage, projectStage, lawfulBasisMatch)
+	} else {
+		pipeline = []bson.M{}
 	}
-	return results, nil
+
+	return pipeline, nil
 }

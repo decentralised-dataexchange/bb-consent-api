@@ -30,6 +30,7 @@ const (
 	IndividualHeaderKey   = "X-ConsentBB-IndividualId"
 	RevisionId            = "revisionId"
 	LawfulBasis           = "lawfulBasis"
+	Id                    = "id"
 )
 
 // Schemas
