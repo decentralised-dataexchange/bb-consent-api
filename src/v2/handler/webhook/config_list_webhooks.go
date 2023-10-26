@@ -65,7 +65,7 @@ func ConfigListWebhooks(w http.ResponseWriter, r *http.Request) {
 
 		// Fetching the last delivery to the webhook and retrieving the delivery status
 		isLastDeliverySuccess := false
-		lastDelivery, err := wh.GetLastWebhookDelivery(webhook.ID)
+		lastDelivery, err := wh.GetLastWebhookDelivery(webhook.ID.Hex())
 		if err != nil {
 			// There is no payload delivery yet !
 			isLastDeliverySuccess = true
@@ -80,7 +80,7 @@ func ConfigListWebhooks(w http.ResponseWriter, r *http.Request) {
 		}
 
 		updatedWebhook := WebhookWithLastDeliveryStatus{
-			ID:                    webhook.ID,
+			ID:                    webhook.ID.Hex(),
 			OrganisationId:        webhook.OrganisationId,
 			PayloadURL:            webhook.PayloadURL,
 			ContentType:           webhook.ContentType,

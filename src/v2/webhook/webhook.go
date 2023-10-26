@@ -227,7 +227,7 @@ func TriggerWebhooks(webhookEventData WebhookEventData, webhookEventType string)
 	for _, toBeProcessedWebhook := range toBeProcessedWebhooks {
 		// Constructing webhook payload
 		we := WebhookEvent{
-			WebhookID: toBeProcessedWebhook.ID,
+			WebhookID: toBeProcessedWebhook.ID.Hex(),
 			Timestamp: strconv.FormatInt(time.Now().UTC().Unix(), 10),
 			Data:      webhookEventData,
 			Type:      webhookEventType,

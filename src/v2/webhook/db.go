@@ -13,16 +13,16 @@ import (
 
 // Webhook Defines the structure for an organisation webhook
 type Webhook struct {
-	ID                  string   `json:"id" bson:"_id,omitempty"`           // Webhook ID
-	OrganisationId      string   `json:"orgId" bson:"orgid"`                // Organisation ID
-	PayloadURL          string   `json:"payloadUrl" valid:"required"`       // Webhook payload URL
-	ContentType         string   `json:"contentType" valid:"required"`      // Webhook payload content type for e.g application/json
-	SubscribedEvents    []string `json:"subscribedEvents" valid:"required"` // Events subscribed for e.g. user.data.delete
-	Disabled            bool     `json:"disabled"`                          // Disabled or not
-	SecretKey           string   `json:"secretKey" valid:"required"`        // For calculating SHA256 HMAC to verify data integrity and authenticity
-	SkipSSLVerification bool     `json:"skipSslVerification"`               // Skip SSL certificate verification or not (expiry is checked)
-	TimeStamp           string   `json:"timestamp" valid:"required"`        // UTC timestamp
-	IsDeleted           bool     `json:"-"`
+	ID                  primitive.ObjectID `json:"id" bson:"_id,omitempty"`           // Webhook ID
+	OrganisationId      string             `json:"orgId" bson:"orgid"`                // Organisation ID
+	PayloadURL          string             `json:"payloadUrl" valid:"required"`       // Webhook payload URL
+	ContentType         string             `json:"contentType" valid:"required"`      // Webhook payload content type for e.g application/json
+	SubscribedEvents    []string           `json:"subscribedEvents" valid:"required"` // Events subscribed for e.g. user.data.delete
+	Disabled            bool               `json:"disabled"`                          // Disabled or not
+	SecretKey           string             `json:"secretKey" valid:"required"`        // For calculating SHA256 HMAC to verify data integrity and authenticity
+	SkipSSLVerification bool               `json:"skipSslVerification"`               // Skip SSL certificate verification or not (expiry is checked)
+	TimeStamp           string             `json:"timestamp" valid:"required"`        // UTC timestamp
+	IsDeleted           bool               `json:"-"`
 }
 
 // WebhookDelivery Details of payload delivery to webhook endpoint
@@ -227,11 +227,16 @@ func (whRepo *WebhookRepository) GetWebhookCountByPayloadURL(payloadURL string) 
 }
 
 // GetByOrgID Gets a webhook by organisation ID and webhook ID
-func (whRepo *WebhookRepository) GetByOrgID(webhookId string) (Webhook, error) {
+func (whRepo *WebhookRepository) GetByOrgID(webhookID string) (Webhook, error) {
+	var result Webhook
+	webhookId, err := primitive.ObjectIDFromHex(webhookID)
+	if err != nil {
+		return result, err
+	}
+
 	filter := common.CombineFilters(whRepo.DefaultFilter, bson.M{"_id": webhookId})
 
-	var result Webhook
-	err := webhookCollection().FindOne(context.TODO(), filter).Decode(&result)
+	err = webhookCollection().FindOne(context.TODO(), filter).Decode(&result)
 
 	return result, err
 }
@@ -247,7 +252,7 @@ func (whRepo *WebhookRepository) GetWebhookByPayloadURL(payloadURL string) (resu
 
 // UpdateWebhook Updates a webhook for an organization
 func (whRepo *WebhookRepository) UpdateWebhook(webhook Webhook) (Webhook, error) {
-	filter := common.CombineFilters(whRepo.DefaultFilter, bson.M{"_id": webhook.ID})
+	filter := bson.M{"_id": webhook.ID, "orgid": webhook.OrganisationId, "isdeleted": false}
 	update := bson.M{"$set": webhook}
 
 	_, err := webhookCollection().UpdateOne(context.TODO(), filter, update)
