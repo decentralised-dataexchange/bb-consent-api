@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
@@ -12,6 +14,8 @@ import (
 	daRecordHistory "github.com/bb-consent/api/src/v2/dataagreement_record_history"
 	"github.com/bb-consent/api/src/v2/dataattribute"
 	"github.com/bb-consent/api/src/v2/revision"
+	"github.com/bb-consent/api/src/v2/webhook"
+	"github.com/bb-consent/api/src/webhooks"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -137,6 +141,14 @@ func ServiceCreateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
+
+	// Trigger webhooks
+	var consentedAttributes []string
+	for _, pConsent := range savedDaRecord.DataAttributes {
+		consentedAttributes = append(consentedAttributes, pConsent.DataAttributeId)
+	}
+
+	go webhook.TriggerConsentWebhookEvent(individualId, dataAgreementId, savedDaRecord.Id.Hex(), organisationId, webhooks.EventTypes[30], strconv.FormatInt(time.Now().UTC().Unix(), 10), 0, consentedAttributes)
 	// Add data agreement record history
 	darH := daRecordHistory.DataAgreementRecordsHistory{}
 	darH.DataAgreementId = dataAgreementId
