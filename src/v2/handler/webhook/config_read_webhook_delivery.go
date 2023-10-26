@@ -47,7 +47,7 @@ func ConfigReadRecentWebhookDelivery(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the webhook delivery by ID
-	webhookDelivery, err := wh.GetWebhookDeliveryByID(webhook.ID, deliveryId)
+	webhookDelivery, err := wh.GetWebhookDeliveryByID(webhook.ID.Hex(), deliveryId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get delivery details by ID:%v for webhook:%v for organisation: %v", deliveryId, webhookId, organisationId)
 		common.HandleError(w, http.StatusBadRequest, m, err)

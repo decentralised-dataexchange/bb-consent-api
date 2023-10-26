@@ -30,7 +30,7 @@ func validateUpdatewebhookRequestBody(webhookReq updateWebhookReq, currentWebhoo
 	// Check if webhook with provided payload URL already exists
 	tempWebhook, err := webhhokRepo.GetWebhookByPayloadURL(webhookReq.Webhook.PayloadURL)
 	if err == nil {
-		if tempWebhook.ID != webhookId {
+		if tempWebhook.ID.Hex() != webhookId {
 			return errors.New("webhook with provided payload URL already exists")
 		}
 	}

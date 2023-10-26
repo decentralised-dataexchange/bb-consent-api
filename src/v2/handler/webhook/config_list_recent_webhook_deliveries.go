@@ -64,7 +64,7 @@ func ConfigListRecentWebhookDeliveries(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get all recent webhook deliveries
-	recentWebhookDeliveries, err := wh.GetAllDeliveryByWebhookId(webhook.ID)
+	recentWebhookDeliveries, err := wh.GetAllDeliveryByWebhookId(webhook.ID.Hex())
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch recent payload deliveries for webhook:%v for organisation: %v", webhookId, organisationId)
 		common.HandleError(w, http.StatusInternalServerError, m, err)
