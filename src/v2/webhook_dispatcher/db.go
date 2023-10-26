@@ -18,7 +18,11 @@ func webhookDeliveryCollection() *mongo.Collection {
 }
 
 // GetWebhookByOrgID Gets a webhook by organisation ID and webhook ID
-func GetWebhookByOrgID(webhookId, orgID string) (result Webhook, err error) {
+func GetWebhookByOrgID(webhookID, orgID string) (result Webhook, err error) {
+	webhookId, err := primitive.ObjectIDFromHex(webhookID)
+	if err != nil {
+		return result, err
+	}
 
 	err = webhookCollection().FindOne(context.TODO(), bson.M{"_id": webhookId, "orgid": orgID}).Decode(&result)
 
