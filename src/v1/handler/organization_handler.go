@@ -212,8 +212,7 @@ func UpdateOrganizationCoverImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	imageURL := "https://" + r.Host + "/v1/organizations/" + organizationID + "/image/" + imageID
-	o, err := org.UpdateCoverImage(organizationID, imageID, imageURL)
+	o, err := org.UpdateCoverImage(organizationID, imageID)
 	if err != nil {
 		m := fmt.Sprintf("Failed to update organization: %v with image: %v details", organizationID, imageID)
 		common.HandleError(w, http.StatusInternalServerError, m, err)
@@ -253,8 +252,7 @@ func UpdateOrganizationLogoImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	imageURL := "https://" + r.Host + "/v1/organizations/" + organizationID + "/image/" + imageID
-	o, err := org.UpdateLogoImage(organizationID, imageID, imageURL)
+	o, err := org.UpdateLogoImage(organizationID, imageID)
 	if err != nil {
 		m := fmt.Sprintf("Failed to update organization: %v with image: %v details", organizationID, imageID)
 		common.HandleError(w, http.StatusInternalServerError, m, err)
