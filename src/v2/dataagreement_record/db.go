@@ -195,3 +195,19 @@ func PipelineForList(organisationId string, id string, lawfulBasis string, isId 
 
 	return pipeline, nil
 }
+
+// Deletes all the data agreement records for data agreement id
+func (darRepo *DataAgreementRecordRepository) DeleteDataAgreementRecordsForDataAgreement(dataAgreementId string) error {
+	filter := common.CombineFilters(darRepo.DefaultFilter, bson.M{"dataagreementid": dataAgreementId})
+
+	// Update to set IsDeleted to true
+	update := bson.M{
+		"$set": bson.M{
+			"isdeleted": true,
+		},
+	}
+
+	_, err := Collection().UpdateMany(context.TODO(), filter, update)
+
+	return err
+}

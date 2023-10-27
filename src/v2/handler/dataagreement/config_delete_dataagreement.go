@@ -8,6 +8,7 @@ import (
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/v2/dataagreement"
+	daRecord "github.com/bb-consent/api/src/v2/dataagreement_record"
 	"github.com/bb-consent/api/src/v2/dataattribute"
 	"github.com/bb-consent/api/src/v2/revision"
 	"github.com/gorilla/mux"
@@ -57,6 +58,18 @@ func ConfigDeleteDataAgreement(w http.ResponseWriter, r *http.Request) {
 	err = deleteDataAgreementIdFromDataAttributes(dataAgreementId, organisationId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to delete data agreement id from data attributes: %v", dataAgreementId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Repository
+	darRepo := daRecord.DataAgreementRecordRepository{}
+	darRepo.Init(organisationId)
+
+	// Deletes all the data agreement records for data agreement id
+	err = darRepo.DeleteDataAgreementRecordsForDataAgreement(dataAgreementId)
+	if err != nil {
+		m := fmt.Sprintf("Failed to delete data agreement id from data agreement records: %v", dataAgreementId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
