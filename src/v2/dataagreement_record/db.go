@@ -90,6 +90,18 @@ func (darRepo *DataAgreementRecordRepository) DeleteAllRecordsForIndividual(indi
 	return err
 }
 
+// CountDataAgreementRecords counts the data agreement record containing data agreement id and individual id
+func (darRepo *DataAgreementRecordRepository) CountDataAgreementRecords(dataAgreementId string, individualId string) (int64, error) {
+	filter := common.CombineFilters(darRepo.DefaultFilter, bson.M{"individualid": individualId, "dataagreementid": dataAgreementId})
+
+	count, err := Collection().CountDocuments(context.Background(), filter)
+	if err != nil {
+		return count, nil
+	}
+
+	return count, nil
+}
+
 // PipelineForList creates pipeline for list data agreement records
 func PipelineForList(organisationId string, id string, lawfulBasis string, isId bool, isLawfulBasis bool) ([]primitive.M, error) {
 	var pipeline []primitive.M
