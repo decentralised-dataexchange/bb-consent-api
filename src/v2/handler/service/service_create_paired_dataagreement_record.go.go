@@ -40,6 +40,23 @@ func ServiceCreatePairedDataAgreementRecord(w http.ResponseWriter, r *http.Reque
 	defer r.Body.Close()
 	json.Unmarshal(b, &dataAgreementRecordReq)
 
+	// Repository
+	darRepo := daRecord.DataAgreementRecordRepository{}
+	darRepo.Init(organisationId)
+
+	// Check for existing data agreement record with same data agreement id and individual id
+	count, err := darRepo.CountDataAgreementRecords(dataAgreementRecordReq.DataAgreementRecord.DataAgreementId, individualId)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch data agreement record for data agreement: %v", dataAgreementRecordReq.DataAgreementRecord.DataAgreementId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+	if count > 0 {
+		m := fmt.Sprintf("Data agreement record for data agreement: %v and individual id : %s exists", dataAgreementRecordReq.DataAgreementRecord.DataAgreementId, individualId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
 	dataAgreementRecord := dataAgreementRecordReq.DataAgreementRecord
 	currentSignature := dataAgreementRecordReq.Signature
 
@@ -59,10 +76,6 @@ func ServiceCreatePairedDataAgreementRecord(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	toBeCreatedSignature.Id = primitive.NewObjectID()
-
-	// Repository
-	darRepo := daRecord.DataAgreementRecordRepository{}
-	darRepo.Init(organisationId)
 
 	dataAgreementRecord.SignatureId = toBeCreatedSignature.Id.Hex()
 

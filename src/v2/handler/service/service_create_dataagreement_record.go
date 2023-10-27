@@ -70,6 +70,23 @@ func ServiceCreateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 
 	dataAgreementId := common.Sanitize(mux.Vars(r)[config.DataAgreementId])
 
+	// Repository
+	darRepo := daRecord.DataAgreementRecordRepository{}
+	darRepo.Init(organisationId)
+
+	// Check for existing data agreement record with same data agreement id and individual id
+	count, err := darRepo.CountDataAgreementRecords(dataAgreementId, individualId)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch data agreement record for data agreement: %v", dataAgreementId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+	if count > 0 {
+		m := fmt.Sprintf("Data agreement record for data agreement: %v and individual id : %s exists", dataAgreementId, individualId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
 	revisionId, err := daRecord.ParseQueryParams(r, config.RevisionId, daRecord.RevisionIdIsMissingError)
 	revisionId = common.Sanitize(revisionId)
 	var rev revision.Revision
@@ -123,9 +140,6 @@ func ServiceCreateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
-	// Repository
-	darRepo := daRecord.DataAgreementRecordRepository{}
-	darRepo.Init(organisationId)
 
 	savedDaRecord, err := darRepo.Add(newDaRecord)
 	if err != nil {
