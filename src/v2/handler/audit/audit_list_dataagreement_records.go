@@ -36,23 +36,17 @@ func AuditListDataAgreementRecords(w http.ResponseWriter, r *http.Request) {
 	darRepo := daRecord.DataAgreementRecordRepository{}
 	darRepo.Init(organisationId)
 
-	var isIdExists bool
-	var isLawfulBasis bool
 	id, err := daRecord.ParseQueryParams(r, config.Id, daRecord.IdIsMissingError)
 	if err != nil && errors.Is(err, daRecord.IdIsMissingError) {
-		isIdExists = false
-	} else {
-		isIdExists = true
+		log.Println(err)
 	}
 
 	lawfulBasis, err := daRecord.ParseQueryParams(r, config.LawfulBasis, daRecord.LawfulBasisIsMissingError)
 	if err != nil && errors.Is(err, daRecord.LawfulBasisIsMissingError) {
-		isLawfulBasis = false
-	} else {
-		isLawfulBasis = true
+		log.Println(err)
 	}
 
-	pipeline, err := daRecord.PipelineForList(organisationId, id, lawfulBasis, isIdExists, isLawfulBasis)
+	pipeline, err := daRecord.CreatePipelineForFilteringDataAgreementRecords(organisationId, id, lawfulBasis)
 	if err != nil {
 		m := "Failed to create pipeline"
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)

@@ -102,29 +102,38 @@ func (darRepo *DataAgreementRecordRepository) CountDataAgreementRecords(dataAgre
 	return count, nil
 }
 
-// PipelineForList creates pipeline for list data agreement records
-func PipelineForList(organisationId string, id string, lawfulBasis string, isId bool, isLawfulBasis bool) ([]primitive.M, error) {
-	var pipeline []primitive.M
+// CreatePipelineForFilteringDataAgreementRecords This pipeline is used for filtering data agreement records by `id` and `lawfulBasis`
+// `id` has 3 possible values - dataAgreementRecordId, dataAgreementId, individualId
+func CreatePipelineForFilteringDataAgreementRecords(organisationId string, id string, lawfulBasis string) ([]primitive.M, error) {
 
-	var pipelineForIdExists []primitive.M
-	if isId {
-		dataAgreementRecordId, err := primitive.ObjectIDFromHex(id)
-		if err != nil {
-			return []bson.M{}, err
+	var pipeline []bson.M
+
+	// Stage 1 - Match by `organisationId` and `isDeleted=false`
+	pipeline = append(pipeline, bson.M{"$match": bson.M{"organisationid": organisationId, "isdeleted": false}})
+
+	if len(id) > 0 {
+
+		or := []bson.M{
+			{"dataagreementid": id},
+			{"individualid": id},
 		}
 
-		pipelineForIdExists = []bson.M{
-			{"$match": bson.M{
-				"$or": []bson.M{
-					{"_id": dataAgreementRecordId},
-					{"dataagreementid": id},
-					{"individualid": id},
-				},
-			},
-			},
+		// Stage 2 - Match `id` against `dataAgreementRecordId`, `dataAgreementId`, `individualId`
+		convertIdtoObjectId, err := primitive.ObjectIDFromHex(id)
+		if err == nil {
+			// Append `dataAgreementRecordId` `or` statements only if
+			// string is converted to objectId without errors
+			or = append(or, bson.M{"_id": convertIdtoObjectId})
 		}
+
+		pipeline = append(pipeline, bson.M{"$match": bson.M{
+			"$or": or,
+		}})
 	}
-	lookupAgreementStage := bson.M{"$lookup": bson.M{
+
+	// Stage 3 - Lookup data agreement document by `dataAgreementId`
+	// This is done to obtain `policy` and `lawfulBasis` fields from data agreement document
+	pipeline = append(pipeline, bson.M{"$lookup": bson.M{
 		"from": "dataAgreements",
 		"let":  bson.M{"localId": "$dataagreementid"},
 		"pipeline": bson.A{
@@ -137,9 +146,14 @@ func PipelineForList(organisationId string, id string, lawfulBasis string, isId 
 			},
 		},
 		"as": "dataAgreements",
-	}}
-	unwindStage := bson.M{"$unwind": "$dataAgreements"}
-	lookupRevisionStage := bson.M{"$lookup": bson.M{
+	}})
+
+	// Stage 4 - Unwind the data agreement fields
+	pipeline = append(pipeline, bson.M{"$unwind": "$dataAgreements"})
+
+	// Stage 5 - Lookup revision by `dataAgreementRecordId`
+	// This is done to obtain timestamp for the latest revision of the data agreement record.
+	pipeline = append(pipeline, bson.M{"$lookup": bson.M{
 		"from": "revisions",
 		"let":  bson.M{"localId": "$_id"},
 		"pipeline": bson.A{
@@ -150,47 +164,40 @@ func PipelineForList(organisationId string, id string, lawfulBasis string, isId 
 					},
 				},
 			},
+			bson.M{
+				"$sort": bson.M{"timestamp": -1},
+			},
+			bson.M{"$limit": int64(1)},
 		},
-		"as": "Revisions",
-	}}
-	addRevisionFieldStage := bson.M{
-		"$addFields": bson.M{
-			"Revision": bson.M{
-				"$arrayElemAt": []interface{}{
-					bson.M{
-						"$slice": []interface{}{"$Revisions", -1},
-					},
-					0,
+		"as": "revisions",
+	}})
+
+	// Stage 6 - Add the timestamp from revisions
+	pipeline = append(pipeline, bson.M{"$addFields": bson.M{"timestamp": bson.M{
+		"$let": bson.M{
+			"vars": bson.M{
+				"first": bson.M{
+					"$arrayElemAt": bson.A{"$revisions", 0},
 				},
 			},
+			"in": "$$first.timestamp",
 		},
-	}
-	addTimestampFieldStage := bson.M{"$addFields": bson.M{"timestamp": "$Revision.timestamp"}}
-	projectStage := bson.M{
+	}}})
+
+	// Stage 7 - Remove revisions field
+	pipeline = append(pipeline, bson.M{
 		"$project": bson.M{
-			"Revisions": 0,
-			"Revision":  0,
+			"revisions": 0,
 		},
-	}
+	})
 
-	pipelineForIdNotExists := []bson.M{
-		{"$match": bson.M{"organisationid": organisationId, "isdeleted": false}},
-	}
-
-	lawfulBasisMatch := bson.M{
-		"$match": bson.M{
-			"dataAgreements.lawfulbasis": lawfulBasis,
-		},
-	}
-	if isId && isLawfulBasis {
-		pipeline = append(pipelineForIdExists, lookupAgreementStage, unwindStage, lookupRevisionStage, addRevisionFieldStage, addTimestampFieldStage, projectStage, lawfulBasisMatch)
-	} else if isId && !isLawfulBasis {
-		pipeline = append(pipelineForIdExists, lookupAgreementStage, unwindStage, lookupRevisionStage, addRevisionFieldStage, addTimestampFieldStage, projectStage)
-
-	} else if isLawfulBasis && !isId {
-		pipeline = append(pipelineForIdNotExists, lookupAgreementStage, unwindStage, lookupRevisionStage, addRevisionFieldStage, addTimestampFieldStage, projectStage, lawfulBasisMatch)
-	} else {
-		pipeline = []bson.M{}
+	// Stage 8 - Match by lawful basis
+	if len(lawfulBasis) > 0 {
+		pipeline = append(pipeline, bson.M{
+			"$match": bson.M{
+				"dataAgreements.lawfulbasis": lawfulBasis,
+			},
+		})
 	}
 
 	return pipeline, nil
