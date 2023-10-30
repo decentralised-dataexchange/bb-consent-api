@@ -10,9 +10,9 @@ import (
 
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
+	"github.com/bb-consent/api/src/v2/dataagreement"
 	daRecord "github.com/bb-consent/api/src/v2/dataagreement_record"
 	daRecordHistory "github.com/bb-consent/api/src/v2/dataagreement_record_history"
-	"github.com/bb-consent/api/src/v2/dataattribute"
 	"github.com/bb-consent/api/src/v2/revision"
 	"github.com/bb-consent/api/src/v2/webhook"
 	"github.com/bb-consent/api/src/webhooks"
@@ -20,36 +20,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// getDataAttributesWithRevisionForCreateDataAgreementRecord
-func getDataAttributesWithRevisionForCreateDataAgreementRecord(dataAttributes []dataattribute.DataAttribute) ([]daRecord.DataAttributeForDataAgreementRecord, error) {
-	var dataAttributesWithRevision []daRecord.DataAttributeForDataAgreementRecord
-
-	for _, da := range dataAttributes {
-		var dataAttributeWithRevision daRecord.DataAttributeForDataAgreementRecord
-
-		dataAttributeWithRevision.DataAttributeId = da.Id.Hex()
-		revisionForDataAttibute, err := revision.GetLatestByDataAttributeId(da.Id.Hex())
-		if err != nil {
-			return dataAttributesWithRevision, err
-		}
-		dataAttributeWithRevision.DataAttributeRevisionId = revisionForDataAttibute.Id.Hex()
-		dataAttributeWithRevision.DataAttributeRevisionHash = revisionForDataAttibute.SerializedHash
-		dataAttributeWithRevision.OptIn = true
-
-		dataAttributesWithRevision = append(dataAttributesWithRevision, dataAttributeWithRevision)
-	}
-	return dataAttributesWithRevision, nil
-}
-
 // createDataAgreementRecord
-func createDataAgreementRecord(dataAgreementId string, rev revision.Revision, individualId string, dataAttributesWithRevision []daRecord.DataAttributeForDataAgreementRecord) daRecord.DataAgreementRecord {
+func createDataAgreementRecord(dataAgreementId string, rev revision.Revision, individualId string) daRecord.DataAgreementRecord {
 	var newDaRecord daRecord.DataAgreementRecord
 
 	newDaRecord.Id = primitive.NewObjectID()
 	newDaRecord.DataAgreementId = dataAgreementId
 	newDaRecord.DataAgreementRevisionHash = rev.SerializedHash
 	newDaRecord.DataAgreementRevisionId = rev.Id.Hex()
-	newDaRecord.DataAttributes = dataAttributesWithRevision
 	newDaRecord.IndividualId = individualId
 	newDaRecord.OptIn = true
 	newDaRecord.State = config.Unsigned
@@ -109,29 +87,10 @@ func ServiceCreateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Repository
-	dataAttributeRepo := dataattribute.DataAttributeRepository{}
-	dataAttributeRepo.Init(organisationId)
-
-	// Fetch data attributes of data agreement from db
-	dataAttributes, err := dataAttributeRepo.GetDataAttributesByDataAgreementId(dataAgreementId)
-	if err != nil {
-		m := fmt.Sprintf("Failed to fetch data attributes for data agreement: %v", dataAgreementId)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
-
-	// Fetch revisions for data attributes
-	dataAttributesWithRevision, err := getDataAttributesWithRevisionForCreateDataAgreementRecord(dataAttributes)
-	if err != nil {
-		m := "Failed to fetch revisions for data attributes"
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
-
 	// create new data agreement record
-	newDaRecord := createDataAgreementRecord(dataAgreementId, rev, individualId, dataAttributesWithRevision)
+	newDaRecord := createDataAgreementRecord(dataAgreementId, rev, individualId)
 	newDaRecord.OrganisationId = organisationId
+	newDaRecord.IsDeleted = false
 
 	// Create new revision
 	newRevision, err := revision.CreateRevisionForDataAgreementRecord(newDaRecord, individualId)
@@ -156,10 +115,21 @@ func ServiceCreateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Repository
+	daRepo := dataagreement.DataAgreementRepository{}
+	daRepo.Init(organisationId)
+
+	da, err := daRepo.Get(dataAgreementId)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch data agreement: %v", dataAgreementId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
 	// Trigger webhooks
 	var consentedAttributes []string
-	for _, pConsent := range savedDaRecord.DataAttributes {
-		consentedAttributes = append(consentedAttributes, pConsent.DataAttributeId)
+	for _, pConsent := range da.DataAttributes {
+		consentedAttributes = append(consentedAttributes, pConsent.Id.Hex())
 	}
 
 	go webhook.TriggerConsentWebhookEvent(individualId, dataAgreementId, savedDaRecord.Id.Hex(), organisationId, webhooks.EventTypes[30], strconv.FormatInt(time.Now().UTC().Unix(), 10), 0, consentedAttributes)

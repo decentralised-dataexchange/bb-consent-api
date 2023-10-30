@@ -2,7 +2,6 @@ package dataattribute
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,7 +10,6 @@ import (
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/v2/dataagreement"
-	"github.com/bb-consent/api/src/v2/dataattribute"
 	"github.com/bb-consent/api/src/v2/revision"
 	"github.com/bb-consent/api/src/v2/token"
 	"github.com/gorilla/mux"
@@ -24,40 +22,61 @@ func validateUpdateDataAttributeRequestBody(dataAttributeReq updateDataAttribute
 		return err
 	}
 
-	// Repository
-	darepo := dataagreement.DataAgreementRepository{}
-	darepo.Init(organisationId)
-
-	// validating data agreement Ids provided
-	// checking if data agreement Ids provided exist in the db
-	for _, p := range dataAttributeReq.DataAttribute.AgreementIds {
-		exists, err := darepo.IsDataAgreementExist(p)
-		if err != nil || exists < 1 {
-			m := fmt.Sprintf("Invalid data agreementId: %v provided;Failed to add data attribute", p)
-			return errors.New(m)
-		}
-	}
-
 	return nil
 }
 
-func updateDataAttributeFromRequestBody(requestBody updateDataAttributeReq, toBeUpdatedDataAttribute dataattribute.DataAttribute) dataattribute.DataAttribute {
+func updateDataAttributeFromRequestBody(dataAttributeId string, requestBody updateDataAttributeReq, toBeUpdatedDataAgreement dataagreement.DataAgreement) dataagreement.DataAgreement {
 
-	toBeUpdatedDataAttribute.AgreementIds = requestBody.DataAttribute.AgreementIds
-	toBeUpdatedDataAttribute.Name = requestBody.DataAttribute.Name
-	toBeUpdatedDataAttribute.Description = requestBody.DataAttribute.Description
-	toBeUpdatedDataAttribute.Sensitivity = requestBody.DataAttribute.Sensitivity
-	toBeUpdatedDataAttribute.Category = requestBody.DataAttribute.Category
+	var dataAttributes []dataagreement.DataAttribute
 
-	return toBeUpdatedDataAttribute
+	for i := range toBeUpdatedDataAgreement.DataAttributes {
+		var dataAttribute dataagreement.DataAttribute
+		if toBeUpdatedDataAgreement.DataAttributes[i].Id.Hex() == dataAttributeId {
+			dataAttribute.Id = toBeUpdatedDataAgreement.DataAttributes[i].Id
+			dataAttribute.Name = requestBody.DataAttribute.Name
+			dataAttribute.Description = requestBody.DataAttribute.Description
+			dataAttribute.Sensitivity = requestBody.DataAttribute.Sensitivity
+			dataAttribute.Category = requestBody.DataAttribute.Category
+		} else {
+			dataAttribute.Id = toBeUpdatedDataAgreement.DataAttributes[i].Id
+			dataAttribute.Name = toBeUpdatedDataAgreement.DataAttributes[i].Name
+			dataAttribute.Description = toBeUpdatedDataAgreement.DataAttributes[i].Description
+			dataAttribute.Sensitivity = toBeUpdatedDataAgreement.DataAttributes[i].Sensitivity
+			dataAttribute.Category = toBeUpdatedDataAgreement.DataAttributes[i].Category
+		}
+		dataAttributes = append(dataAttributes, dataAttribute)
+	}
+	toBeUpdatedDataAgreement.DataAttributes = dataAttributes
+
+	return toBeUpdatedDataAgreement
+}
+
+func dataAttributeResp(dataAttributeId string, savedDataAgreement dataagreement.DataAgreement) dataagreement.DataAttribute {
+
+	var dataAttribute dataagreement.DataAttribute
+
+	for i := range savedDataAgreement.DataAttributes {
+
+		if savedDataAgreement.DataAttributes[i].Id.Hex() == dataAttributeId {
+			dataAttribute.Id = savedDataAgreement.DataAttributes[i].Id
+			dataAttribute.Name = savedDataAgreement.DataAttributes[i].Name
+			dataAttribute.Description = savedDataAgreement.DataAttributes[i].Description
+			dataAttribute.Sensitivity = savedDataAgreement.DataAttributes[i].Sensitivity
+			dataAttribute.Category = savedDataAgreement.DataAttributes[i].Category
+			return dataAttribute
+		}
+
+	}
+
+	return dataAttribute
 }
 
 type updateDataAttributeReq struct {
-	DataAttribute dataattribute.DataAttribute `json:"dataAttribute" valid:"required"`
+	DataAttribute dataagreement.DataAttribute `json:"dataAttribute" valid:"required"`
 }
 
 type updateDataAttributeResp struct {
-	DataAttribute dataattribute.DataAttribute `json:"dataAttribute"`
+	DataAttribute dataagreement.DataAttribute `json:"dataAttribute"`
 	Revision      interface{}                 `json:"revision"`
 }
 
@@ -88,71 +107,78 @@ func ConfigUpdateDataAttribute(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Repository
-	dataAttributeRepo := dataattribute.DataAttributeRepository{}
-	dataAttributeRepo.Init(organisationId)
+	darepo := dataagreement.DataAgreementRepository{}
+	darepo.Init(organisationId)
+
 	// Get data attribute from db
-	toBeUpdatedDataAttribute, err := dataAttributeRepo.Get(dataAttributeId)
+	toBeUpdatedDataAgreement, err := darepo.GetByDataAttributeId(dataAttributeId)
 	if err != nil {
 		common.HandleErrorV2(w, http.StatusInternalServerError, err.Error(), err)
 		return
 	}
-	// Get data attribute from db
-	currentRevision, err := revision.GetLatestByDataAttributeId(dataAttributeId)
+	var currentRevision revision.Revision
+	// Get current revision from db
+	currentRevision, err = revision.GetLatestByDataAgreementId(toBeUpdatedDataAgreement.Id.Hex())
 	if err != nil {
 		common.HandleErrorV2(w, http.StatusInternalServerError, err.Error(), err)
 		return
 	}
 
 	// Update data attribute from request body
-	toBeUpdatedDataAttribute = updateDataAttributeFromRequestBody(dataAttributeReq, toBeUpdatedDataAttribute)
+	toBeUpdatedDataAgreement = updateDataAttributeFromRequestBody(dataAttributeId, dataAttributeReq, toBeUpdatedDataAgreement)
 
 	// Bump major version for data attribute
-	updatedVersion, err := common.BumpMajorVersion(toBeUpdatedDataAttribute.Version)
+	updatedVersion, err := common.BumpMajorVersion(toBeUpdatedDataAgreement.Version)
 	if err != nil {
 		m := fmt.Sprintf("Failed to bump major version for data attribute: %v", dataAttributeId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
-	toBeUpdatedDataAttribute.Version = updatedVersion
 
-	// Update revision
-	newRevision, err := revision.UpdateRevisionForDataAttribute(toBeUpdatedDataAttribute, &currentRevision, orgAdminId)
-	if err != nil {
-		m := fmt.Sprintf("Failed to update revision for data attribute: %v", dataAttributeId)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
+	if toBeUpdatedDataAgreement.Active {
+
+		toBeUpdatedDataAgreement.Version = updatedVersion
+
+		// Update revision
+		newRevision, err := revision.UpdateRevisionForDataAgreement(toBeUpdatedDataAgreement, &currentRevision, orgAdminId)
+		if err != nil {
+			m := fmt.Sprintf("Failed to update revision for data attribute: %v", dataAttributeId)
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
+
+		// Save the previous revision to db
+		updatedRevision, err := revision.Update(currentRevision)
+		if err != nil {
+			m := fmt.Sprintf("Failed to update revision: %v", updatedRevision.Id)
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
+
+		// Save the revision to db
+		currentRevision, err = revision.Add(newRevision)
+		if err != nil {
+			m := fmt.Sprintf("Failed to create new revision: %v", newRevision.Id)
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
 	}
 
-	// Save the data attribute to db
-	savedDataAttribute, err := dataAttributeRepo.Update(toBeUpdatedDataAttribute)
+	// Save the data agreement to db
+	savedDataAgreement, err := darepo.Update(toBeUpdatedDataAgreement)
 	if err != nil {
-		m := fmt.Sprintf("Failed to update data attribute: %v", toBeUpdatedDataAttribute.Id)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
-
-	// Save the previous revision to db
-	updatedRevision, err := revision.Update(currentRevision)
-	if err != nil {
-		m := fmt.Sprintf("Failed to update revision: %v", updatedRevision.Id)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
-
-	// Save the revision to db
-	savedRevision, err := revision.Add(newRevision)
-	if err != nil {
-		m := fmt.Sprintf("Failed to create new revision: %v", newRevision.Id)
+		m := fmt.Sprintf("Failed to update data attribute: %v", dataAttributeId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 
 	// Constructing the response
 	var resp updateDataAttributeResp
-	resp.DataAttribute = savedDataAttribute
+	updatedDataAttribute := dataAttributeResp(dataAttributeId, savedDataAgreement)
 
+	resp.DataAttribute = updatedDataAttribute
 	var revisionForHTTPResponse revision.RevisionForHTTPResponse
-	revisionForHTTPResponse.Init(savedRevision)
+	revisionForHTTPResponse.Init(currentRevision)
 	resp.Revision = revisionForHTTPResponse
 
 	response, _ := json.Marshal(resp)

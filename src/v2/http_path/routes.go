@@ -37,11 +37,7 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(ConfigListDataAttributesForDataAgreement, m.Chain(dataAgreementHandler.ConfigListDataAttributesForDataAgreement, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Data attribute
-	r.Handle(ConfigReadDataAttribute, m.Chain(dataAttributeHandler.ConfigReadDataAttribute, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(ConfigCreateDataAttribute, m.Chain(dataAttributeHandler.ConfigCreateDataAttribute, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
 	r.Handle(ConfigUpdateDataAttribute, m.Chain(dataAttributeHandler.ConfigUpdateDataAttribute, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
-	r.Handle(ConfigListDataAttributeRevisions, m.Chain(dataAttributeHandler.ConfigListDataAttributeRevisions, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(ConfigDeleteDataAttribute, m.Chain(dataAttributeHandler.ConfigDeleteDataAttribute, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("DELETE")
 	r.Handle(ConfigListDataAttributes, m.Chain(dataAttributeHandler.ConfigListDataAttributes, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Organisation webhooks related api(s)

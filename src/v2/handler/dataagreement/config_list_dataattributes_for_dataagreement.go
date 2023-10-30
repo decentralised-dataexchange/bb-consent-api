@@ -9,18 +9,16 @@ import (
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/v2/dataagreement"
-	"github.com/bb-consent/api/src/v2/dataattribute"
 	"github.com/bb-consent/api/src/v2/paginate"
 	"github.com/gorilla/mux"
 )
 
 type listDataAttributesResp struct {
-	DataAgreement  dataagreement.DataAgreement `json:"dataAgreement"`
-	DataAttributes interface{}                 `json:"dataAttributes"`
-	Pagination     paginate.Pagination         `json:"pagination"`
+	DataAttributes interface{}         `json:"dataAttributes"`
+	Pagination     paginate.Pagination `json:"pagination"`
 }
 
-func dataAttributesToInterfaceSlice(dataAttributes []dataattribute.DataAttribute) []interface{} {
+func dataAttributesToInterfaceSlice(dataAttributes []dataagreement.DataAttribute) []interface{} {
 	interfaceSlice := make([]interface{}, len(dataAttributes))
 	for i, r := range dataAttributes {
 		interfaceSlice[i] = r
@@ -39,9 +37,6 @@ func ConfigListDataAttributesForDataAgreement(w http.ResponseWriter, r *http.Req
 	daRepo := dataagreement.DataAgreementRepository{}
 	daRepo.Init(organisationId)
 
-	dataAttributeRepo := dataattribute.DataAttributeRepository{}
-	dataAttributeRepo.Init(organisationId)
-
 	da, err := daRepo.Get(dataAgreementId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch data agreement: %v", dataAgreementId)
@@ -49,12 +44,7 @@ func ConfigListDataAttributesForDataAgreement(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	dataAttributes, err := dataAttributeRepo.GetDataAttributesByDataAgreementId(dataAgreementId)
-	if err != nil {
-		m := fmt.Sprintf("Failed to fetch data attributes for data agreement: %v", dataAgreementId)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
+	dataAttributes := da.DataAttributes
 
 	// Query params
 	offset, limit := paginate.ParsePaginationQueryParams(r)
@@ -68,7 +58,6 @@ func ConfigListDataAttributesForDataAgreement(w http.ResponseWriter, r *http.Req
 	result := paginate.PaginateObjects(query, interfaceSlice)
 
 	var resp = listDataAttributesResp{
-		DataAgreement:  da,
 		DataAttributes: result.Items,
 		Pagination:     result.Pagination,
 	}

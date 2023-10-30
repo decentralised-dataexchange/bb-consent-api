@@ -15,6 +15,14 @@ func Collection() *mongo.Collection {
 	return database.DB.Client.Database(database.DB.Name).Collection("dataAgreements")
 }
 
+type DataAttribute struct {
+	Id          primitive.ObjectID `json:"id" bson:"id,omitempty"`
+	Name        string             `json:"name" valid:"required"`
+	Description string             `json:"description" valid:"required"`
+	Sensitivity bool               `json:"sensitivity"`
+	Category    string             `json:"category"`
+}
+
 type Signature struct {
 	Id                           primitive.ObjectID `json:"id"`
 	Payload                      string             `json:"payload"`
@@ -38,25 +46,26 @@ type PolicyForDataAgreement struct {
 }
 
 type DataAgreement struct {
-	Id                      primitive.ObjectID     `json:"id" bson:"_id,omitempty"`
-	Version                 string                 `json:"version"`
-	ControllerId            string                 `json:"controllerId"`
-	ControllerUrl           string                 `json:"controllerUrl" valid:"required"`
-	ControllerName          string                 `json:"controllerName" valid:"required"`
-	Policy                  PolicyForDataAgreement `json:"policy" valid:"required"`
-	Purpose                 string                 `json:"purpose" valid:"required"`
-	PurposeDescription      string                 `json:"purposeDescription" valid:"required"`
-	LawfulBasis             string                 `json:"lawfulBasis" valid:"required"`
-	MethodOfUse             string                 `json:"methodOfUse" valid:"required"`
-	DpiaDate                string                 `json:"dpiaDate"`
-	DpiaSummaryUrl          string                 `json:"dpiaSummaryUrl"`
-	Signature               Signature              `json:"signature"`
-	Active                  bool                   `json:"active"`
-	Forgettable             bool                   `json:"forgettable"`
-	CompatibleWithVersionId string                 `json:"compatibleWithVersionId"`
-	Lifecycle               string                 `json:"lifecycle" valid:"required"`
-	OrganisationId          string                 `json:"-"`
-	IsDeleted               bool                   `json:"-"`
+	Id                      primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Version                 string             `json:"version"`
+	ControllerId            string             `json:"controllerId"`
+	ControllerUrl           string             `json:"controllerUrl" valid:"required"`
+	ControllerName          string             `json:"controllerName" valid:"required"`
+	Policy                  policy.Policy      `json:"policy" valid:"required"`
+	Purpose                 string             `json:"purpose" valid:"required"`
+	PurposeDescription      string             `json:"purposeDescription" valid:"required"`
+	LawfulBasis             string             `json:"lawfulBasis" valid:"required"`
+	MethodOfUse             string             `json:"methodOfUse" valid:"required"`
+	DpiaDate                string             `json:"dpiaDate"`
+	DpiaSummaryUrl          string             `json:"dpiaSummaryUrl"`
+	Signature               Signature          `json:"signature"`
+	Active                  bool               `json:"active"`
+	Forgettable             bool               `json:"forgettable"`
+	CompatibleWithVersionId string             `json:"compatibleWithVersionId"`
+	Lifecycle               string             `json:"lifecycle" valid:"required"`
+	DataAttributes          []DataAttribute    `json:"dataAttributes" valid:"required"`
+	OrganisationId          string             `json:"-"`
+	IsDeleted               bool               `json:"-"`
 }
 
 type DataAgreementRepository struct {
@@ -223,4 +232,54 @@ func CreatePipelineForFilteringDataAgreementsUsingLifecycle(organisationId strin
 	})
 
 	return pipeline, nil
+}
+
+// GetDataAttributeById Gets a single data agreement by data attribute id
+func (darepo *DataAgreementRepository) GetByDataAttributeId(dataAttributeID string) (DataAgreement, error) {
+	dataAgreementId, err := primitive.ObjectIDFromHex(dataAttributeID)
+	if err != nil {
+		return DataAgreement{}, err
+	}
+
+	filter := common.CombineFilters(darepo.DefaultFilter, bson.M{"dataattributes.id": dataAgreementId})
+
+	var result DataAgreement
+	err = Collection().FindOne(context.TODO(), filter).Decode(&result)
+	return result, err
+}
+
+// GetByMethodOfUse Gets data agreements by method of use
+func (darepo *DataAgreementRepository) GetByMethodOfUse(methodOfUse string) ([]DataAgreement, error) {
+
+	filter := common.CombineFilters(darepo.DefaultFilter, bson.M{"methodofuse": methodOfUse})
+
+	var results []DataAgreement
+	cursor, err := Collection().Find(context.TODO(), filter)
+	if err != nil {
+		return results, err
+	}
+
+	defer cursor.Close(context.TODO())
+
+	if err := cursor.All(context.TODO(), &results); err != nil {
+		return results, err
+	}
+	return results, nil
+}
+
+// GetAll Gets all data agreements
+func (darepo *DataAgreementRepository) GetAll() ([]DataAgreement, error) {
+
+	var results []DataAgreement
+	cursor, err := Collection().Find(context.TODO(), darepo.DefaultFilter)
+	if err != nil {
+		return results, err
+	}
+
+	defer cursor.Close(context.TODO())
+
+	if err := cursor.All(context.TODO(), &results); err != nil {
+		return results, err
+	}
+	return results, nil
 }

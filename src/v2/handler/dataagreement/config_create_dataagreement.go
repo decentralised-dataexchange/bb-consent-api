@@ -71,26 +71,39 @@ type policyForDataAgreement struct {
 	Url  string `json:"url" validate:"required_if=Active true"`
 }
 
+type dataAttributeForDataAgreement struct {
+	dataagreement.DataAttribute
+	Id          string `json:"id"`
+	Name        string `json:"name" validate:"required_if=Active true"`
+	Description string `json:"description" validate:"required_if=Active true,max=500"`
+}
+
+type signatureForDataAgreement struct {
+	dataagreement.Signature
+	Id string `json:"id"`
+}
+
 type dataAgreement struct {
-	Id                      primitive.ObjectID      `json:"id" bson:"_id,omitempty"`
-	Version                 string                  `json:"version"`
-	ControllerId            string                  `json:"controllerId"`
-	ControllerUrl           string                  `json:"controllerUrl" validate:"required_if=Active true"`
-	ControllerName          string                  `json:"controllerName" validate:"required_if=Active true"`
-	Policy                  policyForDataAgreement  `json:"policy" validate:"required_if=Active true"`
-	Purpose                 string                  `json:"purpose" validate:"required_if=Active true"`
-	PurposeDescription      string                  `json:"purposeDescription" validate:"required_if=Active true,max=500"`
-	LawfulBasis             string                  `json:"lawfulBasis" validate:"required_if=Active true"`
-	MethodOfUse             string                  `json:"methodOfUse" validate:"required_if=Active true"`
-	DpiaDate                string                  `json:"dpiaDate"`
-	DpiaSummaryUrl          string                  `json:"dpiaSummaryUrl"`
-	Signature               dataagreement.Signature `json:"signature" validate:"required_if=Active true"`
-	Active                  bool                    `json:"active"`
-	Forgettable             bool                    `json:"forgettable"`
-	CompatibleWithVersionId string                  `json:"compatibleWithVersionId"`
-	Lifecycle               string                  `json:"lifecycle" validate:"required_if=Active true"`
-	OrganisationId          string                  `json:"-"`
-	IsDeleted               bool                    `json:"-"`
+	Id                      primitive.ObjectID              `json:"id" bson:"_id,omitempty"`
+	Version                 string                          `json:"version"`
+	ControllerId            string                          `json:"controllerId"`
+	ControllerUrl           string                          `json:"controllerUrl" validate:"required_if=Active true"`
+	ControllerName          string                          `json:"controllerName" validate:"required_if=Active true"`
+	Policy                  policyForDataAgreement          `json:"policy" validate:"required_if=Active true"`
+	Purpose                 string                          `json:"purpose" validate:"required_if=Active true"`
+	PurposeDescription      string                          `json:"purposeDescription" validate:"required_if=Active true,max=500"`
+	LawfulBasis             string                          `json:"lawfulBasis" validate:"required_if=Active true"`
+	MethodOfUse             string                          `json:"methodOfUse" validate:"required_if=Active true"`
+	DpiaDate                string                          `json:"dpiaDate"`
+	DpiaSummaryUrl          string                          `json:"dpiaSummaryUrl"`
+	Signature               signatureForDataAgreement       `json:"signature"`
+	Active                  bool                            `json:"active"`
+	Forgettable             bool                            `json:"forgettable"`
+	CompatibleWithVersionId string                          `json:"compatibleWithVersionId"`
+	Lifecycle               string                          `json:"lifecycle" validate:"required_if=Active true"`
+	DataAttributes          []dataAttributeForDataAgreement `json:"dataAttributes" validate:"required_if=Active true"`
+	OrganisationId          string                          `json:"-"`
+	IsDeleted               bool                            `json:"-"`
 }
 
 type addDataAgreementReq struct {
@@ -134,6 +147,7 @@ func validateAddDataAgreementRequestBody(dataAgreementReq addDataAgreementReq) e
 	if err := validate.Struct(dataAgreementReq.DataAgreement); err != nil {
 		return err
 	}
+	fmt.Println(dataAgreementReq.DataAgreement.Active)
 
 	if dataAgreementReq.DataAgreement.Active {
 		// Proceed if lawful basis provided is valid
@@ -162,7 +176,7 @@ func setDataAgreementLifecycle(active bool) string {
 
 func updateDataAgreementFromAddDataAgreementRequestBody(requestBody addDataAgreementReq, newDataAgreement dataagreement.DataAgreement) dataagreement.DataAgreement {
 
-	newDataAgreement.Policy.Id = requestBody.DataAgreement.Policy.Id
+	newDataAgreement.Policy.Id = primitive.NewObjectID()
 	newDataAgreement.Policy.Name = requestBody.DataAgreement.Policy.Name
 	newDataAgreement.Policy.Version = requestBody.DataAgreement.Policy.Version
 	newDataAgreement.Policy.Url = requestBody.DataAgreement.Policy.Url
@@ -178,12 +192,43 @@ func updateDataAgreementFromAddDataAgreementRequestBody(requestBody addDataAgree
 	newDataAgreement.MethodOfUse = requestBody.DataAgreement.MethodOfUse
 	newDataAgreement.DpiaDate = requestBody.DataAgreement.DpiaDate
 	newDataAgreement.DpiaSummaryUrl = requestBody.DataAgreement.DpiaSummaryUrl
-	newDataAgreement.Signature = requestBody.DataAgreement.Signature
+	newDataAgreement.Signature.Id = primitive.NewObjectID()
+	newDataAgreement.Signature.Payload = requestBody.DataAgreement.Signature.Payload
+	newDataAgreement.Signature.Signature = requestBody.DataAgreement.Signature.Signature.Signature
+	newDataAgreement.Signature.VerificationMethod = requestBody.DataAgreement.Signature.VerificationMethod
+	newDataAgreement.Signature.VerificationPayload = requestBody.DataAgreement.Signature.VerificationPayload
+	newDataAgreement.Signature.VerificationPayloadHash = requestBody.DataAgreement.Signature.VerificationPayloadHash
+	newDataAgreement.Signature.VerificationArtifact = requestBody.DataAgreement.Signature.VerificationArtifact
+	newDataAgreement.Signature.VerificationSignedBy = requestBody.DataAgreement.Signature.VerificationSignedBy
+	newDataAgreement.Signature.VerificationSignedAs = requestBody.DataAgreement.Signature.VerificationSignedAs
+	newDataAgreement.Signature.VerificationJwsHeader = requestBody.DataAgreement.Signature.VerificationJwsHeader
+	newDataAgreement.Signature.Timestamp = requestBody.DataAgreement.Signature.Timestamp
+	newDataAgreement.Signature.SignedWithoutObjectReference = requestBody.DataAgreement.Signature.SignedWithoutObjectReference
+	newDataAgreement.Signature.ObjectType = requestBody.DataAgreement.Signature.ObjectType
+	newDataAgreement.Signature.ObjectReference = requestBody.DataAgreement.Signature.ObjectReference
+
 	newDataAgreement.Active = requestBody.DataAgreement.Active
 	newDataAgreement.Forgettable = requestBody.DataAgreement.Forgettable
 	newDataAgreement.CompatibleWithVersionId = requestBody.DataAgreement.CompatibleWithVersionId
 
 	return newDataAgreement
+}
+
+func updateDataAttributeFromAddDataAgreementRequestBody(requestBody addDataAgreementReq) []dataagreement.DataAttribute {
+	var newDataAttributes []dataagreement.DataAttribute
+
+	for _, dA := range requestBody.DataAgreement.DataAttributes {
+		var dataAttribute dataagreement.DataAttribute
+		dataAttribute.Id = primitive.NewObjectID()
+		dataAttribute.Name = dA.Name
+		dataAttribute.Description = dA.Description
+		dataAttribute.Category = dA.Category
+		dataAttribute.Sensitivity = dA.Sensitivity
+
+		newDataAttributes = append(newDataAttributes, dataAttribute)
+	}
+
+	return newDataAttributes
 }
 
 // ConfigCreatePolicy
@@ -222,24 +267,36 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 	// Initialise data agreement
 	var newDataAgreement dataagreement.DataAgreement
 	newDataAgreement.Id = primitive.NewObjectID()
+	newDataAttributes := updateDataAttributeFromAddDataAgreementRequestBody(dataAgreementReq)
 	// Update data agreement from request body
 	newDataAgreement = updateDataAgreementFromAddDataAgreementRequestBody(dataAgreementReq, newDataAgreement)
 	newDataAgreement.OrganisationId = organisationId
 	newDataAgreement.ControllerId = organisationId
 	newDataAgreement.ControllerName = o.Name
 	newDataAgreement.ControllerUrl = o.EulaURL
+	newDataAgreement.DataAttributes = newDataAttributes
 	newDataAgreement.IsDeleted = false
-	if lifecycle == config.Complete {
-		newDataAgreement.Version = version
-	}
 	newDataAgreement.Lifecycle = lifecycle
 
-	// Create new revision
-	newRevision, err := revision.CreateRevisionForDataAgreement(newDataAgreement, orgAdminId)
-	if err != nil {
-		m := fmt.Sprintf("Failed to create revision for new data agreement: %v", newDataAgreement.Id)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
+	var newRevision revision.Revision
+	if lifecycle == config.Complete {
+		newDataAgreement.Version = version
+
+		// Create new revision
+		newRevision, err = revision.CreateRevisionForDataAgreement(newDataAgreement, orgAdminId)
+		if err != nil {
+			m := fmt.Sprintf("Failed to create revision for new data agreement: %v", newDataAgreement.Id)
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
+
+		// Save the data agreement to db
+		_, err := revision.Add(newRevision)
+		if err != nil {
+			m := fmt.Sprintf("Failed to create new revision: %v", newRevision.Id)
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
 	}
 
 	// Repository
@@ -254,20 +311,12 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Save the data agreement to db
-	savedRevision, err := revision.Add(newRevision)
-	if err != nil {
-		m := fmt.Sprintf("Failed to create new revision: %v", newRevision.Id)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
-
 	// Constructing the response
 	var resp addDataAgreementResp
 	resp.DataAgreement = savedDataAgreement
 
 	var revisionForHTTPResponse revision.RevisionForHTTPResponse
-	revisionForHTTPResponse.Init(savedRevision)
+	revisionForHTTPResponse.Init(newRevision)
 	resp.Revision = revisionForHTTPResponse
 
 	response, _ := json.Marshal(resp)

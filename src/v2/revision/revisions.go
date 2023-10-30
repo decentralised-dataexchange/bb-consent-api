@@ -9,7 +9,6 @@ import (
 	"github.com/bb-consent/api/src/policy"
 	"github.com/bb-consent/api/src/v2/dataagreement"
 	daRecord "github.com/bb-consent/api/src/v2/dataagreement_record"
-	"github.com/bb-consent/api/src/v2/dataattribute"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -182,6 +181,7 @@ func RecreatePolicyFromRevision(revision Revision) (policy.Policy, error) {
 // RevisionForHTTPResponse
 type RevisionForHTTPResponse struct {
 	Revision
+	Id                 string `json:"id"`
 	SuccessorId        string `json:"successorId"`
 	SerializedHash     string `json:"serializedHash"`
 	SerializedSnapshot string `json:"serizalizedSnapshot"`
@@ -189,7 +189,11 @@ type RevisionForHTTPResponse struct {
 
 // Init
 func (r *RevisionForHTTPResponse) Init(revision Revision) {
-	r.Id = revision.Id
+	if revision.Id.IsZero() {
+		r.Id = ""
+	} else {
+		r.Id = revision.Id.Hex()
+	}
 	r.SchemaName = revision.SchemaName
 	r.ObjectId = revision.ObjectId
 	r.SignedWithoutObjectId = revision.SignedWithoutObjectId
@@ -205,25 +209,26 @@ func (r *RevisionForHTTPResponse) Init(revision Revision) {
 }
 
 type dataAgreementForObjectData struct {
-	Id                      string                               `json:"id"`
-	Version                 string                               `json:"version"`
-	ControllerId            string                               `json:"controllerId"`
-	ControllerUrl           string                               `json:"controllerUrl" valid:"required"`
-	ControllerName          string                               `json:"controllerName" valid:"required"`
-	Policy                  dataagreement.PolicyForDataAgreement `json:"policy" valid:"required"`
-	Purpose                 string                               `json:"purpose" valid:"required"`
-	PurposeDescription      string                               `json:"purposeDescription" valid:"required"`
-	LawfulBasis             string                               `json:"lawfulBasis" valid:"required"`
-	MethodOfUse             string                               `json:"methodOfUse" valid:"required"`
-	DpiaDate                string                               `json:"dpiaDate"`
-	DpiaSummaryUrl          string                               `json:"dpiaSummaryUrl"`
-	Signature               dataagreement.Signature              `json:"signature"`
-	Active                  bool                                 `json:"active"`
-	Forgettable             bool                                 `json:"forgettable"`
-	CompatibleWithVersionId string                               `json:"compatibleWithVersionId"`
-	Lifecycle               string                               `json:"lifecycle" valid:"required"`
-	OrganisationId          string                               `json:"-"`
-	IsDeleted               bool                                 `json:"-"`
+	Id                      string                        `json:"id"`
+	Version                 string                        `json:"version"`
+	ControllerId            string                        `json:"controllerId"`
+	ControllerUrl           string                        `json:"controllerUrl" valid:"required"`
+	ControllerName          string                        `json:"controllerName" valid:"required"`
+	Policy                  policy.Policy                 `json:"policy" valid:"required"`
+	Purpose                 string                        `json:"purpose" valid:"required"`
+	PurposeDescription      string                        `json:"purposeDescription" valid:"required"`
+	LawfulBasis             string                        `json:"lawfulBasis" valid:"required"`
+	MethodOfUse             string                        `json:"methodOfUse" valid:"required"`
+	DpiaDate                string                        `json:"dpiaDate"`
+	DpiaSummaryUrl          string                        `json:"dpiaSummaryUrl"`
+	Signature               dataagreement.Signature       `json:"signature"`
+	Active                  bool                          `json:"active"`
+	Forgettable             bool                          `json:"forgettable"`
+	CompatibleWithVersionId string                        `json:"compatibleWithVersionId"`
+	Lifecycle               string                        `json:"lifecycle" valid:"required"`
+	DataAttributes          []dataagreement.DataAttribute `json:"dataAttributes" valid:"required"`
+	OrganisationId          string                        `json:"-"`
+	IsDeleted               bool                          `json:"-"`
 }
 
 // CreateRevisionForDataAgreement
@@ -246,6 +251,7 @@ func CreateRevisionForDataAgreement(newDataAgreement dataagreement.DataAgreement
 		Forgettable:             newDataAgreement.Forgettable,
 		CompatibleWithVersionId: newDataAgreement.CompatibleWithVersionId,
 		Lifecycle:               newDataAgreement.Lifecycle,
+		DataAttributes:          newDataAgreement.DataAttributes,
 	}
 
 	// Create revision
@@ -276,6 +282,7 @@ func UpdateRevisionForDataAgreement(updatedDataAgreement dataagreement.DataAgree
 		Forgettable:             updatedDataAgreement.Forgettable,
 		CompatibleWithVersionId: updatedDataAgreement.CompatibleWithVersionId,
 		Lifecycle:               updatedDataAgreement.Lifecycle,
+		DataAttributes:          updatedDataAgreement.DataAttributes,
 	}
 
 	// Update revision
@@ -305,87 +312,15 @@ func RecreateDataAgreementFromRevision(revision Revision) (dataagreement.DataAgr
 	return da, nil
 }
 
-type dataAttributeForObjectData struct {
-	Id           string   `json:"id"`
-	Version      string   `json:"version"`
-	AgreementIds []string `json:"agreementIds"`
-	Name         string   `json:"name" valid:"required"`
-	Description  string   `json:"description" valid:"required"`
-	Sensitivity  bool     `json:"sensitivity"`
-	Category     string   `json:"category"`
-}
-
-// CreateRevisionForDataAttribute
-func CreateRevisionForDataAttribute(newDataAttribute dataattribute.DataAttribute, orgAdminId string) (Revision, error) {
-	// Object data
-	objectData := dataAttributeForObjectData{
-		Id:           newDataAttribute.Id.Hex(),
-		Version:      newDataAttribute.Version,
-		AgreementIds: newDataAttribute.AgreementIds,
-		Name:         newDataAttribute.Name,
-		Description:  newDataAttribute.Description,
-		Sensitivity:  newDataAttribute.Sensitivity,
-		Category:     newDataAttribute.Category,
-	}
-
-	// Create revision
-	revision := Revision{}
-	revision.Init(objectData.Id, orgAdminId, config.DataAttribute)
-	err := revision.CreateRevision(objectData)
-
-	return revision, err
-}
-
-// UpdateRevisionForDataAttribute
-func UpdateRevisionForDataAttribute(updatedDataAttribute dataattribute.DataAttribute, previousRevision *Revision, orgAdminId string) (Revision, error) {
-	// Object data
-	objectData := dataAttributeForObjectData{
-		Id:           updatedDataAttribute.Id.Hex(),
-		Version:      updatedDataAttribute.Version,
-		AgreementIds: updatedDataAttribute.AgreementIds,
-		Name:         updatedDataAttribute.Name,
-		Description:  updatedDataAttribute.Description,
-		Sensitivity:  updatedDataAttribute.Sensitivity,
-		Category:     updatedDataAttribute.Category,
-	}
-
-	// Update revision
-	revision := Revision{}
-	revision.Init(objectData.Id, orgAdminId, config.DataAttribute)
-	err := revision.UpdateRevision(previousRevision, objectData)
-
-	return revision, err
-}
-
-func RecreateDataAttributeFromRevision(revision Revision) (dataattribute.DataAttribute, error) {
-
-	// Deserialise revision snapshot
-	var r Revision
-	err := json.Unmarshal([]byte(revision.SerializedSnapshot), &r)
-	if err != nil {
-		return dataattribute.DataAttribute{}, err
-	}
-
-	// Deserialise data attribute
-	var da dataattribute.DataAttribute
-	err = json.Unmarshal([]byte(r.ObjectData), &da)
-	if err != nil {
-		return dataattribute.DataAttribute{}, err
-	}
-
-	return da, nil
-}
-
 type dataAgreementRecordForObjectData struct {
-	Id                        primitive.ObjectID                             `json:"id" bson:"_id,omitempty"`
-	DataAgreementId           string                                         `json:"dataAgreementId"`
-	DataAgreementRevisionId   string                                         `json:"dataAgreementRevisionId"`
-	DataAgreementRevisionHash string                                         `json:"dataAgreementRevisionHash"`
-	DataAttributes            []daRecord.DataAttributeForDataAgreementRecord `json:"dataAttributes"`
-	IndividualId              string                                         `json:"individualId"`
-	OptIn                     bool                                           `json:"optIn"`
-	State                     string                                         `json:"state" valid:"required"`
-	SignatureId               string                                         `json:"signatureId"`
+	Id                        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	DataAgreementId           string             `json:"dataAgreementId"`
+	DataAgreementRevisionId   string             `json:"dataAgreementRevisionId"`
+	DataAgreementRevisionHash string             `json:"dataAgreementRevisionHash"`
+	IndividualId              string             `json:"individualId"`
+	OptIn                     bool               `json:"optIn"`
+	State                     string             `json:"state" valid:"required"`
+	SignatureId               string             `json:"signatureId"`
 }
 
 // CreateRevisionForDataAgreementRecord
@@ -396,7 +331,6 @@ func CreateRevisionForDataAgreementRecord(newDataAgreementRecord daRecord.DataAg
 		DataAgreementId:           newDataAgreementRecord.DataAgreementId,
 		DataAgreementRevisionId:   newDataAgreementRecord.DataAgreementRevisionId,
 		DataAgreementRevisionHash: newDataAgreementRecord.DataAgreementRevisionHash,
-		DataAttributes:            newDataAgreementRecord.DataAttributes,
 		IndividualId:              newDataAgreementRecord.IndividualId,
 		OptIn:                     newDataAgreementRecord.OptIn,
 		State:                     newDataAgreementRecord.State,
@@ -419,7 +353,6 @@ func UpdateRevisionForDataAgreementRecord(updatedDataAgreementRecord daRecord.Da
 		DataAgreementId:           updatedDataAgreementRecord.DataAgreementId,
 		DataAgreementRevisionId:   updatedDataAgreementRecord.DataAgreementRevisionId,
 		DataAgreementRevisionHash: updatedDataAgreementRecord.DataAgreementRevisionHash,
-		DataAttributes:            updatedDataAgreementRecord.DataAttributes,
 		IndividualId:              updatedDataAgreementRecord.IndividualId,
 		OptIn:                     updatedDataAgreementRecord.OptIn,
 		State:                     updatedDataAgreementRecord.State,

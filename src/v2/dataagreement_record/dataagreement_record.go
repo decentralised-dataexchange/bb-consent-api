@@ -8,24 +8,16 @@ import (
 )
 
 type DataAgreementRecord struct {
-	Id                        primitive.ObjectID                    `json:"id" bson:"_id,omitempty"`
-	DataAgreementId           string                                `json:"dataAgreementId"`
-	DataAgreementRevisionId   string                                `json:"dataAgreementRevisionId"`
-	DataAgreementRevisionHash string                                `json:"dataAgreementRevisionHash"`
-	DataAttributes            []DataAttributeForDataAgreementRecord `json:"dataAttributes"`
-	IndividualId              string                                `json:"individualId"`
-	OptIn                     bool                                  `json:"optIn"`
-	State                     string                                `json:"state" valid:"required"`
-	SignatureId               string                                `json:"signatureId"`
-	OrganisationId            string                                `json:"-"`
-	IsDeleted                 bool                                  `json:"-"`
-}
-
-type DataAttributeForDataAgreementRecord struct {
-	DataAttributeId           string `json:"id"`
-	DataAttributeRevisionId   string `json:"dataAttributeRevisionId"`
-	DataAttributeRevisionHash string `json:"dataAttributeRevisionHash"`
-	OptIn                     bool   `json:"optIn"`
+	Id                        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	DataAgreementId           string             `json:"dataAgreementId"`
+	DataAgreementRevisionId   string             `json:"dataAgreementRevisionId"`
+	DataAgreementRevisionHash string             `json:"dataAgreementRevisionHash"`
+	IndividualId              string             `json:"individualId"`
+	OptIn                     bool               `json:"optIn"`
+	State                     string             `json:"state" valid:"required"`
+	SignatureId               string             `json:"signatureId"`
+	OrganisationId            string             `json:"-"`
+	IsDeleted                 bool               `json:"-"`
 }
 
 type DataAgreementForListDataAgreementRecord struct {
@@ -42,7 +34,6 @@ type DataAgreementRecordForAuditList struct {
 	DataAgreementId           string                                  `json:"dataAgreementId"`
 	DataAgreementRevisionId   string                                  `json:"dataAgreementRevisionId"`
 	DataAgreementRevisionHash string                                  `json:"dataAgreementRevisionHash"`
-	DataAttributes            []DataAttributeForDataAgreementRecord   `json:"dataAttributes"`
 	IndividualId              string                                  `json:"individualId"`
 	OptIn                     bool                                    `json:"optIn"`
 	State                     string                                  `json:"state" valid:"required"`

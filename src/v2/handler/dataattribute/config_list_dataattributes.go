@@ -10,9 +10,9 @@ import (
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/v2/dataagreement"
-	"github.com/bb-consent/api/src/v2/dataattribute"
 	"github.com/bb-consent/api/src/v2/paginate"
 	"github.com/bb-consent/api/src/v2/revision"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // ListDataAttributesError is an error enumeration for list data attribute API.
@@ -34,6 +34,28 @@ func (e ListDataAttributesError) Error() string {
 	default:
 		return "Unknown error!"
 	}
+}
+
+func dataAttributesForList(res []dataagreement.DataAgreement) []dataAttributeForLists {
+
+	var dataAttributes []dataAttributeForLists
+	for i := range res {
+		for _, dA := range res[i].DataAttributes {
+			var dataAttribute dataAttributeForLists
+			dataAttribute.Id = dA.Id
+			dataAttribute.Name = dA.Name
+			dataAttribute.Description = dA.Description
+			dataAttribute.Sensitivity = dA.Sensitivity
+			dataAttribute.Category = dA.Category
+			dataAttribute.DataAgreement.Id = res[i].Id.Hex()
+			dataAttribute.DataAgreement.Purpose = res[i].Purpose
+			dataAttributes = append(dataAttributes, dataAttribute)
+
+		}
+
+	}
+
+	return dataAttributes
 }
 
 // ParseListDataAttributesQueryParams parses query params for listing data attributes.
@@ -60,7 +82,7 @@ func ParseMethodOfUseDataAttributesQueryParams(r *http.Request) (methodOfUse str
 	return "", MethodOfUseIsMissingError
 }
 
-func dataAttributesToInterfaceSlice(dataAttributes []dataattribute.DataAttributeForLists) []interface{} {
+func dataAttributesToInterfaceSlice(dataAttributes []dataAttributeForLists) []interface{} {
 	interfaceSlice := make([]interface{}, len(dataAttributes))
 	for i, r := range dataAttributes {
 		interfaceSlice[i] = r
@@ -73,6 +95,20 @@ func returnHTTPResponse(resp interface{}, w http.ResponseWriter) {
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
+}
+
+type dataAgreementForDataAttribute struct {
+	Id      string `json:"id" bson:"_id,omitempty"`
+	Purpose string `json:"purpose"`
+}
+
+type dataAttributeForLists struct {
+	Id            primitive.ObjectID            `json:"id" bson:"_id,omitempty"`
+	Name          string                        `json:"name" valid:"required"`
+	Description   string                        `json:"description" valid:"required"`
+	Sensitivity   bool                          `json:"sensitivity"`
+	Category      string                        `json:"category"`
+	DataAgreement dataAgreementForDataAttribute `json:"dataAgreement"`
 }
 
 type listDataAttributesResp struct {
@@ -95,15 +131,20 @@ func ConfigListDataAttributes(w http.ResponseWriter, r *http.Request) {
 	revisionId, err := ParseListDataAttributesQueryParams(r)
 	revisionId = common.Sanitize(revisionId)
 
+	// Repository
+	darepo := dataagreement.DataAgreementRepository{}
+	darepo.Init(organisationId)
+
 	if err != nil && errors.Is(err, RevisionIDIsMissingError) {
 
 		methodOfUse, err := ParseMethodOfUseDataAttributesQueryParams(r)
 		methodOfUse = common.Sanitize(methodOfUse)
-		var res []dataattribute.DataAttributeForLists
+		var res []dataagreement.DataAgreement
+
 		if err != nil && errors.Is(err, MethodOfUseIsMissingError) {
 
 			// Return all data attributes
-			res, err = dataattribute.ListDataAttributesWithDataAgreement(organisationId)
+			res, err = darepo.GetAll()
 			if err != nil {
 				m := fmt.Sprintf("Failed to fetch data attribute by method of use: %v", methodOfUse)
 				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
@@ -112,7 +153,7 @@ func ConfigListDataAttributes(w http.ResponseWriter, r *http.Request) {
 
 		} else {
 			// List by method of use
-			res, err = dataattribute.ListDataAttributesBasedOnMethodOfUse(methodOfUse, organisationId)
+			res, err = darepo.GetByMethodOfUse(methodOfUse)
 			if err != nil {
 				m := fmt.Sprintf("Failed to fetch data attribute by method of use: %v", methodOfUse)
 				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
@@ -120,11 +161,13 @@ func ConfigListDataAttributes(w http.ResponseWriter, r *http.Request) {
 			}
 
 		}
+		dataAttributes := dataAttributesForList(res)
+
 		query := paginate.PaginateObjectsQuery{
 			Limit:  limit,
 			Offset: offset,
 		}
-		interfaceSlice := dataAttributesToInterfaceSlice(res)
+		interfaceSlice := dataAttributesToInterfaceSlice(dataAttributes)
 		result := paginate.PaginateObjects(query, interfaceSlice)
 		resp = listDataAttributesResp{
 			DataAttributes: result.Items,
@@ -142,36 +185,29 @@ func ConfigListDataAttributes(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Recreate data attribute from revision
-		da, err := revision.RecreateDataAttributeFromRevision(revisionResp)
+		// Recreate data agreement from revision
+		da, err := revision.RecreateDataAgreementFromRevision(revisionResp)
 		if err != nil {
 			m := fmt.Sprintf("Failed to fetch data attribute by revision: %v", revisionId)
 			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 			return
 		}
-		// Repository
-		darepo := dataagreement.DataAgreementRepository{}
-		darepo.Init(organisationId)
 
-		var dataAgreements []dataattribute.DataAgreementForDataAttribute
-		for _, a := range da.AgreementIds {
-			var dA dataattribute.DataAgreementForDataAttribute
-			dataAgreement, err := darepo.Get(a)
-			if err != nil {
-				m := fmt.Sprintf("Failed to fetch data agreement by revision: %v", revisionId)
-				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-				return
-			}
-			dA.Id = dataAgreement.Id.Hex()
-			dA.Purpose = dataAgreement.Purpose
-			dataAgreements = append(dataAgreements, dA)
+		var dAttributes []dataAttributeForLists
+		for _, a := range da.DataAttributes {
+			var dA dataAttributeForLists
+			dA.Id = a.Id
+			dA.Name = a.Name
+			dA.Description = a.Description
+			dA.Sensitivity = a.Sensitivity
+			dA.Category = a.Category
+			dA.DataAgreement.Id = da.Id.Hex()
+			dA.DataAgreement.Purpose = da.Purpose
+			dAttributes = append(dAttributes, dA)
 		}
 
-		var dataAttributes dataattribute.DataAttributeForLists
-		dataAttributes.AgreementData = dataAgreements
-
 		interfaceSlice := make([]interface{}, 0)
-		interfaceSlice = append(interfaceSlice, da)
+		interfaceSlice = append(interfaceSlice, dAttributes)
 
 		// Constructing the response
 		resp = listDataAttributesResp{
