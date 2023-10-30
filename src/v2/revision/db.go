@@ -55,7 +55,8 @@ func GetLatestByPolicyId(policyId string) (Revision, error) {
 func ListAllByPolicyId(policyId string) ([]Revision, error) {
 
 	var results []Revision
-	cursor, err := Collection().Find(context.TODO(), bson.M{"objectid": policyId})
+	opts := options.Find().SetSort(bson.M{"timestamp": -1})
+	cursor, err := Collection().Find(context.TODO(), bson.M{"objectid": policyId}, opts)
 	if err != nil {
 		return []Revision{}, err
 	}
@@ -102,7 +103,8 @@ func GetLatestByDataAgreementId(dataAgreementId string) (Revision, error) {
 func ListAllByDataAgreementId(dataAgreementId string) ([]Revision, error) {
 
 	var results []Revision
-	cursor, err := Collection().Find(context.TODO(), bson.M{"objectid": dataAgreementId})
+	opts := options.Find().SetSort(bson.M{"timestamp": -1})
+	cursor, err := Collection().Find(context.TODO(), bson.M{"objectid": dataAgreementId}, opts)
 	if err != nil {
 		return []Revision{}, err
 	}

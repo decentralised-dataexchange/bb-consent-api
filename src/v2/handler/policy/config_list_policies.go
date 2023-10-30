@@ -13,6 +13,7 @@ import (
 	"github.com/bb-consent/api/src/policy"
 	"github.com/bb-consent/api/src/v2/paginate"
 	"github.com/bb-consent/api/src/v2/revision"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // ListPoliciesError is an error enumeration for list policies API.
@@ -74,16 +75,24 @@ func ConfigListPolicies(w http.ResponseWriter, r *http.Request) {
 		// Repository
 		prepo := policy.PolicyRepository{}
 		prepo.Init(organisationId)
+
+		pipeline, err := policy.CreatePipelineForFilteringPolicies(organisationId)
+		if err != nil {
+			m := "Failed to create pipeline"
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
 		// Return all policies
 		var policies []policy.Policy
-		query := paginate.PaginateDBObjectsQuery{
-			Filter:     prepo.DefaultFilter,
+		pipeline = append(pipeline, bson.M{"$sort": bson.M{"timestamp": -1}})
+		query := paginate.PaginateDBObjectsQueryUsingPipeline{
+			Pipeline:   pipeline,
 			Collection: policy.Collection(),
 			Context:    context.Background(),
 			Limit:      limit,
 			Offset:     offset,
 		}
-		result, err := paginate.PaginateDBObjects(query, &policies)
+		result, err := paginate.PaginateDBObjectsUsingPipeline(query, &policies)
 		if err != nil {
 			if errors.Is(err, paginate.EmptyDBError) {
 				emptyPolicies := make([]interface{}, 0)
