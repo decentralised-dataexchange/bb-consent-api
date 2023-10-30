@@ -7,13 +7,14 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/org"
+	"github.com/bb-consent/api/src/policy"
 	"github.com/bb-consent/api/src/v2/dataagreement"
 	"github.com/bb-consent/api/src/v2/revision"
 	"github.com/bb-consent/api/src/v2/token"
+	"github.com/go-playground/validator"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -63,8 +64,37 @@ var MethodOfUseMappings = []MethodOfUseMapping{
 	},
 }
 
+type policyForDataAgreement struct {
+	policy.Policy
+	Id   string `json:"id"`
+	Name string `json:"name" validate:"requiredWhenActive"`
+	Url  string `json:"url" validate:"requiredWhenActive"`
+}
+
+type dataAgreement struct {
+	Id                      primitive.ObjectID      `json:"id" bson:"_id,omitempty"`
+	Version                 string                  `json:"version"`
+	ControllerId            string                  `json:"controllerId"`
+	ControllerUrl           string                  `json:"controllerUrl" validate:"requiredWhenActive"`
+	ControllerName          string                  `json:"controllerName" validate:"requiredWhenActive"`
+	Policy                  policyForDataAgreement  `json:"policy" validate:"requiredWhenActive"`
+	Purpose                 string                  `json:"purpose" validate:"requiredWhenActive"`
+	PurposeDescription      string                  `json:"purposeDescription" validate:"requiredWhenActive,max=500"`
+	LawfulBasis             string                  `json:"lawfulBasis" validate:"requiredWhenActive"`
+	MethodOfUse             string                  `json:"methodOfUse" validate:"requiredWhenActive"`
+	DpiaDate                string                  `json:"dpiaDate"`
+	DpiaSummaryUrl          string                  `json:"dpiaSummaryUrl"`
+	Signature               dataagreement.Signature `json:"signature" validate:"requiredWhenActive"`
+	Active                  bool                    `json:"active"`
+	Forgettable             bool                    `json:"forgettable"`
+	CompatibleWithVersionId string                  `json:"compatibleWithVersionId"`
+	Lifecycle               string                  `json:"lifecycle" validate:"requiredWhenActive"`
+	OrganisationId          string                  `json:"-"`
+	IsDeleted               bool                    `json:"-"`
+}
+
 type addDataAgreementReq struct {
-	DataAgreement dataagreement.DataAgreement `json:"dataAgreement" valid:"required"`
+	DataAgreement dataAgreement `json:"dataAgreement"`
 }
 
 type addDataAgreementResp struct {
@@ -98,21 +128,39 @@ func isValidMethodOfUse(methodOfUse string) bool {
 	return isFound
 }
 
+func registerCustomValidation(validate *validator.Validate) {
+	if err := validate.RegisterValidation("requiredWhenActive", func(fl validator.FieldLevel) bool {
+		dataAgreement := fl.Top().Interface().(dataAgreement)
+
+		// If "active" is true, require the field
+		if dataAgreement.Active {
+			return fl.Field().String() != ""
+		}
+
+		return true
+
+	}); err != nil {
+		panic(err)
+	}
+}
+
 func validateAddDataAgreementRequestBody(dataAgreementReq addDataAgreementReq) error {
-	// validating request payload
-	valid, err := govalidator.ValidateStruct(dataAgreementReq)
-	if !valid {
+	var validate = validator.New()
+	registerCustomValidation(validate)
+	if err := validate.Struct(dataAgreementReq.DataAgreement); err != nil {
 		return err
 	}
 
-	// Proceed if lawful basis provided is valid
-	if !isValidLawfulBasisOfProcessing(dataAgreementReq.DataAgreement.LawfulBasis) {
-		return errors.New("invalid lawful basis provided")
-	}
+	if dataAgreementReq.DataAgreement.Active {
+		// Proceed if lawful basis provided is valid
+		if !isValidLawfulBasisOfProcessing(dataAgreementReq.DataAgreement.LawfulBasis) {
+			return errors.New("invalid lawful basis provided")
+		}
 
-	// Proceed if method of use is valid
-	if !isValidMethodOfUse(dataAgreementReq.DataAgreement.MethodOfUse) {
-		return errors.New("invalid method of use provided")
+		// Proceed if method of use is valid
+		if !isValidMethodOfUse(dataAgreementReq.DataAgreement.MethodOfUse) {
+			return errors.New("invalid method of use provided")
+		}
 	}
 
 	return nil
@@ -120,7 +168,7 @@ func validateAddDataAgreementRequestBody(dataAgreementReq addDataAgreementReq) e
 
 func setDataAgreementLifecycle(active bool) string {
 	var lifecycle string
-	if active == true {
+	if active {
 		lifecycle = "complete"
 	} else {
 		lifecycle = "draft"
@@ -130,7 +178,16 @@ func setDataAgreementLifecycle(active bool) string {
 
 func updateDataAgreementFromAddDataAgreementRequestBody(requestBody addDataAgreementReq, newDataAgreement dataagreement.DataAgreement) dataagreement.DataAgreement {
 
-	newDataAgreement.Policy = requestBody.DataAgreement.Policy
+	newDataAgreement.Policy.Id = requestBody.DataAgreement.Policy.Id
+	newDataAgreement.Policy.Name = requestBody.DataAgreement.Policy.Name
+	newDataAgreement.Policy.Version = requestBody.DataAgreement.Policy.Version
+	newDataAgreement.Policy.Url = requestBody.DataAgreement.Policy.Url
+	newDataAgreement.Policy.Jurisdiction = requestBody.DataAgreement.Policy.Jurisdiction
+	newDataAgreement.Policy.IndustrySector = requestBody.DataAgreement.Policy.IndustrySector
+	newDataAgreement.Policy.DataRetentionPeriodDays = requestBody.DataAgreement.Policy.DataRetentionPeriodDays
+	newDataAgreement.Policy.GeographicRestriction = requestBody.DataAgreement.Policy.GeographicRestriction
+	newDataAgreement.Policy.StorageLocation = requestBody.DataAgreement.Policy.StorageLocation
+	newDataAgreement.Policy.ThirdPartyDataSharing = requestBody.DataAgreement.Policy.ThirdPartyDataSharing
 	newDataAgreement.Purpose = requestBody.DataAgreement.Purpose
 	newDataAgreement.PurposeDescription = requestBody.DataAgreement.PurposeDescription
 	newDataAgreement.LawfulBasis = requestBody.DataAgreement.LawfulBasis
@@ -188,7 +245,9 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 	newDataAgreement.ControllerName = o.Name
 	newDataAgreement.ControllerUrl = o.EulaURL
 	newDataAgreement.IsDeleted = false
-	newDataAgreement.Version = version
+	if lifecycle == config.Complete {
+		newDataAgreement.Version = version
+	}
 	newDataAgreement.Lifecycle = lifecycle
 
 	// Create new revision
