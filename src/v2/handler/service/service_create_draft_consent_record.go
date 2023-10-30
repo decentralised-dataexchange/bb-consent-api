@@ -28,7 +28,7 @@ func createDraftDataAgreementRecord(dataAgreementId string, rev revision.Revisio
 }
 
 type draftDataAgreementRecordResp struct {
-	DataAgreementRecord daRecord.DataAgreementRecord `json:"dataAgreementRecord"`
+	DataAgreementRecord daRecord.DataAgreementRecord `json:"consentRecord"`
 	Signature           signature.Signature          `json:"signature"`
 }
 

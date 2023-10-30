@@ -36,7 +36,7 @@ func createDataAgreementRecord(dataAgreementId string, rev revision.Revision, in
 }
 
 type createDataAgreementRecordResp struct {
-	DataAgreementRecord daRecord.DataAgreementRecord `json:"dataAgreementRecord"`
+	DataAgreementRecord daRecord.DataAgreementRecord `json:"consentRecord"`
 	Revision            revision.Revision            `json:"revision"`
 }
 

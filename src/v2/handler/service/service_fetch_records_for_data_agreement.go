@@ -15,7 +15,7 @@ import (
 )
 
 type fetchRecordsForDataAgreementResp struct {
-	DataAgreementRecords interface{}         `json:"dataAgreementRecords"`
+	DataAgreementRecords interface{}         `json:"consentRecords"`
 	Pagination           paginate.Pagination `json:"pagination"`
 }
 

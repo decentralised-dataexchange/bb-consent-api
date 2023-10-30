@@ -13,7 +13,7 @@ import (
 )
 
 type listDataAgreementRecordHistory struct {
-	DataAgreementRecordHistory interface{}         `json:"dataAgreementRecordHistory"`
+	DataAgreementRecordHistory interface{}         `json:"consentRecordHistory"`
 	Pagination                 paginate.Pagination `json:"pagination"`
 }
 

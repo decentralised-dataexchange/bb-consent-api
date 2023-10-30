@@ -1,7 +1,7 @@
 package http_path
 
-const AuditListDataAgreementRecords = "/v2/audit/data-agreement-records"
-const AuditDataAgreementRecordRead = "/v2/audit/data-agreement-record/{dataAgreementRecordId}"
+const AuditListDataAgreementRecords = "/v2/audit/consent-records"
+const AuditDataAgreementRecordRead = "/v2/audit/consent-record/{consentRecordId}"
 const AuditListDataAgreements = "/v2/audit/data-agreements"
 const AuditReadDataAgreement = "/v2/audit/data-agreement/{dataAgreementId}"
 

@@ -20,12 +20,12 @@ import (
 )
 
 type createPairedDataAgreementRecordReq struct {
-	DataAgreementRecord daRecord.DataAgreementRecord `json:"dataAgreementRecord" valid:"required"`
+	DataAgreementRecord daRecord.DataAgreementRecord `json:"consentRecord" valid:"required"`
 	Signature           signature.Signature          `json:"signature" valid:"required"`
 }
 
 type createPairedDataAgreementRecordResp struct {
-	DataAgreementRecord daRecord.DataAgreementRecord `json:"dataAgreementRecord"`
+	DataAgreementRecord daRecord.DataAgreementRecord `json:"consentRecord"`
 	Revision            revision.Revision            `json:"revision"`
 	Signature           signature.Signature          `json:"signature"`
 }
