@@ -38,3 +38,9 @@ const ServiceReadIdp = "/v2/service/idp/open-id/{idpId}"
 const ServiceReadOrganisation = "/v2/service/organisation"
 const ServiceReadOrganisationLogoImage = "/v2/service/organisation/logoimage"
 const ServiceReadOrganisationCoverImage = "/v2/service/organisation/coverimage"
+
+// Individuals
+const ServiceCreateIndividual = "/v2/service/individual"
+const ServiceReadIndividual = "/v2/service/individual/{individualId}"
+const ServiceUpdateIndividual = "/v2/service/individual/{individualId}"
+const ServiceListIndividuals = "/v2/service/individuals"
