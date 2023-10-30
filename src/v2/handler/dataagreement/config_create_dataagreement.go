@@ -14,7 +14,7 @@ import (
 	"github.com/bb-consent/api/src/v2/dataagreement"
 	"github.com/bb-consent/api/src/v2/revision"
 	"github.com/bb-consent/api/src/v2/token"
-	"github.com/go-playground/validator"
+	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -67,28 +67,28 @@ var MethodOfUseMappings = []MethodOfUseMapping{
 type policyForDataAgreement struct {
 	policy.Policy
 	Id   string `json:"id"`
-	Name string `json:"name" validate:"requiredWhenActive"`
-	Url  string `json:"url" validate:"requiredWhenActive"`
+	Name string `json:"name" validate:"required_if=Active true"`
+	Url  string `json:"url" validate:"required_if=Active true"`
 }
 
 type dataAgreement struct {
 	Id                      primitive.ObjectID      `json:"id" bson:"_id,omitempty"`
 	Version                 string                  `json:"version"`
 	ControllerId            string                  `json:"controllerId"`
-	ControllerUrl           string                  `json:"controllerUrl" validate:"requiredWhenActive"`
-	ControllerName          string                  `json:"controllerName" validate:"requiredWhenActive"`
-	Policy                  policyForDataAgreement  `json:"policy" validate:"requiredWhenActive"`
-	Purpose                 string                  `json:"purpose" validate:"requiredWhenActive"`
-	PurposeDescription      string                  `json:"purposeDescription" validate:"requiredWhenActive,max=500"`
-	LawfulBasis             string                  `json:"lawfulBasis" validate:"requiredWhenActive"`
-	MethodOfUse             string                  `json:"methodOfUse" validate:"requiredWhenActive"`
+	ControllerUrl           string                  `json:"controllerUrl" validate:"required_if=Active true"`
+	ControllerName          string                  `json:"controllerName" validate:"required_if=Active true"`
+	Policy                  policyForDataAgreement  `json:"policy" validate:"required_if=Active true"`
+	Purpose                 string                  `json:"purpose" validate:"required_if=Active true"`
+	PurposeDescription      string                  `json:"purposeDescription" validate:"required_if=Active true,max=500"`
+	LawfulBasis             string                  `json:"lawfulBasis" validate:"required_if=Active true"`
+	MethodOfUse             string                  `json:"methodOfUse" validate:"required_if=Active true"`
 	DpiaDate                string                  `json:"dpiaDate"`
 	DpiaSummaryUrl          string                  `json:"dpiaSummaryUrl"`
-	Signature               dataagreement.Signature `json:"signature" validate:"requiredWhenActive"`
+	Signature               dataagreement.Signature `json:"signature" validate:"required_if=Active true"`
 	Active                  bool                    `json:"active"`
 	Forgettable             bool                    `json:"forgettable"`
 	CompatibleWithVersionId string                  `json:"compatibleWithVersionId"`
-	Lifecycle               string                  `json:"lifecycle" validate:"requiredWhenActive"`
+	Lifecycle               string                  `json:"lifecycle" validate:"required_if=Active true"`
 	OrganisationId          string                  `json:"-"`
 	IsDeleted               bool                    `json:"-"`
 }
@@ -128,25 +128,9 @@ func isValidMethodOfUse(methodOfUse string) bool {
 	return isFound
 }
 
-func registerCustomValidation(validate *validator.Validate) {
-	if err := validate.RegisterValidation("requiredWhenActive", func(fl validator.FieldLevel) bool {
-		dataAgreement := fl.Top().Interface().(dataAgreement)
-
-		// If "active" is true, require the field
-		if dataAgreement.Active {
-			return fl.Field().String() != ""
-		}
-
-		return true
-
-	}); err != nil {
-		panic(err)
-	}
-}
-
 func validateAddDataAgreementRequestBody(dataAgreementReq addDataAgreementReq) error {
 	var validate = validator.New()
-	registerCustomValidation(validate)
+
 	if err := validate.Struct(dataAgreementReq.DataAgreement); err != nil {
 		return err
 	}
