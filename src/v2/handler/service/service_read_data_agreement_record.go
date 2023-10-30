@@ -11,7 +11,7 @@ import (
 )
 
 type readDataAgreementRecordResp struct {
-	DataAgreementRecord daRecord.DataAgreementRecord `json:"dataAgreementRecord"`
+	DataAgreementRecord daRecord.DataAgreementRecord `json:"consentRecord"`
 }
 
 func ServiceReadDataAgreementRecord(w http.ResponseWriter, r *http.Request) {

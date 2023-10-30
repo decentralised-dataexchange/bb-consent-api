@@ -2,6 +2,7 @@ package audit
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/bb-consent/api/src/common"
@@ -11,7 +12,7 @@ import (
 )
 
 type readDataAgreementRecordResp struct {
-	DataAgreementRecord daRecord.DataAgreementRecord `json:"dataAgreementRecord"`
+	DataAgreementRecord daRecord.DataAgreementRecord `json:"consentRecord"`
 }
 
 // AuditDataAgreementRecordRead
@@ -24,6 +25,7 @@ func AuditDataAgreementRecordRead(w http.ResponseWriter, r *http.Request) {
 	// Repository
 	darRepo := daRecord.DataAgreementRecordRepository{}
 	darRepo.Init(organisationId)
+	fmt.Println(dataAgreementRecordId)
 
 	// fetch data agreement record from db
 	daRecord, err := darRepo.Get(dataAgreementRecordId)

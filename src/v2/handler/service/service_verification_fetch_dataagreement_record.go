@@ -12,7 +12,7 @@ import (
 )
 
 type vFetchDataAgreementRecordResp struct {
-	DataAgreementRecord daRecord.DataAgreementRecord `json:"dataAgreementRecord"`
+	DataAgreementRecord daRecord.DataAgreementRecord `json:"consentRecord"`
 	Revision            revision.Revision            `json:"revision"`
 }
 

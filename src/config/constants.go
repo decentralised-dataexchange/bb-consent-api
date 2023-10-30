@@ -22,7 +22,7 @@ const (
 	WebhookId             = "webhookId"
 	WebhookDeliveryId     = "deliveryId"
 	PolicyId              = "policyId"
-	DataAgreementRecordId = "dataAgreementRecordId"
+	DataAgreementRecordId = "consentRecordId"
 	IndividualId          = "individualId"
 	DeliveryId            = "deliveryId"
 	IdpId                 = "idpId"
@@ -37,7 +37,7 @@ const (
 const (
 	DataAgreement       = "dataAgreement"
 	Policy              = "policy"
-	DataAgreementRecord = "dataAgreementRecord"
+	DataAgreementRecord = "consentRecord"
 	DataAttribute       = "dataAttribute"
 )
 
