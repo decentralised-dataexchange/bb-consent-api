@@ -15,6 +15,7 @@ import (
 	"github.com/bb-consent/api/src/v2/revision"
 	"github.com/bb-consent/api/src/v2/token"
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type updateDataAgreementReq struct {
@@ -50,6 +51,27 @@ func validateUpdateDataAgreementRequestBody(dataAgreementReq updateDataAgreement
 	return nil
 }
 
+func updateDataAttributeFromUpdateDataAgreementRequestBody(requestBody updateDataAgreementReq) []dataagreement.DataAttribute {
+	var newDataAttributes []dataagreement.DataAttribute
+
+	for _, dA := range requestBody.DataAgreement.DataAttributes {
+		var dataAttribute dataagreement.DataAttribute
+		if dA.Id.IsZero() {
+			dataAttribute.Id = primitive.NewObjectID()
+		} else {
+			dataAttribute.Id = dA.Id
+		}
+		dataAttribute.Name = dA.Name
+		dataAttribute.Description = dA.Description
+		dataAttribute.Category = dA.Category
+		dataAttribute.Sensitivity = dA.Sensitivity
+
+		newDataAttributes = append(newDataAttributes, dataAttribute)
+	}
+
+	return newDataAttributes
+}
+
 func updateDataAgreementFromRequestBody(requestBody updateDataAgreementReq, toBeUpdatedDataAgreement dataagreement.DataAgreement) dataagreement.DataAgreement {
 
 	toBeUpdatedDataAgreement.Policy = requestBody.DataAgreement.Policy
@@ -60,9 +82,18 @@ func updateDataAgreementFromRequestBody(requestBody updateDataAgreementReq, toBe
 	toBeUpdatedDataAgreement.DpiaDate = requestBody.DataAgreement.DpiaDate
 	toBeUpdatedDataAgreement.DpiaSummaryUrl = requestBody.DataAgreement.DpiaSummaryUrl
 	toBeUpdatedDataAgreement.Signature = requestBody.DataAgreement.Signature
+
 	toBeUpdatedDataAgreement.Active = requestBody.DataAgreement.Active
 	toBeUpdatedDataAgreement.Forgettable = requestBody.DataAgreement.Forgettable
 	toBeUpdatedDataAgreement.CompatibleWithVersionId = requestBody.DataAgreement.CompatibleWithVersionId
+
+	if requestBody.DataAgreement.Signature.Id.IsZero() {
+		toBeUpdatedDataAgreement.Signature.Id = primitive.NewObjectID()
+	}
+
+	if requestBody.DataAgreement.Policy.Id.IsZero() {
+		toBeUpdatedDataAgreement.Policy.Id = primitive.NewObjectID()
+	}
 
 	return toBeUpdatedDataAgreement
 }
@@ -126,6 +157,9 @@ func ConfigUpdateDataAgreement(w http.ResponseWriter, r *http.Request) {
 	toBeUpdatedDataAgreement.ControllerName = o.Name
 	toBeUpdatedDataAgreement.ControllerUrl = o.EulaURL
 	toBeUpdatedDataAgreement.Lifecycle = lifecycle
+
+	toBeUpdatedDataAttributes := updateDataAttributeFromUpdateDataAgreementRequestBody(dataAgreementReq)
+	toBeUpdatedDataAgreement.DataAttributes = toBeUpdatedDataAttributes
 
 	if lifecycle == config.Complete {
 		// Bump major version for policy

@@ -12,23 +12,13 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
+	"github.com/bb-consent/api/src/v2/dataagreement"
 	daRecord "github.com/bb-consent/api/src/v2/dataagreement_record"
 	daRecordHistory "github.com/bb-consent/api/src/v2/dataagreement_record_history"
 	"github.com/bb-consent/api/src/v2/revision"
 	"github.com/bb-consent/api/src/v2/webhook"
 	"github.com/gorilla/mux"
 )
-
-// updateOptInOfDataAttributes
-func updateOptInOfDataAttributes(daR daRecord.DataAgreementRecord) daRecord.DataAgreementRecord {
-	var dataAttributes []daRecord.DataAttributeForDataAgreementRecord
-	for _, da := range daR.DataAttributes {
-		da.OptIn = daR.OptIn
-		dataAttributes = append(dataAttributes, da)
-	}
-	daR.DataAttributes = dataAttributes
-	return daR
-}
 
 type updateDataAgreementRecordResp struct {
 	DataAgreementRecord daRecord.DataAgreementRecord `json:"dataAgreementRecord"`
@@ -83,7 +73,6 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	toBeUpdatedDaRecord.OptIn = dataAgreementRecordReq.OptIn
-	toBeUpdatedDaRecord = updateOptInOfDataAttributes(toBeUpdatedDaRecord)
 
 	currentDataAgreementRecordRevision, err := revision.GetLatestByObjectId(dataAgreementRecordId)
 	if err != nil {
@@ -115,17 +104,28 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Repository
+	daRepo := dataagreement.DataAgreementRepository{}
+	daRepo.Init(organisationId)
+
+	da, err := daRepo.Get(dataAgreementId)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch data agreement: %v", dataAgreementId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
 	// Trigger webhooks
 	var consentedAttributes []string
-	for _, pConsent := range savedDaRecord.DataAttributes {
-		consentedAttributes = append(consentedAttributes, pConsent.DataAttributeId)
+	for _, pConsent := range da.DataAttributes {
+		consentedAttributes = append(consentedAttributes, pConsent.Id.Hex())
 	}
 	var eventType string
 	if savedDaRecord.OptIn {
 		eventType = webhook.EventTypes[30]
 
 	} else {
-		eventType = webhook.EventTypes[30]
+		eventType = webhook.EventTypes[31]
 	}
 
 	go webhook.TriggerConsentWebhookEvent(individualId, dataAgreementId, dataAgreementRecordId, organisationId, eventType, strconv.FormatInt(time.Now().UTC().Unix(), 10), 0, consentedAttributes)

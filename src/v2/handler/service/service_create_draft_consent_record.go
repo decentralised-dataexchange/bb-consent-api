@@ -9,40 +9,17 @@ import (
 	"github.com/bb-consent/api/src/common"
 	"github.com/bb-consent/api/src/config"
 	daRecord "github.com/bb-consent/api/src/v2/dataagreement_record"
-	"github.com/bb-consent/api/src/v2/dataattribute"
 	"github.com/bb-consent/api/src/v2/revision"
 	"github.com/bb-consent/api/src/v2/signature"
 )
 
-// getDataAttributesWithRevision
-func getDataAttributesWithRevision(dataAttributes []dataattribute.DataAttribute) ([]daRecord.DataAttributeForDataAgreementRecord, error) {
-	var dataAttributesWithRevision []daRecord.DataAttributeForDataAgreementRecord
-
-	for _, da := range dataAttributes {
-		var dataAttributeWithRevision daRecord.DataAttributeForDataAgreementRecord
-
-		dataAttributeWithRevision.DataAttributeId = da.Id.Hex()
-		revisionForDataAttibute, err := revision.GetLatestByDataAttributeId(da.Id.Hex())
-		if err != nil {
-			return dataAttributesWithRevision, err
-		}
-		dataAttributeWithRevision.DataAttributeRevisionId = revisionForDataAttibute.Id.Hex()
-		dataAttributeWithRevision.DataAttributeRevisionHash = revisionForDataAttibute.SerializedHash
-		dataAttributeWithRevision.OptIn = true
-
-		dataAttributesWithRevision = append(dataAttributesWithRevision, dataAttributeWithRevision)
-	}
-	return dataAttributesWithRevision, nil
-}
-
 // createDraftDataAgreementRecord
-func createDraftDataAgreementRecord(dataAgreementId string, rev revision.Revision, individualId string, dataAttributesWithRevision []daRecord.DataAttributeForDataAgreementRecord) daRecord.DataAgreementRecord {
+func createDraftDataAgreementRecord(dataAgreementId string, rev revision.Revision, individualId string) daRecord.DataAgreementRecord {
 	var newDaRecord daRecord.DataAgreementRecord
 
 	newDaRecord.DataAgreementId = dataAgreementId
 	newDaRecord.DataAgreementRevisionHash = rev.SerializedHash
 	newDaRecord.DataAgreementRevisionId = rev.Id.Hex()
-	newDaRecord.DataAttributes = dataAttributesWithRevision
 	newDaRecord.IndividualId = individualId
 	newDaRecord.OptIn = true
 	newDaRecord.State = config.Unsigned
@@ -57,7 +34,7 @@ type draftDataAgreementRecordResp struct {
 
 func ServiceCreateDraftConsentRecord(w http.ResponseWriter, r *http.Request) {
 	// Headers
-	organisationId := common.Sanitize(r.Header.Get(config.OrganizationId))
+	_ = common.Sanitize(r.Header.Get(config.OrganizationId))
 	individualId := common.Sanitize(r.Header.Get(config.IndividualHeaderKey))
 
 	// Parse query params
@@ -91,28 +68,8 @@ func ServiceCreateDraftConsentRecord(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Repository
-	dataAttributeRepo := dataattribute.DataAttributeRepository{}
-	dataAttributeRepo.Init(organisationId)
-
-	// Fetch data attributes of data agreement from db
-	dataAttributes, err := dataAttributeRepo.GetDataAttributesByDataAgreementId(dataAgreementId)
-	if err != nil {
-		m := fmt.Sprintf("Failed to fetch data attributes for data agreement: %v", dataAgreementId)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
-
-	// Fecth revisions for data attributes
-	dataAttributesWithRevision, err := getDataAttributesWithRevision(dataAttributes)
-	if err != nil {
-		m := "Failed to fetch revisions for data attributes"
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
-
 	// create new draft data agreement record
-	newDaRecord := createDraftDataAgreementRecord(dataAgreementId, rev, individualId, dataAttributesWithRevision)
+	newDaRecord := createDraftDataAgreementRecord(dataAgreementId, rev, individualId)
 
 	// response
 	resp := draftDataAgreementRecordResp{
