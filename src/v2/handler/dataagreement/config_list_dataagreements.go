@@ -94,17 +94,24 @@ func ConfigListDataAgreements(w http.ResponseWriter, r *http.Request) {
 		darepo.Init(organisationId)
 
 		if err != nil && errors.Is(err, LifecycleIsMissingError) {
+			pipeline, err := dataagreement.CreatePipelineForFilteringDataAgreements(organisationId)
+			if err != nil {
+				m := "Failed to create pipeline"
+				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+				return
+			}
 
 			// Return all data agreements
 			var dataAgreements []dataagreement.DataAgreement
-			query := paginate.PaginateDBObjectsQuery{
-				Filter:     darepo.DefaultFilter,
+			pipeline = append(pipeline, bson.M{"$sort": bson.M{"timestamp": -1}})
+			query := paginate.PaginateDBObjectsQueryUsingPipeline{
+				Pipeline:   pipeline,
 				Collection: dataagreement.Collection(),
 				Context:    context.Background(),
 				Limit:      limit,
 				Offset:     offset,
 			}
-			result, err := paginate.PaginateDBObjects(query, &dataAgreements)
+			result, err := paginate.PaginateDBObjectsUsingPipeline(query, &dataAgreements)
 			if err != nil {
 				if errors.Is(err, paginate.EmptyDBError) {
 					emptyDataAgreements := make([]interface{}, 0)
@@ -127,16 +134,23 @@ func ConfigListDataAgreements(w http.ResponseWriter, r *http.Request) {
 			returnHTTPResponse(resp, w)
 			return
 		} else {
+			pipeline, err := dataagreement.CreatePipelineForFilteringDataAgreementsUsingLifecycle(organisationId, lifecycle)
+			if err != nil {
+				m := "Failed to create pipeline"
+				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+				return
+			}
 			// Return liecycle filtered data agreements
 			var dataAgreements []dataagreement.DataAgreement
-			query := paginate.PaginateDBObjectsQuery{
-				Filter:     common.CombineFilters(darepo.DefaultFilter, bson.M{"lifecycle": lifecycle}),
+			pipeline = append(pipeline, bson.M{"$sort": bson.M{"timestamp": -1}})
+			query := paginate.PaginateDBObjectsQueryUsingPipeline{
+				Pipeline:   pipeline,
 				Collection: dataagreement.Collection(),
 				Context:    context.Background(),
 				Limit:      limit,
 				Offset:     offset,
 			}
-			result, err := paginate.PaginateDBObjects(query, &dataAgreements)
+			result, err := paginate.PaginateDBObjectsUsingPipeline(query, &dataAgreements)
 			if err != nil {
 				if errors.Is(err, paginate.EmptyDBError) {
 					emptyDataAgreements := make([]interface{}, 0)

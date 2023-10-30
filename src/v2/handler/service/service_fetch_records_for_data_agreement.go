@@ -33,17 +33,25 @@ func ServiceFetchRecordsForDataAgreement(w http.ResponseWriter, r *http.Request)
 	darRepo := daRecord.DataAgreementRecordRepository{}
 	darRepo.Init(organisationId)
 
+	pipeline, err := daRecord.CreatePipelineForFilteringDataAgreementRecordsByDataAgreementId(organisationId, dataAgreementId)
+	if err != nil {
+		m := "Failed to create pipeline"
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
 	// Return all data agreement records
 	var dataAgreementRecords []daRecord.DataAgreementRecord
-	query := paginate.PaginateDBObjectsQuery{
-		Filter:     common.CombineFilters(darRepo.DefaultFilter, bson.M{"dataagreementid": dataAgreementId}),
+	pipeline = append(pipeline, bson.M{"$sort": bson.M{"timestamp": -1}})
+	query := paginate.PaginateDBObjectsQueryUsingPipeline{
+		Pipeline:   pipeline,
 		Collection: daRecord.Collection(),
 		Context:    context.Background(),
 		Limit:      limit,
 		Offset:     offset,
 	}
 	var resp fetchRecordsForDataAgreementResp
-	result, err := paginate.PaginateDBObjects(query, &dataAgreementRecords)
+	result, err := paginate.PaginateDBObjectsUsingPipeline(query, &dataAgreementRecords)
 	if err != nil {
 		if errors.Is(err, paginate.EmptyDBError) {
 			emptyDataAgreementRecords := make([]interface{}, 0)

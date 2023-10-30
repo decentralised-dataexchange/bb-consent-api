@@ -91,3 +91,54 @@ func (prepo *PolicyRepository) GetPolicyCountByOrganisation() (int64, error) {
 
 	return count, err
 }
+
+// CreatePipelineForFilteringPolicies This pipeline is used for filtering policies
+func CreatePipelineForFilteringPolicies(organisationId string) ([]primitive.M, error) {
+
+	var pipeline []bson.M
+
+	// Stage 1 - Match by `organisationId` and `isDeleted=false`
+	pipeline = append(pipeline, bson.M{"$match": bson.M{"organisationid": organisationId, "isdeleted": false}})
+
+	// Stage 2 - Lookup revision by `policyId`
+	// This is done to obtain timestamp for the latest revision of the policies.
+	pipeline = append(pipeline, bson.M{"$lookup": bson.M{
+		"from": "revisions",
+		"let":  bson.M{"localId": "$_id"},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
+					},
+				},
+			},
+			bson.M{
+				"$sort": bson.M{"timestamp": -1},
+			},
+			bson.M{"$limit": int64(1)},
+		},
+		"as": "revisions",
+	}})
+
+	// Stage 3 - Add the timestamp from revisions
+	pipeline = append(pipeline, bson.M{"$addFields": bson.M{"timestamp": bson.M{
+		"$let": bson.M{
+			"vars": bson.M{
+				"first": bson.M{
+					"$arrayElemAt": bson.A{"$revisions", 0},
+				},
+			},
+			"in": "$$first.timestamp",
+		},
+	}}})
+
+	// Stage 4 - Remove revisions field
+	pipeline = append(pipeline, bson.M{
+		"$project": bson.M{
+			"revisions": 0,
+		},
+	})
+
+	return pipeline, nil
+}

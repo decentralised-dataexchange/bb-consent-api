@@ -10,6 +10,7 @@ import (
 	"github.com/bb-consent/api/src/config"
 	"github.com/bb-consent/api/src/v2/dataagreement"
 	"github.com/bb-consent/api/src/v2/paginate"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type listDataAgreementsResp struct {
@@ -31,16 +32,24 @@ func AuditListDataAgreements(w http.ResponseWriter, r *http.Request) {
 
 	var resp listDataAgreementsResp
 
+	pipeline, err := dataagreement.CreatePipelineForFilteringDataAgreements(organisationId)
+	if err != nil {
+		m := "Failed to create pipeline"
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
 	// Return all data agreements
 	var dataAgreements []dataagreement.DataAgreement
-	query := paginate.PaginateDBObjectsQuery{
-		Filter:     darepo.DefaultFilter,
+	pipeline = append(pipeline, bson.M{"$sort": bson.M{"timestamp": -1}})
+	query := paginate.PaginateDBObjectsQueryUsingPipeline{
+		Pipeline:   pipeline,
 		Collection: dataagreement.Collection(),
 		Context:    context.Background(),
 		Limit:      limit,
 		Offset:     offset,
 	}
-	result, err := paginate.PaginateDBObjects(query, &dataAgreements)
+	result, err := paginate.PaginateDBObjectsUsingPipeline(query, &dataAgreements)
 	if err != nil {
 		if errors.Is(err, paginate.EmptyDBError) {
 			emptyDataAgreements := make([]interface{}, 0)

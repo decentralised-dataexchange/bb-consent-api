@@ -10,6 +10,7 @@ import (
 	"github.com/bb-consent/api/src/config"
 	daRecord "github.com/bb-consent/api/src/v2/dataagreement_record"
 	"github.com/bb-consent/api/src/v2/paginate"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type fetchDataAgreementRecordsResp struct {
@@ -30,17 +31,25 @@ func ServiceFetchDataAgreementRecords(w http.ResponseWriter, r *http.Request) {
 	darRepo := daRecord.DataAgreementRecordRepository{}
 	darRepo.Init(organisationId)
 
+	pipeline, err := daRecord.CreatePipelineForFilteringLatestDataAgreementRecords(organisationId)
+	if err != nil {
+		m := "Failed to create pipeline"
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
 	// Return all data agreement records
 	var dataAgreementRecords []daRecord.DataAgreementRecord
-	query := paginate.PaginateDBObjectsQuery{
-		Filter:     darRepo.DefaultFilter,
+	pipeline = append(pipeline, bson.M{"$sort": bson.M{"timestamp": -1}})
+	query := paginate.PaginateDBObjectsQueryUsingPipeline{
+		Pipeline:   pipeline,
 		Collection: daRecord.Collection(),
 		Context:    context.Background(),
 		Limit:      limit,
 		Offset:     offset,
 	}
 	var resp fetchDataAgreementRecordsResp
-	result, err := paginate.PaginateDBObjects(query, &dataAgreementRecords)
+	result, err := paginate.PaginateDBObjectsUsingPipeline(query, &dataAgreementRecords)
 	if err != nil {
 		if errors.Is(err, paginate.EmptyDBError) {
 			emptyDataAgreementRecords := make([]interface{}, 0)
