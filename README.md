@@ -28,6 +28,18 @@ The key deliverables of the project are as given. The table summarises the relea
 | D3.1.1     | November 15th | Developer documentation |
 | D3.1.2     | November 15th | Test protocol           |
 
+## Instructions to run
+
+Prerequisite: Docker is up and running in your server
+
+1. Clone this repository to your local server using `git clone`
+2. Checkout the latest release or any release available that you wish to run. E.g `git checkout tags/2023.10.4`
+3. Execute `make setup`. This sets up the necessary dependencies and configurations for running Consent BB API server instance.
+4. Execute `make build`. The compiles and assembles source code into executable files or libraries, following the instructions specified in the Makefile of Consent BB API server instance.
+5. Execute `make run`.  This executes a predefined set of instructions in the  Makefile to launch or run the compiled Consent BB API server instance.
+
+The server is up and running now locally at: "https://api.bb-consent.dev/v2". You can use openAPIs or the admin dashboard to interact with the Consent BB server instance.
+
 ## Other resources
 
 * Wiki - https://github.com/decentralised-dataexchange/consent-dev-docs/wiki
