@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
@@ -37,17 +38,21 @@ func ConfigReadDataAgreement(w http.ResponseWriter, r *http.Request) {
 	daRepo := dataagreement.DataAgreementRepository{}
 	daRepo.Init(organisationId)
 
+	// Query data agreement by id
 	da, err := daRepo.Get(dataAgreementId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch data agreement: %v", dataAgreementId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
-	var revisionResp revision.Revision
 
-	if revisionId != "" {
+	var rev revision.Revision
 
-		revisionResp, err = revision.GetByRevisionId(revisionId)
+	// If `revisionId` query param is provided
+	// then query revision by id
+	if strings.TrimSpace(revisionId) != "" {
+
+		rev, err = revision.GetByRevisionId(revisionId)
 		if err != nil {
 			m := fmt.Sprintf("Failed to fetch revision: %v", dataAgreementId)
 			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
@@ -55,17 +60,23 @@ func ConfigReadDataAgreement(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
-		if da.Version == "0.0.0" {
-			revisionResp, err = revision.CreateRevisionForDraftDataAgreement(da, orgAdminId)
+		// If `revisionId` query param is not provided
+		// If data agreement is published then:
+		// a. Fetch latest revision
+		if da.Active {
+			rev, err = revision.GetLatestByDataAgreementId(dataAgreementId)
 			if err != nil {
-				m := fmt.Sprintf("Failed to create revision for draft data agreement: %v", dataAgreementId)
+				m := fmt.Sprintf("Failed to fetch revision: %v", dataAgreementId)
 				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 				return
 			}
+
 		} else {
-			revisionResp, err = revision.GetLatestByDataAgreementId(dataAgreementId)
+			// Data agreement is draft
+			// Create a revision on runtime
+			rev, err = revision.CreateRevisionForDraftDataAgreement(da, orgAdminId)
 			if err != nil {
-				m := fmt.Sprintf("Failed to fetch revision: %v", dataAgreementId)
+				m := "Failed to create revision for draft data agreement"
 				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 				return
 			}
@@ -78,7 +89,7 @@ func ConfigReadDataAgreement(w http.ResponseWriter, r *http.Request) {
 	resp.DataAgreement = da
 
 	var revisionForHTTPResponse revision.RevisionForHTTPResponse
-	revisionForHTTPResponse.Init(revisionResp)
+	revisionForHTTPResponse.Init(rev)
 	resp.Revision = revisionForHTTPResponse
 
 	response, _ := json.Marshal(resp)

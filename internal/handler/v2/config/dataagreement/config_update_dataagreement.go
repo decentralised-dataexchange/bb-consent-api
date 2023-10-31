@@ -198,6 +198,15 @@ func ConfigUpdateDataAgreement(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+	} else {
+		// If data agreement is draft then:
+		// a. Create a revision on runtime
+		newRevision, err = revision.CreateRevisionForDraftDataAgreement(toBeUpdatedDataAgreement, orgAdminId)
+		if err != nil {
+			m := fmt.Sprintf("Failed to create revision for draft data agreement: %v", dataAgreementId)
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
 	}
 
 	// Save the data agreement to db

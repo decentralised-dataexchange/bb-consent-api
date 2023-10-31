@@ -302,6 +302,15 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 		// Data agreement is draft
 		// Set data agreement version 0.0.0
 		newDataAgreement.Version = common.IntegerToSemver(0)
+
+		// Create a revision on runtime
+		newRevision, err = revision.CreateRevisionForDraftDataAgreement(newDataAgreement, orgAdminId)
+		if err != nil {
+			m := "Failed to create revision for draft data agreement"
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
+
 	}
 
 	// Repository
