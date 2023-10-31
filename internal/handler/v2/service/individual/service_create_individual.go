@@ -1,18 +1,29 @@
 package individual
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 
+	"github.com/Nerzal/gocloak/v13"
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
+	"github.com/bb-consent/api/internal/iam"
 	"github.com/bb-consent/api/internal/individual"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+type iamIndividualRegisterReq struct {
+	Username        string   `json:"username"`
+	Firstname       string   `json:"firstName"`
+	Email           string   `json:"email"`
+	Enabled         bool     `json:"enabled"`
+	RequiredActions []string `json:"requiredActions"`
+}
 
 func createIamRegisterRequestFromAddRequestBody(requestBody addServiceIndividualReq, iamRegReq iamIndividualRegisterReq) iamIndividualRegisterReq {
 
@@ -43,6 +54,22 @@ type addServiceIndividualResp struct {
 	Individual individual.Individual `json:"individual"`
 }
 
+// registerUser Registers a new user
+func registerUser(iamRegReq iamIndividualRegisterReq, adminToken string, client *gocloak.GoCloak) (string, error) {
+	user := gocloak.User{
+		FirstName: &iamRegReq.Firstname,
+		Email:     &iamRegReq.Email,
+		Enabled:   gocloak.BoolP(true),
+		Username:  &iamRegReq.Email,
+	}
+
+	iamId, err := client.CreateUser(context.Background(), adminToken, iam.IamConfig.Realm, user)
+	if err != nil {
+		return "", err
+	}
+	return iamId, err
+}
+
 // ServiceCreateIndividual
 func ServiceCreateIndividual(w http.ResponseWriter, r *http.Request) {
 	// Headers
@@ -66,7 +93,7 @@ func ServiceCreateIndividual(w http.ResponseWriter, r *http.Request) {
 
 	iamRegReq = createIamRegisterRequestFromAddRequestBody(individualReq, iamRegReq)
 
-	client := getClient()
+	client := iam.GetClient()
 
 	t, err := getAdminToken(client)
 	if err != nil {

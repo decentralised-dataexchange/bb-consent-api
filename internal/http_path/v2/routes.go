@@ -1,17 +1,18 @@
 package http_path
 
 import (
-	apiKeyHandler "github.com/bb-consent/api/internal/handler/v2/apikey"
 	auditHandler "github.com/bb-consent/api/internal/handler/v2/audit"
-	dataAgreementHandler "github.com/bb-consent/api/internal/handler/v2/dataagreement"
-	dataAttributeHandler "github.com/bb-consent/api/internal/handler/v2/dataattribute"
-	idpHandler "github.com/bb-consent/api/internal/handler/v2/idp"
-	individualHandler "github.com/bb-consent/api/internal/handler/v2/individual"
+	apiKeyHandler "github.com/bb-consent/api/internal/handler/v2/config/apikey"
+	dataAgreementHandler "github.com/bb-consent/api/internal/handler/v2/config/dataagreement"
+	dataAttributeHandler "github.com/bb-consent/api/internal/handler/v2/config/dataattribute"
+	idpHandler "github.com/bb-consent/api/internal/handler/v2/config/idp"
+	configIndividualHandler "github.com/bb-consent/api/internal/handler/v2/config/individual"
+	policyHandler "github.com/bb-consent/api/internal/handler/v2/config/policy"
+	privacyDashboardHandler "github.com/bb-consent/api/internal/handler/v2/config/privacy_dashboard"
+	webhookHandler "github.com/bb-consent/api/internal/handler/v2/config/webhook"
 	onboardHandler "github.com/bb-consent/api/internal/handler/v2/onboard"
-	policyHandler "github.com/bb-consent/api/internal/handler/v2/policy"
-	privacyDashboardHandler "github.com/bb-consent/api/internal/handler/v2/privacy_dashboard"
 	serviceHandler "github.com/bb-consent/api/internal/handler/v2/service"
-	webhookHandler "github.com/bb-consent/api/internal/handler/v2/webhook"
+	serviceIndividualHandler "github.com/bb-consent/api/internal/handler/v2/service/individual"
 	m "github.com/bb-consent/api/internal/middleware"
 	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
@@ -61,10 +62,10 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(ConfigListIdentityProviders, m.Chain(idpHandler.ConfigListIdps, m.Logger(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Individual related api(s)
-	r.Handle(ConfigReadIndividual, m.Chain(individualHandler.ConfigReadIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(ConfigCreateIndividual, m.Chain(individualHandler.ConfigCreateIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
-	r.Handle(ConfigUpdateIndividual, m.Chain(individualHandler.ConfigUpdateIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
-	r.Handle(ConfigListIndividuals, m.Chain(individualHandler.ConfigListIndividuals, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ConfigReadIndividual, m.Chain(configIndividualHandler.ConfigReadIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ConfigCreateIndividual, m.Chain(configIndividualHandler.ConfigCreateIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	r.Handle(ConfigUpdateIndividual, m.Chain(configIndividualHandler.ConfigUpdateIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
+	r.Handle(ConfigListIndividuals, m.Chain(configIndividualHandler.ConfigListIndividuals, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Api key related api(s)
 	r.Handle(ConfigCreateApiKey, m.Chain(apiKeyHandler.ConfigCreateApiKey, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
@@ -72,7 +73,7 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(ConfigUpdateApiKey, m.Chain(apiKeyHandler.ConfigUpdateApiKey, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
 	r.Handle(ConfigListApiKey, m.Chain(apiKeyHandler.ConfigListApiKey, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
-	r.Handle(ConfigCreateIndividualsInBulk, m.Chain(individualHandler.ConfigCreateIndividualsInBulk, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	r.Handle(ConfigCreateIndividualsInBulk, m.Chain(configIndividualHandler.ConfigCreateIndividualsInBulk, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
 
 	r.Handle(ConfigReadPrivacyDashboard, m.Chain(privacyDashboardHandler.ConfigReadPrivacyDashboard, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
@@ -117,10 +118,10 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(ServiceReadOrganisationCoverImage, m.Chain(serviceHandler.ServiceReadOrganisationCoverImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Individual related api(s)
-	r.Handle(ServiceReadIndividual, m.Chain(individualHandler.ServiceReadIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(ServiceCreateIndividual, m.Chain(individualHandler.ServiceCreateIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
-	r.Handle(ServiceUpdateIndividual, m.Chain(individualHandler.ServiceUpdateIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
-	r.Handle(ServiceListIndividuals, m.Chain(individualHandler.ServiceListIndividuals, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ServiceReadIndividual, m.Chain(serviceIndividualHandler.ServiceReadIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ServiceCreateIndividual, m.Chain(serviceIndividualHandler.ServiceCreateIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	r.Handle(ServiceUpdateIndividual, m.Chain(serviceIndividualHandler.ServiceUpdateIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
+	r.Handle(ServiceListIndividuals, m.Chain(serviceIndividualHandler.ServiceListIndividuals, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Audit api(s)
 
