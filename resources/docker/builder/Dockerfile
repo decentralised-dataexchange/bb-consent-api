@@ -1,7 +1,7 @@
 FROM golang:1.18
 
 
-WORKDIR /go/src/github.com/bb-consent/api
+WORKDIR /go/github.com/bb-consent/api
 COPY go.mod .
 COPY go.sum .
 
