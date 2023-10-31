@@ -11,39 +11,21 @@ type JSONWebKeys struct {
 	RsaRawE string
 }
 
-// ExternalIdentityProvidersConfiguration Holds the external identity provider configurations
-type ExternalIdentityProvidersConfiguration struct {
-	IdentityProviderCustomerAuthenticationFlowID string
-	IdentityProviderCustomerAutoLinkFlowName     string
-	IamTokenEndpoint                             string
-	IamAuthEndpoint                              string
-}
-
 // Iam Holds the IAM config details.
 type Iam struct {
-	URL                                    string
-	Realm                                  string
-	ClientId                               string
-	Jwks                                   JSONWebKeys
-	AdminUser                              string
-	AdminPassword                          string
-	Timeout                                int
-	ExternalIdentityProvidersConfiguration ExternalIdentityProvidersConfiguration
+	URL           string
+	Realm         string
+	ClientId      string
+	Jwks          JSONWebKeys
+	AdminUser     string
+	AdminPassword string
+	Timeout       int
 }
 
 // Twilio Twiolio account details
 type Twilio struct {
 	AccountSid string
 	AuthToken  string
-}
-
-// Firebase Firebase account details
-type Firebase struct {
-	WebApiKey          string
-	DynamicLink        string
-	AndroidPackageName string
-	IosAppStoreId      string
-	IosBundleId        string
 }
 
 // SmtpConfig Smtp server details
@@ -110,7 +92,6 @@ type Configuration struct {
 	Iam              Iam
 	Twilio           Twilio
 	PrivacyDashboard PrivacyDashboard
-	Firebase         Firebase
 	Smtp             SmtpConfig
 	Webhooks         WebhooksConfig
 }
