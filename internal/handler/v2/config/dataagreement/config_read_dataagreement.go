@@ -76,7 +76,7 @@ func ConfigReadDataAgreement(w http.ResponseWriter, r *http.Request) {
 			// Create a revision on runtime
 			rev, err = revision.CreateRevisionForDraftDataAgreement(da, orgAdminId)
 			if err != nil {
-				m := "Failed to create revision for draft data agreement"
+				m := "Failed to create revision in run time"
 				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 				return
 			}

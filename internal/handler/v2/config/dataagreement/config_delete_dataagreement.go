@@ -19,8 +19,10 @@ func ConfigDeleteDataAgreement(w http.ResponseWriter, r *http.Request) {
 	// Current user
 	orgAdminId := token.GetUserID(r)
 
+	// Query params
 	organisationId := r.Header.Get(config.OrganizationId)
 	organisationId = common.Sanitize(organisationId)
+
 	dataAgreementId := mux.Vars(r)[config.DataAgreementId]
 	dataAgreementId = common.Sanitize(dataAgreementId)
 
@@ -28,39 +30,47 @@ func ConfigDeleteDataAgreement(w http.ResponseWriter, r *http.Request) {
 	daRepo := dataagreement.DataAgreementRepository{}
 	daRepo.Init(organisationId)
 
-	currentDataAgreement, err := daRepo.Get(dataAgreementId)
+	// Query data agreement by id
+	toBeDeletedDA, err := daRepo.Get(dataAgreementId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch data agreement: %v", dataAgreementId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 
-	var currentRevision revision.Revision
+	var rev revision.Revision
 
-	if currentDataAgreement.Version == "0.0.0" {
-		currentRevision, err = revision.CreateRevisionForDraftDataAgreement(currentDataAgreement, orgAdminId)
+	// If data agreement is published then:
+	// a. Fetch latest revision
+	if toBeDeletedDA.Active {
+		rev, err = revision.GetLatestByDataAgreementId(dataAgreementId)
 		if err != nil {
-			m := fmt.Sprintf("Failed to create revision for draft data agreement: %v", dataAgreementId)
+			m := fmt.Sprintf("Failed to fetch revision: %v", dataAgreementId)
 			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 			return
 		}
+
 	} else {
-		currentRevision, err = revision.GetLatestByDataAgreementId(dataAgreementId)
+		// Data agreement is draft
+		// Create a revision on runtime
+		rev, err = revision.CreateRevisionForDraftDataAgreement(toBeDeletedDA, orgAdminId)
 		if err != nil {
-			m := fmt.Sprintf("Failed to fetch revisions: %v", dataAgreementId)
+			m := "Failed to create revision in run time"
 			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 			return
 		}
 
 	}
 
-	currentDataAgreement.IsDeleted = true
+	// Mark data agreement as deleted
+	toBeDeletedDA.IsDeleted = true
 
 	// Repository
 	darRepo := daRecord.DataAgreementRecordRepository{}
 	darRepo.Init(organisationId)
 
-	_, err = daRepo.Update(currentDataAgreement)
+	// Update deleted data agreement in db
+	_, err = daRepo.Update(toBeDeletedDA)
 	if err != nil {
 		m := fmt.Sprintf("Failed to delete data agreement: %v", dataAgreementId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
@@ -68,7 +78,7 @@ func ConfigDeleteDataAgreement(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var revisionForHTTPResponse revision.RevisionForHTTPResponse
-	revisionForHTTPResponse.Init(currentRevision)
+	revisionForHTTPResponse.Init(rev)
 
 	response, _ := json.Marshal(revisionForHTTPResponse)
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)

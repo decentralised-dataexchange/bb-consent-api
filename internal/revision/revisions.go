@@ -82,7 +82,7 @@ func (r *Revision) CreateRevision(objectData interface{}) error {
 // UpdateRevision
 func (r *Revision) UpdateRevision(previousRevision *Revision, objectData interface{}) error {
 
-	if previousRevision == nil {
+	if previousRevision != nil {
 		// Update successor for previous revision
 		previousRevision.updateSuccessorId(r.Id.Hex())
 
