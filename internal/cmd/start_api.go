@@ -84,7 +84,7 @@ func StartApiCmdHandler(cmd *cobra.Command, args []string) {
 		tenant.SingleTenantConfiguration(loadedConfig)
 	case config.MultiTenant:
 	default:
-		panic("Application mode is mandatory. Specify either 'single-tenant' or 'multi-tenant'.")
+		tenant.SingleTenantConfiguration(loadedConfig)
 	}
 
 	// Router

@@ -23,20 +23,38 @@ func SetApplicationMode() Middleware {
 
 		// Define the http.HandlerFunc
 		return func(w http.ResponseWriter, r *http.Request) {
-			if ApplicationMode == config.SingleTenant {
-
-				organization, err := org.GetFirstOrganization()
+			switch ApplicationMode {
+			case config.SingleTenant:
+				err := singleTenantConfig(r)
 				if err != nil {
 					m := "Failed to find organization"
 					common.HandleError(w, http.StatusBadRequest, m, err)
 					return
 				}
-				organizationId := organization.ID.Hex()
-				r.Header.Set(config.OrganizationId, organizationId)
+
+			case config.MultiTenant:
+			default:
+				err := singleTenantConfig(r)
+				if err != nil {
+					m := "Failed to find organization"
+					common.HandleError(w, http.StatusBadRequest, m, err)
+					return
+				}
 			}
 
 			// Call the next middleware/handler in chain
 			f(w, r)
 		}
 	}
+}
+
+// singleTenantConfig
+func singleTenantConfig(r *http.Request) error {
+	organization, err := org.GetFirstOrganization()
+	if err != nil {
+		return err
+	}
+	organizationId := organization.ID.Hex()
+	r.Header.Set(config.OrganizationId, organizationId)
+	return nil
 }
