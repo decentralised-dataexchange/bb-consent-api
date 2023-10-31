@@ -30,17 +30,28 @@ The key deliverables of the project are as given. The table summarises the relea
 
 ## Instructions to run
 
-Prerequisites: 
-1. Docker is up and running in your server
-2. The configuration file is updated for setting up default parameters for the instance such as organisation details, admin access security etc. This can be changed later as well.
+The prerequisites for getting the server up and running are as follows:
 
-3. Clone this repository to your local server using `git clone`
-4. Checkout the latest release or any release available that you wish to run. E.g `git checkout tags/2023.10.4`
-5. Execute `make setup`. This sets up the necessary dependencies and configurations for running Consent BB API server instance.
-6. Execute `make build`. The compiles and assembles source code into executable files or libraries, following the instructions specified in the Makefile of Consent BB API server instance.
-7. Execute `make run`.  This executes a predefined set of instructions in the  Makefile to launch or run the compiled Consent BB API server instance. 
+1. Docker is up and running on your server. You can check it using the command docker ps.
+2. Pre-install [jq](https://jqlang.github.io/jq/), a lightweight and flexible command-line JSON processor for parsing and manipulating JSON data.
+3. The configuration file is updated to set up the instance's default parameters, such as organisation details, admin access security, etc. This can be changed later as well.
 
-The server is up and running now locally at: "https://api.bb-consent.dev/v2". You can use openAPIs or the admin dashboard to interact with the Consent BB server instance.
+You can now request a configuration file and skip the following steps by contacting [support@igrant.io](mailto:support@igrant.io). Please specify the desired admin username in your request. Alternatively, you can proceed with steps 3 and 4 for manual installation and configuration.
+
+4. Install keycloak and use the parameters in step 4 configurations.
+5. The parameters are defined in the config-development.json file created at <server address>/bb-consent-api/resources/config/config-development.json. This sets up the default parameters for the Consent BB server instance, such as organisation details, admin access security (with keycloak, etc. This can also be modified later but would require building the server again.
+
+Note: It is recommended to remove all container instances and volumes running using `docker container rm -f $(docker container ls -aq)` and `docker volume rm $(docker volume ls -q)`. If any of the steps below need to be repeated, we recommend this step to ensure a clean environment.  
+
+Now, follow the steps below to get the ConsentBB API server up and running:  
+
+1. Clone this repository to your local server using `git clone`.
+2. Check out the latest release or any available release you wish to run. E.g. `git checkout tags/2023.10.4`.
+3. Execute `make setup`. This sets up the necessary dependencies and configurations for running the Consent BB API server instance.
+4. Execute `make build`. The compiles and assembles source code into executable files or libraries, following the instructions specified in the Makefile of Consent BB API server instance.
+5. Execute `make run`.  This executes a predefined set of instructions in the  Makefile to launch or run the compiled Consent BB API server instance.
+
+The server is up and running now locally at https://api.bb-consent.dev/v2. You can use openAPIs with postman or the admin dashboard to interact with the Consent BB server instance.
 
 ## Other resources
 
