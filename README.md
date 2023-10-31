@@ -34,12 +34,11 @@ The prerequisites for getting the server up and running are as follows:
 
 1. Docker is up and running on your server. You can check it using the command docker ps.
 2. Pre-install [jq](https://jqlang.github.io/jq/), a lightweight and flexible command-line JSON processor for parsing and manipulating JSON data.
-3. The configuration file is updated to set up the instance's default parameters, such as organisation details, admin access security, etc. This can be changed later as well.
 
-You can now request a configuration file and skip the following steps by contacting [support@igrant.io](mailto:support@igrant.io). Please specify the desired admin username in your request. Alternatively, you can proceed with steps 3 and 4 for manual installation and configuration.
+You can request a pre-defined configuration file and skip the following steps by contactingg [support@igrant.io](mailto:support@igrant.io). Please specify the desired admin username in your request. Alternatively, you can proceed with steps 3 and 4 for manual installation and configuration.
 
-4. Install keycloak and use the parameters in step 4 configurations.
-5. The parameters are defined in the config-development.json file created at <server address>/bb-consent-api/resources/config/config-development.json. This sets up the default parameters for the Consent BB server instance, such as organisation details, admin access security (with keycloak, etc. This can also be modified later but would require building the server again.
+3. Install keycloak and use the parameters in step 4 configurations below.
+4. The configuration parameters used by the Consent BB API server is created at <server address>/bb-consent-api/resources/config/config-development.json. This sets up the default parameters for the Consent BB server instance, such as organisation details, admin access security (with keycloak, etc. This can also be modified later but would require building the server again.
 
 Note: It is recommended to remove all container instances and volumes running using `docker container rm -f $(docker container ls -aq)` and `docker volume rm $(docker volume ls -q)`. If any of the steps below need to be repeated, we recommend this step to ensure a clean environment.  
 
