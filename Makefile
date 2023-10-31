@@ -16,8 +16,6 @@ VERSION   ?= $(shell git describe --tags --abbrev=0)
 CANDIDATE ?= "dev"
 CONTAINER_API ?= "bb-consent_api_dev"
 DB_CONTAINER_NAME = "mongo"
-KAFKA_BROKER_CONTAINER_NAME = "broker"
-ZOOKEEPER_CONTAINER_NAME = "zookeeper"
 
 # kafka configuration
 KAFKA_TOPIC_NAME = "example_topic"
