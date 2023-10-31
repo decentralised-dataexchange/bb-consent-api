@@ -55,7 +55,7 @@ func ConfigReadDataAgreement(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
-		if da.Version == "" {
+		if da.Version == "0.0.0" {
 			revisionResp, err = revision.CreateRevisionForDraftDataAgreement(da, orgAdminId)
 			if err != nil {
 				m := fmt.Sprintf("Failed to create revision for draft data agreement: %v", dataAgreementId)

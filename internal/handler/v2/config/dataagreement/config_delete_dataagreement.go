@@ -37,7 +37,7 @@ func ConfigDeleteDataAgreement(w http.ResponseWriter, r *http.Request) {
 
 	var currentRevision revision.Revision
 
-	if currentDataAgreement.Version == "" {
+	if currentDataAgreement.Version == "0.0.0" {
 		currentRevision, err = revision.CreateRevisionForDraftDataAgreement(currentDataAgreement, orgAdminId)
 		if err != nil {
 			m := fmt.Sprintf("Failed to create revision for draft data agreement: %v", dataAgreementId)

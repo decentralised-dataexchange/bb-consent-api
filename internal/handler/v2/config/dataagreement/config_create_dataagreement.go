@@ -258,6 +258,7 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 	}
 
 	version := common.IntegerToSemver(1)
+	draftVersion := common.IntegerToSemver(0)
 	// Add life cycle based on active field
 	lifecycle := setDataAgreementLifecycle(dataAgreementReq.DataAgreement.Active)
 
@@ -274,9 +275,10 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 	newDataAgreement.DataAttributes = newDataAttributes
 	newDataAgreement.IsDeleted = false
 	newDataAgreement.Lifecycle = lifecycle
+	newDataAgreement.Version = draftVersion
 
 	var newRevision revision.Revision
-	if lifecycle == config.Complete {
+	if dataAgreementReq.DataAgreement.Active {
 		newDataAgreement.Version = version
 
 		// Create new revision
