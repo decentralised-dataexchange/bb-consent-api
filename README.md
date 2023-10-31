@@ -61,7 +61,7 @@ The server is up and running now locally at https://api.bb-consent.dev/v2. You c
 Feel free to improve the plugin and send us a pull request. If you find any problems, please create an issue in this repo.
 
 ## Licensing
-Copyright (c) 2023-25
+Copyright (c) 2023-25 LCubed AB (iGrant.io), Sweden
 
 Licensed under the Apache 2.0 License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
 
