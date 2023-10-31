@@ -12,6 +12,7 @@ import (
 	"github.com/bb-consent/api/internal/iam"
 	"github.com/bb-consent/api/internal/middleware"
 	privacyDashboard "github.com/bb-consent/api/internal/privacy_dashboard"
+	"github.com/bb-consent/api/internal/rbac"
 	"github.com/bb-consent/api/internal/sms"
 	"github.com/bb-consent/api/internal/tenant"
 	"github.com/bb-consent/api/internal/token"
@@ -72,8 +73,15 @@ func StartApiCmdHandler(cmd *cobra.Command, args []string) {
 
 	apikey.Init(loadedConfig)
 	log.Println("Api key initialized")
+
 	// Setup Casbin auth rules
-	authEnforcer, err := casbin.NewEnforcer("/opt/bb-consent/api/config/auth_model.conf", "/opt/bb-consent/api/config/rbac_policy.csv")
+	authEnforcer, err := casbin.NewEnforcer(rbac.CreateRbacModel(), false)
+	if err != nil {
+		panic(err)
+	}
+
+	// Load the policy into the enforcer.
+	_, err = authEnforcer.AddPolicies(rbac.GetRbacPolicies())
 	if err != nil {
 		panic(err)
 	}
