@@ -9,6 +9,7 @@ import (
 	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/dataagreement"
 	"github.com/bb-consent/api/internal/revision"
+	"github.com/bb-consent/api/internal/token"
 	"github.com/gorilla/mux"
 )
 
@@ -19,6 +20,9 @@ type getDataAgreementResp struct {
 
 // ConfigReadDataAgreement
 func ConfigReadDataAgreement(w http.ResponseWriter, r *http.Request) {
+	// Current user
+	orgAdminId := token.GetUserID(r)
+
 	organisationId := r.Header.Get(config.OrganizationId)
 	organisationId = common.Sanitize(organisationId)
 
@@ -51,11 +55,21 @@ func ConfigReadDataAgreement(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
-		revisionResp, err = revision.GetLatestByDataAgreementId(dataAgreementId)
-		if err != nil {
-			m := fmt.Sprintf("Failed to fetch revision: %v", dataAgreementId)
-			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-			return
+		if da.Version == "" {
+			revisionResp, err = revision.CreateRevisionForDraftDataAgreement(da, orgAdminId)
+			if err != nil {
+				m := fmt.Sprintf("Failed to create revision for draft data agreement: %v", dataAgreementId)
+				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+				return
+			}
+		} else {
+			revisionResp, err = revision.GetLatestByDataAgreementId(dataAgreementId)
+			if err != nil {
+				m := fmt.Sprintf("Failed to fetch revision: %v", dataAgreementId)
+				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+				return
+			}
+
 		}
 	}
 
