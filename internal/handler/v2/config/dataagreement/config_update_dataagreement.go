@@ -7,19 +7,19 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/dataagreement"
 	"github.com/bb-consent/api/internal/org"
 	"github.com/bb-consent/api/internal/revision"
 	"github.com/bb-consent/api/internal/token"
+	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type updateDataAgreementReq struct {
-	DataAgreement dataagreement.DataAgreement `json:"dataAgreement" valid:"required"`
+	DataAgreement dataAgreement `json:"dataAgreement"`
 }
 
 type updateDataAgreementResp struct {
@@ -29,13 +29,10 @@ type updateDataAgreementResp struct {
 
 func validateUpdateDataAgreementRequestBody(dataAgreementReq updateDataAgreementReq) error {
 	// validating request payload
-	valid, err := govalidator.ValidateStruct(dataAgreementReq)
-	if err != nil {
-		return err
-	}
+	var validate = validator.New()
 
-	if !valid {
-		return errors.New("invalid request payload")
+	if err := validate.Struct(dataAgreementReq.DataAgreement); err != nil {
+		return err
 	}
 
 	// Proceed if lawful basis provided is valid
@@ -56,10 +53,10 @@ func updateDataAttributeFromUpdateDataAgreementRequestBody(requestBody updateDat
 
 	for _, dA := range requestBody.DataAgreement.DataAttributes {
 		var dataAttribute dataagreement.DataAttribute
-		if dA.Id.IsZero() {
+		if dA.DataAttribute.Id.IsZero() {
 			dataAttribute.Id = primitive.NewObjectID()
 		} else {
-			dataAttribute.Id = dA.Id
+			dataAttribute.Id = dA.DataAttribute.Id
 		}
 		dataAttribute.Name = dA.Name
 		dataAttribute.Description = dA.Description
@@ -74,24 +71,48 @@ func updateDataAttributeFromUpdateDataAgreementRequestBody(requestBody updateDat
 
 func updateDataAgreementFromRequestBody(requestBody updateDataAgreementReq, toBeUpdatedDataAgreement dataagreement.DataAgreement) dataagreement.DataAgreement {
 
-	toBeUpdatedDataAgreement.Policy = requestBody.DataAgreement.Policy
+	toBeUpdatedDataAgreement.Policy.Id = requestBody.DataAgreement.Policy.Policy.Id
+	toBeUpdatedDataAgreement.Policy.Name = requestBody.DataAgreement.Policy.Name
+	toBeUpdatedDataAgreement.Policy.Version = requestBody.DataAgreement.Policy.Version
+	toBeUpdatedDataAgreement.Policy.Url = requestBody.DataAgreement.Policy.Url
+	toBeUpdatedDataAgreement.Policy.Jurisdiction = requestBody.DataAgreement.Policy.Jurisdiction
+	toBeUpdatedDataAgreement.Policy.IndustrySector = requestBody.DataAgreement.Policy.IndustrySector
+	toBeUpdatedDataAgreement.Policy.DataRetentionPeriodDays = requestBody.DataAgreement.Policy.DataRetentionPeriodDays
+	toBeUpdatedDataAgreement.Policy.GeographicRestriction = requestBody.DataAgreement.Policy.GeographicRestriction
+	toBeUpdatedDataAgreement.Policy.StorageLocation = requestBody.DataAgreement.Policy.StorageLocation
+	toBeUpdatedDataAgreement.Policy.ThirdPartyDataSharing = requestBody.DataAgreement.Policy.ThirdPartyDataSharing
+
 	toBeUpdatedDataAgreement.Purpose = requestBody.DataAgreement.Purpose
 	toBeUpdatedDataAgreement.PurposeDescription = requestBody.DataAgreement.PurposeDescription
 	toBeUpdatedDataAgreement.LawfulBasis = requestBody.DataAgreement.LawfulBasis
 	toBeUpdatedDataAgreement.MethodOfUse = requestBody.DataAgreement.MethodOfUse
 	toBeUpdatedDataAgreement.DpiaDate = requestBody.DataAgreement.DpiaDate
 	toBeUpdatedDataAgreement.DpiaSummaryUrl = requestBody.DataAgreement.DpiaSummaryUrl
-	toBeUpdatedDataAgreement.Signature = requestBody.DataAgreement.Signature
+
+	toBeUpdatedDataAgreement.Signature.Id = requestBody.DataAgreement.Signature.Signature.Id
+	toBeUpdatedDataAgreement.Signature.Payload = requestBody.DataAgreement.Signature.Payload
+	toBeUpdatedDataAgreement.Signature.Signature = requestBody.DataAgreement.Signature.Signature.Signature
+	toBeUpdatedDataAgreement.Signature.VerificationMethod = requestBody.DataAgreement.Signature.VerificationMethod
+	toBeUpdatedDataAgreement.Signature.VerificationPayload = requestBody.DataAgreement.Signature.VerificationPayload
+	toBeUpdatedDataAgreement.Signature.VerificationPayloadHash = requestBody.DataAgreement.Signature.VerificationPayloadHash
+	toBeUpdatedDataAgreement.Signature.VerificationArtifact = requestBody.DataAgreement.Signature.VerificationArtifact
+	toBeUpdatedDataAgreement.Signature.VerificationSignedBy = requestBody.DataAgreement.Signature.VerificationSignedBy
+	toBeUpdatedDataAgreement.Signature.VerificationSignedAs = requestBody.DataAgreement.Signature.VerificationSignedAs
+	toBeUpdatedDataAgreement.Signature.VerificationJwsHeader = requestBody.DataAgreement.Signature.VerificationJwsHeader
+	toBeUpdatedDataAgreement.Signature.Timestamp = requestBody.DataAgreement.Signature.Timestamp
+	toBeUpdatedDataAgreement.Signature.SignedWithoutObjectReference = requestBody.DataAgreement.Signature.SignedWithoutObjectReference
+	toBeUpdatedDataAgreement.Signature.ObjectType = requestBody.DataAgreement.Signature.ObjectType
+	toBeUpdatedDataAgreement.Signature.ObjectReference = requestBody.DataAgreement.Signature.ObjectReference
 
 	toBeUpdatedDataAgreement.Active = requestBody.DataAgreement.Active
 	toBeUpdatedDataAgreement.Forgettable = requestBody.DataAgreement.Forgettable
 	toBeUpdatedDataAgreement.CompatibleWithVersionId = requestBody.DataAgreement.CompatibleWithVersionId
 
-	if requestBody.DataAgreement.Signature.Id.IsZero() {
+	if requestBody.DataAgreement.Signature.Signature.Id.IsZero() {
 		toBeUpdatedDataAgreement.Signature.Id = primitive.NewObjectID()
 	}
 
-	if requestBody.DataAgreement.Policy.Id.IsZero() {
+	if requestBody.DataAgreement.Policy.Policy.Id.IsZero() {
 		toBeUpdatedDataAgreement.Policy.Id = primitive.NewObjectID()
 	}
 

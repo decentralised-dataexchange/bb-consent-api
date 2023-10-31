@@ -147,18 +147,15 @@ func validateAddDataAgreementRequestBody(dataAgreementReq addDataAgreementReq) e
 	if err := validate.Struct(dataAgreementReq.DataAgreement); err != nil {
 		return err
 	}
-	fmt.Println(dataAgreementReq.DataAgreement.Active)
 
-	if dataAgreementReq.DataAgreement.Active {
-		// Proceed if lawful basis provided is valid
-		if !isValidLawfulBasisOfProcessing(dataAgreementReq.DataAgreement.LawfulBasis) {
-			return errors.New("invalid lawful basis provided")
-		}
+	// Proceed if lawful basis provided is valid
+	if !isValidLawfulBasisOfProcessing(dataAgreementReq.DataAgreement.LawfulBasis) {
+		return errors.New("invalid lawful basis provided")
+	}
 
-		// Proceed if method of use is valid
-		if !isValidMethodOfUse(dataAgreementReq.DataAgreement.MethodOfUse) {
-			return errors.New("invalid method of use provided")
-		}
+	// Proceed if method of use is valid
+	if !isValidMethodOfUse(dataAgreementReq.DataAgreement.MethodOfUse) {
+		return errors.New("invalid method of use provided")
 	}
 
 	return nil
