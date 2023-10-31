@@ -203,22 +203,6 @@ func CreatePipelineForFilteringDataAgreementRecords(organisationId string, id st
 	return pipeline, nil
 }
 
-// Deletes all the data agreement records for data agreement id
-func (darRepo *DataAgreementRecordRepository) DeleteDataAgreementRecordsForDataAgreement(dataAgreementId string) error {
-	filter := common.CombineFilters(darRepo.DefaultFilter, bson.M{"dataagreementid": dataAgreementId})
-
-	// Update to set IsDeleted to true
-	update := bson.M{
-		"$set": bson.M{
-			"isdeleted": true,
-		},
-	}
-
-	_, err := Collection().UpdateMany(context.TODO(), filter, update)
-
-	return err
-}
-
 // CreatePipelineForFilteringLatestDataAgreementRecords This pipeline is used for filtering data agreement records
 func CreatePipelineForFilteringLatestDataAgreementRecords(organisationId string) ([]primitive.M, error) {
 

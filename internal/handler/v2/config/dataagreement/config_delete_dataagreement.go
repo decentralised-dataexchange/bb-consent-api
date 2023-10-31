@@ -44,14 +44,6 @@ func ConfigDeleteDataAgreement(w http.ResponseWriter, r *http.Request) {
 	darRepo := daRecord.DataAgreementRecordRepository{}
 	darRepo.Init(organisationId)
 
-	// Deletes all the data agreement records for data agreement id
-	err = darRepo.DeleteDataAgreementRecordsForDataAgreement(dataAgreementId)
-	if err != nil {
-		m := fmt.Sprintf("Failed to delete data agreement id from data agreement records: %v", dataAgreementId)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
-
 	_, err = daRepo.Update(currentDataAgreement)
 	if err != nil {
 		m := fmt.Sprintf("Failed to delete data agreement: %v", dataAgreementId)

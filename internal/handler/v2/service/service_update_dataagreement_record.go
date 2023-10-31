@@ -58,6 +58,17 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Repository
+	daRepo := dataagreement.DataAgreementRepository{}
+	daRepo.Init(organisationId)
+
+	da, err := daRepo.Get(dataAgreementId)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch data agreement: %v", dataAgreementId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Repository
 	darRepo := daRecord.DataAgreementRecordRepository{}
 	darRepo.Init(organisationId)
 
@@ -100,17 +111,6 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 	savedRevision, err := revision.Add(newRevision)
 	if err != nil {
 		m := fmt.Sprintf("Failed to create new revision: %v", newRevision.Id)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
-
-	// Repository
-	daRepo := dataagreement.DataAgreementRepository{}
-	daRepo.Init(organisationId)
-
-	da, err := daRepo.Get(dataAgreementId)
-	if err != nil {
-		m := fmt.Sprintf("Failed to fetch data agreement: %v", dataAgreementId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
