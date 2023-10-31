@@ -175,9 +175,9 @@ func ConfigUpdateDataAgreement(w http.ResponseWriter, r *http.Request) {
 
 	var newRevision revision.Revision
 
-	// If data agreement is published
-	// then update data agreement version
-	// and add a new revision
+	// If data agreement is published then:
+	// a. Update data agreement version
+	// b. Add a new revision
 	if toBeUpdatedDataAgreement.Active {
 		// Bump major version for data agreement
 		updatedVersion, err := common.BumpMajorVersion(toBeUpdatedDataAgreement.Version)

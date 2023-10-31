@@ -25,30 +25,20 @@ func validateUpdateDataAttributeRequestBody(dataAttributeReq updateDataAttribute
 	return nil
 }
 
-func updateDataAttributeFromRequestBody(dataAttributeId string, requestBody updateDataAttributeReq, toBeUpdatedDataAgreement dataagreement.DataAgreement) dataagreement.DataAgreement {
+func updateDataAttributeFromRequestBody(dataAttributeId string, requestBody updateDataAttributeReq, dataAttributes []dataagreement.DataAttribute) []dataagreement.DataAttribute {
+	updatedDataAttributes := make([]dataagreement.DataAttribute, len(dataAttributes))
 
-	var dataAttributes []dataagreement.DataAttribute
-
-	for i := range toBeUpdatedDataAgreement.DataAttributes {
-		var dataAttribute dataagreement.DataAttribute
-		if toBeUpdatedDataAgreement.DataAttributes[i].Id.Hex() == dataAttributeId {
-			dataAttribute.Id = toBeUpdatedDataAgreement.DataAttributes[i].Id
-			dataAttribute.Name = requestBody.DataAttribute.Name
-			dataAttribute.Description = requestBody.DataAttribute.Description
-			dataAttribute.Sensitivity = requestBody.DataAttribute.Sensitivity
-			dataAttribute.Category = requestBody.DataAttribute.Category
-		} else {
-			dataAttribute.Id = toBeUpdatedDataAgreement.DataAttributes[i].Id
-			dataAttribute.Name = toBeUpdatedDataAgreement.DataAttributes[i].Name
-			dataAttribute.Description = toBeUpdatedDataAgreement.DataAttributes[i].Description
-			dataAttribute.Sensitivity = toBeUpdatedDataAgreement.DataAttributes[i].Sensitivity
-			dataAttribute.Category = toBeUpdatedDataAgreement.DataAttributes[i].Category
+	for i, dataAttribute := range dataAttributes {
+		updatedDataAttribute := dataAttribute
+		if dataAttribute.Id.Hex() == dataAttributeId {
+			updatedDataAttribute.Name = requestBody.DataAttribute.Name
+			updatedDataAttribute.Description = requestBody.DataAttribute.Description
+			updatedDataAttribute.Sensitivity = requestBody.DataAttribute.Sensitivity
+			updatedDataAttribute.Category = requestBody.DataAttribute.Category
 		}
-		dataAttributes = append(dataAttributes, dataAttribute)
+		updatedDataAttributes[i] = updatedDataAttribute
 	}
-	toBeUpdatedDataAgreement.DataAttributes = dataAttributes
-
-	return toBeUpdatedDataAgreement
+	return updatedDataAttributes
 }
 
 func dataAttributeResp(dataAttributeId string, savedDataAgreement dataagreement.DataAgreement) dataagreement.DataAttribute {
@@ -109,7 +99,7 @@ func ConfigUpdateDataAttribute(w http.ResponseWriter, r *http.Request) {
 	darepo := dataagreement.DataAgreementRepository{}
 	darepo.Init(organisationId)
 
-	// Get data attribute from db
+	// Get data agreement by data attribute id
 	toBeUpdatedDataAgreement, err := darepo.GetByDataAttributeId(dataAttributeId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch data agreement by data attribute id: %v", dataAttributeId)
@@ -117,12 +107,13 @@ func ConfigUpdateDataAttribute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update data attribute from request body
-	toBeUpdatedDataAgreement = updateDataAttributeFromRequestBody(dataAttributeId, dataAttributeReq, toBeUpdatedDataAgreement)
+	// Update data attribute if a match is found
+	toBeUpdatedDataAgreement.DataAttributes = updateDataAttributeFromRequestBody(dataAttributeId, dataAttributeReq, toBeUpdatedDataAgreement.DataAttributes)
 
-	// If data agreement is published
-	// then update data agreement version
-	// and add a new revision
+	// Revision handling for data agreements
+	// If data agreement is published then:
+	// a. Update data agreement version
+	// b. Add a new revision
 	if toBeUpdatedDataAgreement.Active {
 		// Bump major version for data agreement
 		updatedVersion, err := common.BumpMajorVersion(toBeUpdatedDataAgreement.Version)
