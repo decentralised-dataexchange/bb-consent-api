@@ -113,14 +113,8 @@ func ConfigUpdateDataAttribute(w http.ResponseWriter, r *http.Request) {
 	// Get data attribute from db
 	toBeUpdatedDataAgreement, err := darepo.GetByDataAttributeId(dataAttributeId)
 	if err != nil {
-		common.HandleErrorV2(w, http.StatusInternalServerError, err.Error(), err)
-		return
-	}
-	var currentRevision revision.Revision
-	// Get current revision from db
-	currentRevision, err = revision.GetLatestByDataAgreementId(toBeUpdatedDataAgreement.Id.Hex())
-	if err != nil {
-		common.HandleErrorV2(w, http.StatusInternalServerError, err.Error(), err)
+		m := fmt.Sprintf("Failed to fetch data agreement by data attribute id: %v", dataAttributeId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 
@@ -134,10 +128,19 @@ func ConfigUpdateDataAttribute(w http.ResponseWriter, r *http.Request) {
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
+	var currentRevision revision.Revision
 
 	if toBeUpdatedDataAgreement.Active {
 
 		toBeUpdatedDataAgreement.Version = updatedVersion
+
+		// Get current revision from db
+		currentRevision, err = revision.GetLatestByDataAgreementId(toBeUpdatedDataAgreement.Id.Hex())
+		if err != nil {
+			m := fmt.Sprintf("Failed to fetch latest revision for data agreement id: %v", toBeUpdatedDataAgreement.Id.Hex())
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
 
 		// Update revision
 		newRevision, err := revision.UpdateRevisionForDataAgreement(toBeUpdatedDataAgreement, &currentRevision, orgAdminId)
