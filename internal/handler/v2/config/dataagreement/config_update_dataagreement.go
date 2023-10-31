@@ -116,6 +116,11 @@ func updateDataAgreementFromRequestBody(requestBody updateDataAgreementReq, toBe
 		toBeUpdatedDataAgreement.Policy.Id = primitive.NewObjectID()
 	}
 
+	// Update life cycle based on active field
+	toBeUpdatedDataAgreement.Lifecycle = setDataAgreementLifecycle(requestBody.DataAgreement.Active)
+
+	toBeUpdatedDataAgreement.DataAttributes = updateDataAttributeFromUpdateDataAgreementRequestBody(requestBody)
+
 	return toBeUpdatedDataAgreement
 }
 
@@ -144,7 +149,9 @@ func ConfigUpdateDataAgreement(w http.ResponseWriter, r *http.Request) {
 		common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
 		return
 	}
-	o, err := org.Get(organisationId)
+
+	// Query organisation by Id
+	_, err = org.Get(organisationId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get organization by ID :%v", organisationId)
 		common.HandleErrorV2(w, http.StatusNotFound, m, err)
@@ -154,8 +161,9 @@ func ConfigUpdateDataAgreement(w http.ResponseWriter, r *http.Request) {
 	// Repository
 	daRepo := dataagreement.DataAgreementRepository{}
 	daRepo.Init(organisationId)
-	// Get policy from db
-	toBeUpdatedDataAgreement, err := daRepo.Get(dataAgreementId)
+
+	// Get data agreement from db
+	currentDataAgreement, err := daRepo.Get(dataAgreementId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch data agreement by id: %v", dataAgreementId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
@@ -163,75 +171,33 @@ func ConfigUpdateDataAgreement(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update data agreement from request body
-	toBeUpdatedDataAgreement = updateDataAgreementFromRequestBody(dataAgreementReq, toBeUpdatedDataAgreement)
+	toBeUpdatedDataAgreement := updateDataAgreementFromRequestBody(dataAgreementReq, currentDataAgreement)
 
-	// Update life cycle based on active field
-	lifecycle := setDataAgreementLifecycle(dataAgreementReq.DataAgreement.Active)
-
-	toBeUpdatedDataAgreement.ControllerName = o.Name
-	toBeUpdatedDataAgreement.ControllerUrl = o.EulaURL
-	toBeUpdatedDataAgreement.Lifecycle = lifecycle
-
-	toBeUpdatedDataAttributes := updateDataAttributeFromUpdateDataAgreementRequestBody(dataAgreementReq)
-	toBeUpdatedDataAgreement.DataAttributes = toBeUpdatedDataAttributes
-
-	// Bump major version for policy
-	updatedVersion, err := common.BumpMajorVersion(toBeUpdatedDataAgreement.Version)
-	if err != nil {
-		m := fmt.Sprintf("Failed to bump major version for data agreement: %v", dataAgreementId)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
-
-	var currentRevision revision.Revision
 	var newRevision revision.Revision
 
+	// If data agreement is published
+	// then update data agreement version
+	// and add a new revision
 	if toBeUpdatedDataAgreement.Active {
-
-		if toBeUpdatedDataAgreement.Version == "0.0.0" {
-			toBeUpdatedDataAgreement.Version = updatedVersion
-			// Create new revision
-			newRevision, err = revision.CreateRevisionForDataAgreement(toBeUpdatedDataAgreement, orgAdminId)
-			if err != nil {
-				m := fmt.Sprintf("Failed to create revision for data agreement: %v", toBeUpdatedDataAgreement.Id)
-				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-				return
-			}
-		} else {
-			// Get revision from db
-			currentRevision, err = revision.GetLatestByDataAgreementId(dataAgreementId)
-			if err != nil {
-				m := fmt.Sprintf("Failed to fetch latest revision by data agreement id: %v", dataAgreementId)
-				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-				return
-			}
-
-			toBeUpdatedDataAgreement.Version = updatedVersion
-
-			// Update revision
-			newRevision, err = revision.UpdateRevisionForDataAgreement(toBeUpdatedDataAgreement, &currentRevision, orgAdminId)
-			if err != nil {
-				m := fmt.Sprintf("Failed to update revision for data agreement: %v", dataAgreementId)
-				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-				return
-			}
-
-			// Save the previous revision to db
-			updatedRevision, err := revision.Update(currentRevision)
-			if err != nil {
-				m := fmt.Sprintf("Failed to update revision: %v", updatedRevision.Id)
-				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-				return
-			}
-		}
-
-		// Save the revision to db
-		currentRevision, err = revision.Add(newRevision)
+		// Bump major version for data agreement
+		updatedVersion, err := common.BumpMajorVersion(toBeUpdatedDataAgreement.Version)
 		if err != nil {
-			m := fmt.Sprintf("Failed to create new data agreement: %v", newRevision.Id)
+			m := fmt.Sprintf("Failed to bump major version for data agreement: %v", dataAgreementId)
 			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 			return
 		}
+
+		// Increment data agreement version
+		toBeUpdatedDataAgreement.Version = updatedVersion
+
+		// Update revision
+		newRevision, err = revision.UpdateRevisionForDataAgreement(toBeUpdatedDataAgreement, orgAdminId)
+		if err != nil {
+			m := fmt.Sprintf("Failed to update data agreement: %v", dataAgreementId)
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
+
 	}
 
 	// Save the data agreement to db
@@ -247,7 +213,7 @@ func ConfigUpdateDataAgreement(w http.ResponseWriter, r *http.Request) {
 	resp.DataAgreement = savedDataAgreement
 
 	var revisionForHTTPResponse revision.RevisionForHTTPResponse
-	revisionForHTTPResponse.Init(currentRevision)
+	revisionForHTTPResponse.Init(newRevision)
 	resp.Revision = revisionForHTTPResponse
 
 	response, _ := json.Marshal(resp)

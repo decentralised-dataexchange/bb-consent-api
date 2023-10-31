@@ -81,16 +81,19 @@ func (r *Revision) CreateRevision(objectData interface{}) error {
 
 // UpdateRevision
 func (r *Revision) UpdateRevision(previousRevision *Revision, objectData interface{}) error {
-	// Update successor for previous revision
-	previousRevision.updateSuccessorId(r.Id.Hex())
 
-	// Predecessor hash
-	r.updatePredecessorHash(previousRevision.SerializedHash)
+	if previousRevision == nil {
+		// Update successor for previous revision
+		previousRevision.updateSuccessorId(r.Id.Hex())
 
-	// Predecessor signature
-	// TODO: Add signature for predecessor hash
-	signature := ""
-	r.updatePredecessorSignature(signature)
+		// Predecessor hash
+		r.updatePredecessorHash(previousRevision.SerializedHash)
+
+		// Predecessor signature
+		// TODO: Add signature for predecessor hash
+		signature := ""
+		r.updatePredecessorSignature(signature)
+	}
 
 	// Create revision
 	err := r.CreateRevision(objectData)
@@ -154,7 +157,7 @@ func UpdateRevisionForPolicy(updatedPolicy policy.Policy, previousRevision *Revi
 	// Update revision
 	revision := Revision{}
 	revision.Init(objectData.Id.Hex(), orgAdminId, config.Policy)
-	err := revision.UpdateRevision(previousRevision, objectData)
+	err := revision.UpdateRevision(nil, objectData)
 
 	return revision, err
 }
@@ -274,7 +277,7 @@ func CreateRevisionForDataAgreement(newDataAgreement dataagreement.DataAgreement
 }
 
 // UpdateRevisionForDataAgreement
-func UpdateRevisionForDataAgreement(updatedDataAgreement dataagreement.DataAgreement, previousRevision *Revision, orgAdminId string) (Revision, error) {
+func UpdateRevisionForDataAgreement(updatedDataAgreement dataagreement.DataAgreement, orgAdminId string) (Revision, error) {
 	// Object data
 	objectData := dataAgreementForObjectData{
 		Id:                      updatedDataAgreement.Id.Hex(),
@@ -296,12 +299,39 @@ func UpdateRevisionForDataAgreement(updatedDataAgreement dataagreement.DataAgree
 		DataAttributes:          updatedDataAgreement.DataAttributes,
 	}
 
-	// Update revision
-	revision := Revision{}
-	revision.Init(objectData.Id, orgAdminId, config.DataAgreement)
-	err := revision.UpdateRevision(previousRevision, objectData)
+	// Initialise revision
+	r := Revision{}
+	r.Init(objectData.Id, orgAdminId, config.DataAgreement)
 
-	return revision, err
+	// Query for previous revisions
+	previousRevision, err := GetLatestByDataAgreementId(updatedDataAgreement.Id.Hex())
+	if err != nil {
+		// Previous revision is not present
+		err = r.UpdateRevision(nil, objectData)
+		if err != nil {
+			return r, err
+		}
+	} else {
+		// Previous revision is present
+		err = r.UpdateRevision(&previousRevision, objectData)
+		if err != nil {
+			return r, err
+		}
+
+		// Save the previous revision to db
+		_, err = Update(previousRevision)
+		if err != nil {
+			return r, err
+		}
+	}
+
+	// Save the new revision
+	_, err = Add(r)
+	if err != nil {
+		return r, err
+	}
+
+	return r, err
 }
 
 func RecreateDataAgreementFromRevision(revision Revision) (dataagreement.DataAgreement, error) {

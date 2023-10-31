@@ -77,7 +77,6 @@ type updateDataAttributeReq struct {
 
 type updateDataAttributeResp struct {
 	DataAttribute dataagreement.DataAttribute `json:"dataAttribute"`
-	Revision      interface{}                 `json:"revision"`
 }
 
 // ConfigUpdateDataAttribute
@@ -121,59 +120,29 @@ func ConfigUpdateDataAttribute(w http.ResponseWriter, r *http.Request) {
 	// Update data attribute from request body
 	toBeUpdatedDataAgreement = updateDataAttributeFromRequestBody(dataAttributeId, dataAttributeReq, toBeUpdatedDataAgreement)
 
-	// Bump major version for data attribute
-	updatedVersion, err := common.BumpMajorVersion(toBeUpdatedDataAgreement.Version)
-	if err != nil {
-		m := fmt.Sprintf("Failed to bump major version for data attribute: %v", dataAttributeId)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
-	var currentRevision revision.Revision
-	var newRevision revision.Revision
-
+	// If data agreement is published
+	// then update data agreement version
+	// and add a new revision
 	if toBeUpdatedDataAgreement.Active {
-		if toBeUpdatedDataAgreement.Version == "0.0.0" {
-			toBeUpdatedDataAgreement.Version = updatedVersion
-			// Create new revision
-			newRevision, err = revision.CreateRevisionForDataAgreement(toBeUpdatedDataAgreement, orgAdminId)
-			if err != nil {
-				m := fmt.Sprintf("Failed to create revision for data agreement: %v", toBeUpdatedDataAgreement.Id)
-				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-				return
-			}
-		} else {
-			// Get current revision from db
-			currentRevision, err = revision.GetLatestByDataAgreementId(toBeUpdatedDataAgreement.Id.Hex())
-			if err != nil {
-				m := fmt.Sprintf("Failed to fetch latest revision for data agreement id: %v", toBeUpdatedDataAgreement.Id.Hex())
-				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-				return
-			}
-			toBeUpdatedDataAgreement.Version = updatedVersion
-
-			// Update revision
-			newRevision, err = revision.UpdateRevisionForDataAgreement(toBeUpdatedDataAgreement, &currentRevision, orgAdminId)
-			if err != nil {
-				m := fmt.Sprintf("Failed to update revision for data attribute: %v", dataAttributeId)
-				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-				return
-			}
-
-			// Save the previous revision to db
-			updatedRevision, err := revision.Update(currentRevision)
-			if err != nil {
-				m := fmt.Sprintf("Failed to update revision: %v", updatedRevision.Id)
-				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-				return
-			}
-		}
-		// Save the revision to db
-		currentRevision, err = revision.Add(newRevision)
+		// Bump major version for data agreement
+		updatedVersion, err := common.BumpMajorVersion(toBeUpdatedDataAgreement.Version)
 		if err != nil {
-			m := fmt.Sprintf("Failed to create new revision: %v", newRevision.Id)
+			m := fmt.Sprintf("Failed to bump major version for data agreement: %v", toBeUpdatedDataAgreement.Id.Hex())
 			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 			return
 		}
+
+		// Increment data agreement version
+		toBeUpdatedDataAgreement.Version = updatedVersion
+
+		// Update revision
+		_, err = revision.UpdateRevisionForDataAgreement(toBeUpdatedDataAgreement, orgAdminId)
+		if err != nil {
+			m := fmt.Sprintf("Failed to update data agreement: %v", toBeUpdatedDataAgreement.Id.Hex())
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
+
 	}
 
 	// Save the data agreement to db
@@ -189,10 +158,6 @@ func ConfigUpdateDataAttribute(w http.ResponseWriter, r *http.Request) {
 	updatedDataAttribute := dataAttributeResp(dataAttributeId, savedDataAgreement)
 
 	resp.DataAttribute = updatedDataAttribute
-	var revisionForHTTPResponse revision.RevisionForHTTPResponse
-	revisionForHTTPResponse.Init(currentRevision)
-	resp.Revision = revisionForHTTPResponse
-
 	response, _ := json.Marshal(resp)
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
