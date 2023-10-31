@@ -28,7 +28,7 @@ func GetAdminToken(username string, password string, realm string, client *goclo
 }
 func GetToken(username string, password string, realm string, client *gocloak.GoCloak) (*gocloak.JWT, error) {
 	ctx := context.Background()
-	clientId := "igrant-ios-app"
+	clientId := IamConfig.ClientId
 	grantType := "password"
 	token, err := client.GetToken(ctx, realm, gocloak.TokenOptions{Username: &username, Password: &password, ClientID: &clientId, GrantType: &grantType})
 	if err != nil {
@@ -122,6 +122,7 @@ func RegisterUser(email string, name string) (string, error) {
 		FirstName: &name,
 		Email:     &email,
 		Username:  &email,
+		Enabled:   gocloak.BoolP(true),
 	}
 
 	client := GetClient()
@@ -137,4 +138,40 @@ func RegisterUser(email string, name string) (string, error) {
 	}
 
 	return iamId, nil
+}
+
+// UpdateIamIndividual Update individual info on IAM server end.
+func UpdateIamIndividual(name string, iamID string, email string) error {
+	user := gocloak.User{
+		ID:        &iamID,
+		FirstName: &name,
+		Username:  &email,
+		Email:     &email,
+	}
+
+	client := GetClient()
+
+	token, err := GetAdminToken(IamConfig.AdminUser, IamConfig.AdminPassword, "master", client)
+	if err != nil {
+		return err
+	}
+
+	err = client.UpdateUser(context.Background(), token.AccessToken, IamConfig.Realm, user)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// UnregisterIndividual Unregisters an existing individual
+func UnregisterIndividual(iamUserID string) error {
+	client := GetClient()
+
+	token, err := GetAdminToken(IamConfig.AdminUser, IamConfig.AdminPassword, "master", client)
+	if err != nil {
+		return err
+	}
+
+	err = client.DeleteUser(context.Background(), token.AccessToken, IamConfig.Realm, iamUserID)
+	return err
 }

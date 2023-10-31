@@ -1,14 +1,11 @@
 package individual
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 
-	"github.com/Nerzal/gocloak/v13"
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
@@ -25,45 +22,6 @@ func validateUpdateIndividualRequestBody(IndividualReq updateIndividualReq) erro
 	}
 
 	return nil
-}
-
-type iamIndividualUpdateReq struct {
-	Username  string `json:"username"`
-	Firstname string `json:"firstName"`
-	Email     string `json:"email"`
-}
-
-// updateIamIndividual Update user info on IAM server end.
-func updateIamIndividual(iamUpdateReq iamIndividualUpdateReq, iamID string) error {
-	client := getClient()
-
-	t, err := getAdminToken(client)
-	if err != nil {
-		log.Printf("Failed to get admin token, user: %v update err:%v", iamUpdateReq.Firstname, err)
-		return err
-	}
-	user, err := client.GetUserByID(context.Background(), t.AccessToken, iam.IamConfig.Realm, iamID)
-	if err != nil {
-		return err
-	}
-	user.FirstName = gocloak.StringP(iamUpdateReq.Firstname)
-	user.Username = gocloak.StringP(iamUpdateReq.Username)
-	user.Email = gocloak.StringP(iamUpdateReq.Email)
-	u := *user
-
-	err = client.UpdateUser(context.Background(), t.AccessToken, iam.IamConfig.Realm, u)
-
-	return err
-}
-
-func updateIamUpdateRequestFromRequestBody(requestBody updateIndividualReq) iamIndividualUpdateReq {
-	var iamIndividualReq iamIndividualUpdateReq
-
-	iamIndividualReq.Username = requestBody.Individual.Email
-	iamIndividualReq.Firstname = requestBody.Individual.Name
-	iamIndividualReq.Email = requestBody.Individual.Email
-
-	return iamIndividualReq
 }
 
 func updateIndividualFromUpdateIndividualRequestBody(requestBody updateIndividualReq, tobeUpdatedIndividual individual.Individual) individual.Individual {
@@ -117,9 +75,8 @@ func ConfigUpdateIndividual(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	iamUpdateReq := updateIamUpdateRequestFromRequestBody(individualReq)
-
-	err = updateIamIndividual(iamUpdateReq, tobeUpdatedIndividual.IamId)
+	// Update individual in iam
+	err = iam.UpdateIamIndividual(individualReq.Individual.Name, tobeUpdatedIndividual.IamId, individualReq.Individual.Email)
 	if err != nil {
 		m := fmt.Sprintf("Failed to update IAM user by id:%v", individualId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
