@@ -10,11 +10,15 @@ import (
 	"github.com/bb-consent/api/internal/dataagreement"
 	daRecord "github.com/bb-consent/api/internal/dataagreement_record"
 	"github.com/bb-consent/api/internal/revision"
+	"github.com/bb-consent/api/internal/token"
 	"github.com/gorilla/mux"
 )
 
 // ConfigDeleteDataAgreement
 func ConfigDeleteDataAgreement(w http.ResponseWriter, r *http.Request) {
+	// Current user
+	orgAdminId := token.GetUserID(r)
+
 	organisationId := r.Header.Get(config.OrganizationId)
 	organisationId = common.Sanitize(organisationId)
 	dataAgreementId := mux.Vars(r)[config.DataAgreementId]
@@ -31,11 +35,23 @@ func ConfigDeleteDataAgreement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentRevision, err := revision.GetLatestByDataAgreementId(dataAgreementId)
-	if err != nil {
-		m := fmt.Sprintf("Failed to fetch revisions: %v", dataAgreementId)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
+	var currentRevision revision.Revision
+
+	if currentDataAgreement.Version == "" {
+		currentRevision, err = revision.CreateRevisionForDraftDataAgreement(currentDataAgreement, orgAdminId)
+		if err != nil {
+			m := fmt.Sprintf("Failed to create revision for draft data agreement: %v", dataAgreementId)
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
+	} else {
+		currentRevision, err = revision.GetLatestByDataAgreementId(dataAgreementId)
+		if err != nil {
+			m := fmt.Sprintf("Failed to fetch revisions: %v", dataAgreementId)
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
+
 	}
 
 	currentDataAgreement.IsDeleted = true

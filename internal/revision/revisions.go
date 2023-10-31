@@ -231,6 +231,17 @@ type dataAgreementForObjectData struct {
 	IsDeleted               bool                          `json:"-"`
 }
 
+// InitForDraftDataAgreement
+func (r *Revision) InitForDraftDataAgreement(objectId string, authorisedByOtherId string, schemaName string) {
+	r.Id = primitive.NilObjectID
+	r.SchemaName = schemaName
+	r.ObjectId = objectId
+	r.SignedWithoutObjectId = false
+	r.Timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
+	r.AuthorizedByIndividualId = ""
+	r.AuthorizedByOtherId = authorisedByOtherId
+}
+
 // CreateRevisionForDataAgreement
 func CreateRevisionForDataAgreement(newDataAgreement dataagreement.DataAgreement, orgAdminId string) (Revision, error) {
 	// Object data
@@ -310,6 +321,37 @@ func RecreateDataAgreementFromRevision(revision Revision) (dataagreement.DataAgr
 	}
 
 	return da, nil
+}
+
+// CreateRevisionForDraftDataAgreement
+func CreateRevisionForDraftDataAgreement(newDataAgreement dataagreement.DataAgreement, orgAdminId string) (Revision, error) {
+	// Object data
+	objectData := dataAgreementForObjectData{
+		Id:                      newDataAgreement.Id.Hex(),
+		Version:                 newDataAgreement.Version,
+		ControllerId:            newDataAgreement.ControllerId,
+		ControllerUrl:           newDataAgreement.ControllerUrl,
+		Policy:                  newDataAgreement.Policy,
+		Purpose:                 newDataAgreement.Purpose,
+		PurposeDescription:      newDataAgreement.PurposeDescription,
+		LawfulBasis:             newDataAgreement.LawfulBasis,
+		MethodOfUse:             newDataAgreement.MethodOfUse,
+		DpiaDate:                newDataAgreement.DpiaDate,
+		DpiaSummaryUrl:          newDataAgreement.DpiaSummaryUrl,
+		Signature:               newDataAgreement.Signature,
+		Active:                  newDataAgreement.Active,
+		Forgettable:             newDataAgreement.Forgettable,
+		CompatibleWithVersionId: newDataAgreement.CompatibleWithVersionId,
+		Lifecycle:               newDataAgreement.Lifecycle,
+		DataAttributes:          newDataAgreement.DataAttributes,
+	}
+
+	// Create revision
+	revision := Revision{}
+	revision.InitForDraftDataAgreement(objectData.Id, orgAdminId, config.DataAgreement)
+	err := revision.CreateRevision(objectData)
+
+	return revision, err
 }
 
 type dataAgreementRecordForObjectData struct {
