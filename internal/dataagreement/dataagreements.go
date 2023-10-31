@@ -63,7 +63,7 @@ type DataAgreement struct {
 	Forgettable             bool               `json:"forgettable"`
 	CompatibleWithVersionId string             `json:"compatibleWithVersionId"`
 	Lifecycle               string             `json:"lifecycle" valid:"required"`
-	DataAttributes          []DataAttribute    `json:"dataAttributes" valid:"required"`
+	DataAttributes          []DataAttribute    `json:"attributes" valid:"required"`
 	OrganisationId          string             `json:"-"`
 	IsDeleted               bool               `json:"-"`
 }

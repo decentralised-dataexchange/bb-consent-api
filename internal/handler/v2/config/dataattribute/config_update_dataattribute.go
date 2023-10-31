@@ -72,11 +72,11 @@ func dataAttributeResp(dataAttributeId string, savedDataAgreement dataagreement.
 }
 
 type updateDataAttributeReq struct {
-	DataAttribute dataagreement.DataAttribute `json:"dataAttribute" valid:"required"`
+	DataAttribute dataagreement.DataAttribute `json:"attribute" valid:"required"`
 }
 
 type updateDataAttributeResp struct {
-	DataAttribute dataagreement.DataAttribute `json:"dataAttribute"`
+	DataAttribute dataagreement.DataAttribute `json:"attribute"`
 	Revision      interface{}                 `json:"revision"`
 }
 

@@ -226,7 +226,7 @@ type dataAgreementForObjectData struct {
 	Forgettable             bool                          `json:"forgettable"`
 	CompatibleWithVersionId string                        `json:"compatibleWithVersionId"`
 	Lifecycle               string                        `json:"lifecycle" valid:"required"`
-	DataAttributes          []dataagreement.DataAttribute `json:"dataAttributes" valid:"required"`
+	DataAttributes          []dataagreement.DataAttribute `json:"attributes" valid:"required"`
 	OrganisationId          string                        `json:"-"`
 	IsDeleted               bool                          `json:"-"`
 }

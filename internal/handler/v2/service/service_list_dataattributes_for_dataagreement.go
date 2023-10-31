@@ -15,7 +15,7 @@ import (
 
 type listDataAttributesResp struct {
 	DataAgreement  dataagreement.DataAgreement `json:"dataAgreement"`
-	DataAttributes interface{}                 `json:"dataAttributes"`
+	DataAttributes interface{}                 `json:"attributes"`
 	Pagination     paginate.Pagination         `json:"pagination"`
 }
 

@@ -14,7 +14,7 @@ import (
 )
 
 type listDataAttributesResp struct {
-	DataAttributes interface{}         `json:"dataAttributes"`
+	DataAttributes interface{}         `json:"attributes"`
 	Pagination     paginate.Pagination `json:"pagination"`
 }
 

@@ -18,7 +18,7 @@ const (
 const (
 	OrganizationId        = "organizationId"
 	DataAgreementId       = "dataAgreementId"
-	DataAttributeId       = "dataAttributeId"
+	DataAttributeId       = "attributeId"
 	WebhookId             = "webhookId"
 	WebhookDeliveryId     = "deliveryId"
 	PolicyId              = "policyId"
@@ -38,7 +38,7 @@ const (
 	DataAgreement       = "dataAgreement"
 	Policy              = "policy"
 	DataAgreementRecord = "consentRecord"
-	DataAttribute       = "dataAttribute"
+	DataAttribute       = "attribute"
 )
 
 // Data Agreement Method of Use

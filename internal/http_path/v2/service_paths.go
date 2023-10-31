@@ -8,7 +8,7 @@ const ServiceListDataAgreements = "/v2/service/data-agreements"
 const ServiceReadPolicy = "/v2/service/policy/{policyId}"
 
 // Data attributes
-const ServiceListDataAttributesForDataAgreement = "/v2/service/data-agreement/{dataAgreementId}/data-attributes"
+const ServiceListDataAttributesForDataAgreement = "/v2/service/data-agreement/{dataAgreementId}/attributes"
 
 // Verification mechanisms
 const ServiceVerificationFetchAllDataAgreementRecords = "/v2/service/verification/data-agreements"
