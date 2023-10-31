@@ -171,8 +171,25 @@ func setDataAgreementLifecycle(active bool) string {
 	return lifecycle
 }
 
-func updateDataAgreementFromAddDataAgreementRequestBody(requestBody addDataAgreementReq, newDataAgreement dataagreement.DataAgreement) dataagreement.DataAgreement {
+func setDataAttributesFromReq(requestBody addDataAgreementReq) []dataagreement.DataAttribute {
+	var newDataAttributes []dataagreement.DataAttribute
 
+	for _, dA := range requestBody.DataAgreement.DataAttributes {
+		var dataAttribute dataagreement.DataAttribute
+		dataAttribute.Id = primitive.NewObjectID()
+		dataAttribute.Name = dA.Name
+		dataAttribute.Description = dA.Description
+		dataAttribute.Category = dA.Category
+		dataAttribute.Sensitivity = dA.Sensitivity
+
+		newDataAttributes = append(newDataAttributes, dataAttribute)
+	}
+
+	return newDataAttributes
+}
+
+func setDataAgreementFromReq(requestBody addDataAgreementReq, newDataAgreement dataagreement.DataAgreement) dataagreement.DataAgreement {
+	// Policy
 	newDataAgreement.Policy.Id = primitive.NewObjectID()
 	newDataAgreement.Policy.Name = requestBody.DataAgreement.Policy.Name
 	newDataAgreement.Policy.Version = requestBody.DataAgreement.Policy.Version
@@ -183,12 +200,8 @@ func updateDataAgreementFromAddDataAgreementRequestBody(requestBody addDataAgree
 	newDataAgreement.Policy.GeographicRestriction = requestBody.DataAgreement.Policy.GeographicRestriction
 	newDataAgreement.Policy.StorageLocation = requestBody.DataAgreement.Policy.StorageLocation
 	newDataAgreement.Policy.ThirdPartyDataSharing = requestBody.DataAgreement.Policy.ThirdPartyDataSharing
-	newDataAgreement.Purpose = requestBody.DataAgreement.Purpose
-	newDataAgreement.PurposeDescription = requestBody.DataAgreement.PurposeDescription
-	newDataAgreement.LawfulBasis = requestBody.DataAgreement.LawfulBasis
-	newDataAgreement.MethodOfUse = requestBody.DataAgreement.MethodOfUse
-	newDataAgreement.DpiaDate = requestBody.DataAgreement.DpiaDate
-	newDataAgreement.DpiaSummaryUrl = requestBody.DataAgreement.DpiaSummaryUrl
+
+	// Signature
 	newDataAgreement.Signature.Id = primitive.NewObjectID()
 	newDataAgreement.Signature.Payload = requestBody.DataAgreement.Signature.Payload
 	newDataAgreement.Signature.Signature = requestBody.DataAgreement.Signature.Signature.Signature
@@ -204,28 +217,28 @@ func updateDataAgreementFromAddDataAgreementRequestBody(requestBody addDataAgree
 	newDataAgreement.Signature.ObjectType = requestBody.DataAgreement.Signature.ObjectType
 	newDataAgreement.Signature.ObjectReference = requestBody.DataAgreement.Signature.ObjectReference
 
+	// Other details
+	newDataAgreement.Purpose = requestBody.DataAgreement.Purpose
+	newDataAgreement.PurposeDescription = requestBody.DataAgreement.PurposeDescription
+	newDataAgreement.LawfulBasis = requestBody.DataAgreement.LawfulBasis
+	newDataAgreement.MethodOfUse = requestBody.DataAgreement.MethodOfUse
+	newDataAgreement.DpiaDate = requestBody.DataAgreement.DpiaDate
+	newDataAgreement.DpiaSummaryUrl = requestBody.DataAgreement.DpiaSummaryUrl
 	newDataAgreement.Active = requestBody.DataAgreement.Active
 	newDataAgreement.Forgettable = requestBody.DataAgreement.Forgettable
 	newDataAgreement.CompatibleWithVersionId = requestBody.DataAgreement.CompatibleWithVersionId
+	newDataAgreement.DataAttributes = setDataAttributesFromReq(requestBody)
+	newDataAgreement.Lifecycle = setDataAgreementLifecycle(requestBody.DataAgreement.Active)
 
 	return newDataAgreement
 }
 
-func updateDataAttributeFromAddDataAgreementRequestBody(requestBody addDataAgreementReq) []dataagreement.DataAttribute {
-	var newDataAttributes []dataagreement.DataAttribute
-
-	for _, dA := range requestBody.DataAgreement.DataAttributes {
-		var dataAttribute dataagreement.DataAttribute
-		dataAttribute.Id = primitive.NewObjectID()
-		dataAttribute.Name = dA.Name
-		dataAttribute.Description = dA.Description
-		dataAttribute.Category = dA.Category
-		dataAttribute.Sensitivity = dA.Sensitivity
-
-		newDataAttributes = append(newDataAttributes, dataAttribute)
-	}
-
-	return newDataAttributes
+func setControllerFromReq(o org.Organization, newDataAgreement dataagreement.DataAgreement) dataagreement.DataAgreement {
+	newDataAgreement.OrganisationId = o.ID.Hex()
+	newDataAgreement.ControllerId = o.ID.Hex()
+	newDataAgreement.ControllerName = o.Name
+	newDataAgreement.ControllerUrl = o.EulaURL
+	return newDataAgreement
 }
 
 // ConfigCreatePolicy
@@ -250,6 +263,7 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Query organisation by id
 	o, err := org.Get(organisationId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get organization by ID :%v", organisationId)
@@ -257,45 +271,37 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	version := common.IntegerToSemver(1)
-	draftVersion := common.IntegerToSemver(0)
-	// Add life cycle based on active field
-	lifecycle := setDataAgreementLifecycle(dataAgreementReq.DataAgreement.Active)
-
 	// Initialise data agreement
 	var newDataAgreement dataagreement.DataAgreement
 	newDataAgreement.Id = primitive.NewObjectID()
-	newDataAttributes := updateDataAttributeFromAddDataAgreementRequestBody(dataAgreementReq)
-	// Update data agreement from request body
-	newDataAgreement = updateDataAgreementFromAddDataAgreementRequestBody(dataAgreementReq, newDataAgreement)
-	newDataAgreement.OrganisationId = organisationId
-	newDataAgreement.ControllerId = organisationId
-	newDataAgreement.ControllerName = o.Name
-	newDataAgreement.ControllerUrl = o.EulaURL
-	newDataAgreement.DataAttributes = newDataAttributes
+
+	// Set data agreement details from request body
+	newDataAgreement = setDataAgreementFromReq(dataAgreementReq, newDataAgreement)
+
+	// Set controller details
+	newDataAgreement = setControllerFromReq(o, newDataAgreement)
 	newDataAgreement.IsDeleted = false
-	newDataAgreement.Lifecycle = lifecycle
-	newDataAgreement.Version = draftVersion
 
+	// If data agreement is published then:
+	// a. Set data agreement verion as 1.0.0
+	// b. Add a new revision
 	var newRevision revision.Revision
-	if dataAgreementReq.DataAgreement.Active {
-		newDataAgreement.Version = version
+	if newDataAgreement.Active {
+		// Set data agreement version
+		newDataAgreement.Version = common.IntegerToSemver(1)
 
-		// Create new revision
-		newRevision, err = revision.CreateRevisionForDataAgreement(newDataAgreement, orgAdminId)
+		// Update revision
+		newRevision, err = revision.UpdateRevisionForDataAgreement(newDataAgreement, orgAdminId)
 		if err != nil {
-			m := fmt.Sprintf("Failed to create revision for new data agreement: %v", newDataAgreement.Id)
+			m := "Failed to create data agreement"
 			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 			return
 		}
 
-		// Save the data agreement to db
-		_, err := revision.Add(newRevision)
-		if err != nil {
-			m := fmt.Sprintf("Failed to create new revision: %v", newRevision.Id)
-			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-			return
-		}
+	} else {
+		// Data agreement is draft
+		// Set data agreement version 0.0.0
+		newDataAgreement.Version = common.IntegerToSemver(0)
 	}
 
 	// Repository

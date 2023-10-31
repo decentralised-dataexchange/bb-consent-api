@@ -325,7 +325,7 @@ func UpdateRevisionForDataAgreement(updatedDataAgreement dataagreement.DataAgree
 		}
 	}
 
-	// Save the new revision
+	// Save the new revision to db
 	_, err = Add(r)
 	if err != nil {
 		return r, err
