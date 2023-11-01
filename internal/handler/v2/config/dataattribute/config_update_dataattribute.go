@@ -27,13 +27,14 @@ func validateReq(dataAttributeReq updateDataAttributeReq, organisationId string)
 
 func updateDataAttributeFromReq(dataAttributeId string, requestBody updateDataAttributeReq, dataAttributes []dataagreement.DataAttribute) ([]dataagreement.DataAttribute, int) {
 	updatedDataAttributes := make([]dataagreement.DataAttribute, len(dataAttributes))
+	updatedDataAttributes = dataAttributes
 
 	for i, dataAttribute := range dataAttributes {
 		if dataAttribute.Id.Hex() == dataAttributeId {
-			dataAttributes[i].Name = requestBody.DataAttribute.Name
-			dataAttributes[i].Description = requestBody.DataAttribute.Description
-			dataAttributes[i].Sensitivity = requestBody.DataAttribute.Sensitivity
-			dataAttributes[i].Category = requestBody.DataAttribute.Category
+			updatedDataAttributes[i].Name = requestBody.DataAttribute.Name
+			updatedDataAttributes[i].Description = requestBody.DataAttribute.Description
+			updatedDataAttributes[i].Sensitivity = requestBody.DataAttribute.Sensitivity
+			updatedDataAttributes[i].Category = requestBody.DataAttribute.Category
 
 			return updatedDataAttributes, i
 		}
