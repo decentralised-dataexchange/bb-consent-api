@@ -715,6 +715,13 @@ func AddOrganization(orgReq config.Organization, typeId string, userId string) (
 		return Organization{}, errors.New("missing mandatory param - Location")
 	}
 
+	description := orgReq.Description
+	defaultDescription := "is committed to safeguarding your privacy. We process your personal data in line with data agreements, ensuring adherence to ISO27560 standards and legal frameworks like GDPR. For every personal data we process, you can view its usage purpose and make informed choices to opt in or out. For inquiries, contact our Data Protection Officer at dpo@"
+
+	if strings.TrimSpace(description) == "" {
+		description = defaultDescription
+	}
+
 	orgType, err := orgtype.Get(typeId)
 	if err != nil {
 		log.Printf("Invalid organization type ID: %v", typeId)
@@ -727,7 +734,7 @@ func AddOrganization(orgReq config.Organization, typeId string, userId string) (
 	o.Name = orgReq.Name
 	o.Location = orgReq.Location
 	o.Type = orgType
-	o.Description = orgReq.Description
+	o.Description = description
 	o.EulaURL = orgReq.EulaURL
 	o.Admins = append(o.Admins, admin)
 	o.Enabled = true
