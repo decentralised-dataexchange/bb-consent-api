@@ -11,14 +11,49 @@ import (
 	"github.com/bb-consent/api/internal/dataagreement"
 	"github.com/bb-consent/api/internal/paginate"
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+type dataAgreementForDataAttribute struct {
+	Id      string `json:"id" bson:"_id,omitempty"`
+	Purpose string `json:"purpose"`
+}
+
+type dataAttributeForLists struct {
+	Id            primitive.ObjectID            `json:"id" bson:"_id,omitempty"`
+	Name          string                        `json:"name" valid:"required"`
+	Description   string                        `json:"description" valid:"required"`
+	Sensitivity   bool                          `json:"sensitivity"`
+	Category      string                        `json:"category"`
+	DataAgreement dataAgreementForDataAttribute `json:"dataAgreement"`
+}
 
 type listDataAttributesResp struct {
 	DataAttributes interface{}         `json:"dataAttributes"`
 	Pagination     paginate.Pagination `json:"pagination"`
 }
 
-func dataAttributesToInterfaceSlice(dataAttributes []dataagreement.DataAttribute) []interface{} {
+func dataAttributesForList(dA dataagreement.DataAgreement) []dataAttributeForLists {
+
+	var dataAttributes []dataAttributeForLists
+
+	for _, dataAttribute := range dA.DataAttributes {
+		var tempDataAttribute dataAttributeForLists
+		tempDataAttribute.Id = dataAttribute.Id
+		tempDataAttribute.Name = dataAttribute.Name
+		tempDataAttribute.Description = dataAttribute.Description
+		tempDataAttribute.Sensitivity = dataAttribute.Sensitivity
+		tempDataAttribute.Category = dataAttribute.Category
+		tempDataAttribute.DataAgreement.Id = dA.Id.Hex()
+		tempDataAttribute.DataAgreement.Purpose = dA.Purpose
+		dataAttributes = append(dataAttributes, tempDataAttribute)
+
+	}
+
+	return dataAttributes
+}
+
+func dataAttributesToInterfaceSlice(dataAttributes []dataAttributeForLists) []interface{} {
 	interfaceSlice := make([]interface{}, len(dataAttributes))
 	for i, r := range dataAttributes {
 		interfaceSlice[i] = r
@@ -44,7 +79,7 @@ func ConfigListDataAttributesForDataAgreement(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	dataAttributes := da.DataAttributes
+	dataAttributes := dataAttributesForList(da)
 
 	// Query params
 	offset, limit := paginate.ParsePaginationQueryParams(r)
