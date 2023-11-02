@@ -68,6 +68,11 @@ type DataAgreement struct {
 	IsDeleted               bool               `json:"-"`
 }
 
+type DataAgreementWithObjectData struct {
+	DataAgreement
+	ObjectData string `json:"objectData"`
+}
+
 type DataAgreementRepository struct {
 	DefaultFilter bson.M
 }
@@ -133,7 +138,7 @@ func (darepo *DataAgreementRepository) IsDataAgreementExist(dataAgreementID stri
 }
 
 // CreatePipelineForFilteringDataAgreements This pipeline is used for filtering data agreements
-func CreatePipelineForFilteringDataAgreements(organisationId string) ([]primitive.M, error) {
+func CreatePipelineForFilteringDataAgreements(organisationId string, removeRevisions bool) ([]primitive.M, error) {
 
 	var pipeline []bson.M
 
@@ -173,12 +178,14 @@ func CreatePipelineForFilteringDataAgreements(organisationId string) ([]primitiv
 		},
 	}}})
 
-	// Stage 4 - Remove revisions field
-	pipeline = append(pipeline, bson.M{
-		"$project": bson.M{
-			"revisions": 0,
-		},
-	})
+	if removeRevisions {
+		// Stage 4 - Remove revisions field
+		pipeline = append(pipeline, bson.M{
+			"$project": bson.M{
+				"revisions": 0,
+			},
+		})
+	}
 
 	return pipeline, nil
 }
@@ -281,5 +288,41 @@ func (darepo *DataAgreementRepository) GetAll() ([]DataAgreement, error) {
 	if err := cursor.All(context.TODO(), &results); err != nil {
 		return results, err
 	}
+	return results, nil
+}
+
+// GetAllDataAgreementsWithLatestRevisionsObjectData
+func GetAllDataAgreementsWithLatestRevisionsObjectData(organisationId string) ([]DataAgreementWithObjectData, error) {
+
+	var results []DataAgreementWithObjectData
+
+	pipeline, err := CreatePipelineForFilteringDataAgreements(organisationId, false)
+	if err != nil {
+		return results, err
+	}
+	// Stage 4 - Add the object data from revisions
+	pipeline = append(pipeline, bson.M{"$addFields": bson.M{"objectData": bson.M{
+		"$let": bson.M{
+			"vars": bson.M{
+				"first": bson.M{
+					"$arrayElemAt": bson.A{"$revisions", 0},
+				},
+			},
+			"in": "$$first.objectdata",
+		},
+	}}})
+	pipeline = append(pipeline, bson.M{"$sort": bson.M{"timestamp": -1}})
+
+	// Perform the aggregation
+	cursor, err := Collection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return results, err
+	}
+	defer cursor.Close(context.Background())
+
+	if err := cursor.All(context.Background(), &results); err != nil {
+		return results, err
+	}
+
 	return results, nil
 }
