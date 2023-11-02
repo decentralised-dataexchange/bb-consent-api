@@ -11,6 +11,7 @@ import (
 	v2HttpPaths "github.com/bb-consent/api/internal/http_path/v2"
 	"github.com/bb-consent/api/internal/iam"
 	"github.com/bb-consent/api/internal/middleware"
+	"github.com/bb-consent/api/internal/migrate"
 	privacyDashboard "github.com/bb-consent/api/internal/privacy_dashboard"
 	"github.com/bb-consent/api/internal/rbac"
 	"github.com/bb-consent/api/internal/sms"
@@ -94,6 +95,10 @@ func StartApiCmdHandler(cmd *cobra.Command, args []string) {
 	default:
 		tenant.SingleTenantConfiguration(loadedConfig)
 	}
+
+	// Applying migration
+	log.Println("Applying migrate")
+	migrate.Migrate()
 
 	// Router
 	router := mux.NewRouter()
