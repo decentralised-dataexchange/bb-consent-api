@@ -17,21 +17,9 @@ func Migrate() {
 func migrateThirdPartyDataSharingToTrueInPolicyCollection() {
 	policyCollection := policy.Collection()
 
-	filter := bson.M{"thirdpartydatasharing": ""}
+	filter := bson.M{"thirdpartydatasharing": bson.M{"$nin": []interface{}{true, false}}}
 	update := bson.M{"$set": bson.M{"thirdpartydatasharing": true}}
 	_, err := policyCollection.UpdateMany(context.TODO(), filter, update)
-	if err != nil {
-		fmt.Println(err)
-	}
-	filter = bson.M{"thirdpartydatasharing": "true"}
-	update = bson.M{"$set": bson.M{"thirdpartydatasharing": true}}
-	_, err = policyCollection.UpdateMany(context.TODO(), filter, update)
-	if err != nil {
-		fmt.Println(err)
-	}
-	filter = bson.M{"thirdpartydatasharing": "false"}
-	update = bson.M{"$set": bson.M{"thirdpartydatasharing": true}}
-	_, err = policyCollection.UpdateMany(context.TODO(), filter, update)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -40,29 +28,12 @@ func migrateThirdPartyDataSharingToTrueInPolicyCollection() {
 func migrateThirdPartyDataSharingToTrueInDataAgreementsCollection() {
 	dataAgreementCollection := dataagreement.Collection()
 
-	filter := bson.M{"policy.thirdpartydatasharing": ""}
+	filter := bson.M{"policy.thirdpartydatasharing": bson.M{"$nin": []interface{}{true, false}}}
 	update := bson.M{"$set": bson.M{"policy.thirdpartydatasharing": true}}
 
 	_, err := dataAgreementCollection.UpdateMany(context.TODO(), filter, update)
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	filter = bson.M{"policy.thirdpartydatasharing": "true"}
-	update = bson.M{"$set": bson.M{"policy.thirdpartydatasharing": true}}
-
-	_, err = dataAgreementCollection.UpdateMany(context.TODO(), filter, update)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	filter = bson.M{"policy.thirdpartydatasharing": "false"}
-	update = bson.M{"$set": bson.M{"policy.thirdpartydatasharing": true}}
-
-	_, err = dataAgreementCollection.UpdateMany(context.TODO(), filter, update)
-	if err != nil {
-		fmt.Println(err)
-	}
 	// TODO: Handle impact towards revisions
-
 }
