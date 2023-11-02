@@ -66,7 +66,7 @@ func OnboardUpdateOrganisationAdminAvatar(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	imageURL := "https://" + r.Host + "/onboard/admin/avatharimage"
+	imageURL := "https://" + r.Host + "/onboard/admin/avatarimage"
 	u.ImageID = imageID
 	u.ImageURL = imageURL
 	u, err = user.Update(u.ID.Hex(), u)

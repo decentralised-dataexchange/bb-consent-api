@@ -23,10 +23,9 @@ KAFKA_TOPIC_NAME = "example_topic"
 CONTAINER_DEFAULT_RUN_FLAGS := \
 	--rm $(TERM_FLAGS) \
 	$(EXTRA_RUN_ARGS) \
-	--env GOOGLE_APPLICATION_CREDENTIALS=/opt/bb-consent/api/kubernetes-config/keyfile.json \
 	-v "$(CURDIR)":/go/$(PROJECT_PACKAGE) \
 	-v $(CURDIR)/resources/config/:/opt/bb-consent/api/config/:ro \
-	-v $(CURDIR)/resources/kubernetes-config/:/opt/bb-consent/api/kubernetes-config/:ro \
+	-v $(CURDIR)/resources/assets/:/opt/bb-consent/api/assets/:ro \
 	-w /go/$(PROJECT_PACKAGE)
 
 GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD | sed -E 's/[^a-zA-Z0-9]+/-/g')

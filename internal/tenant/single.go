@@ -5,6 +5,7 @@ import (
 
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
+	"github.com/bb-consent/api/internal/fixture"
 	"github.com/bb-consent/api/internal/org"
 	"github.com/bb-consent/api/internal/orgtype"
 	"github.com/bb-consent/api/internal/user"
@@ -137,5 +138,11 @@ func SingleTenantConfiguration(config *config.Configuration) {
 
 	// Create organisation
 	createOrganisation(config, orgType, organisationAdminId)
+
+	// Load image assets for organisation
+	err := fixture.LoadImageAssetsForSingleTenantConfiguration()
+	if err != nil {
+		log.Println("Error occured while loading image assets for organisation")
+	}
 
 }

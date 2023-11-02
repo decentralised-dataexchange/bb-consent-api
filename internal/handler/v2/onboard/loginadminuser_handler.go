@@ -11,6 +11,7 @@ import (
 	"github.com/bb-consent/api/internal/actionlog"
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
+	"github.com/bb-consent/api/internal/fixture"
 	"github.com/bb-consent/api/internal/iam"
 	"github.com/bb-consent/api/internal/token"
 	"github.com/bb-consent/api/internal/user"
@@ -72,6 +73,13 @@ func LoginAdminUser(w http.ResponseWriter, r *http.Request) {
 		//Normal user can not login with this API.
 		m := fmt.Sprintf("Non Admin User: %v tried admin login", lReq.Username)
 		common.HandleErrorV2(w, http.StatusForbidden, m, err)
+		return
+	}
+
+	// Load default user image
+	u, err = fixture.LoadOrganisationAdminAvatarImageAssets(u, r.Host)
+	if err != nil {
+		common.HandleErrorV2(w, http.StatusUnauthorized, "Failed to load default avatar image for admin", err)
 		return
 	}
 
