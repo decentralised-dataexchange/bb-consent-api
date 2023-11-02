@@ -1,8 +1,6 @@
 package service
 
 import (
-	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -13,7 +11,6 @@ import (
 	"github.com/bb-consent/api/internal/dataagreement"
 	"github.com/bb-consent/api/internal/paginate"
 	"github.com/bb-consent/api/internal/revision"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // ListDataAgreementsError is an error enumeration for list data agreement API.
@@ -47,16 +44,28 @@ func ParseListDataAgreementsQueryParams(r *http.Request) (revisionId string, err
 	return "", RevisionIDIsMissingError
 }
 
+func activeDataAgreementsFromObjectData(organisationId string) ([]interface{}, error) {
+	var activeDataAgreements []interface{}
+	dataAgreements, err := dataagreement.GetAllDataAgreementsWithLatestRevisionsObjectData(organisationId)
+	if err != nil {
+		return activeDataAgreements, err
+	}
+
+	for _, dataAgreement := range dataAgreements {
+		// Recreate data agreement from revision
+		activeDataAgreement, err := revision.RecreateDataAgreementFromObjectData(dataAgreement.ObjectData)
+		if err != nil {
+			return activeDataAgreements, err
+		}
+		activeDataAgreements = append(activeDataAgreements, activeDataAgreement)
+	}
+
+	return activeDataAgreements, nil
+}
+
 type listDataAgreementsResp struct {
 	DataAgreements interface{}         `json:"dataAgreements"`
 	Pagination     paginate.Pagination `json:"pagination"`
-}
-
-func returnHTTPResponse(resp interface{}, w http.ResponseWriter) {
-	response, _ := json.Marshal(resp)
-	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(response)
 }
 
 // ServiceListDataAgreements
@@ -73,49 +82,27 @@ func ServiceListDataAgreements(w http.ResponseWriter, r *http.Request) {
 	revisionId, err := ParseListDataAgreementsQueryParams(r)
 	revisionId = common.Sanitize(revisionId)
 	if err != nil && errors.Is(err, RevisionIDIsMissingError) {
-		lifecycle := config.Complete
 
 		darepo := dataagreement.DataAgreementRepository{}
 		darepo.Init(organisationId)
 
-		pipeline, err := dataagreement.CreatePipelineForFilteringDataAgreementsUsingLifecycle(organisationId, lifecycle)
+		activeDataAgreements, err := activeDataAgreementsFromObjectData(organisationId)
 		if err != nil {
-			m := "Failed to create pipeline"
-			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			common.HandleErrorV2(w, http.StatusInternalServerError, "Failed to fetch active data agreements", err)
 			return
 		}
 
-		// Return liecycle filtered data agreements
-		var dataAgreements []dataagreement.DataAgreement
-		pipeline = append(pipeline, bson.M{"$sort": bson.M{"timestamp": -1}})
-		query := paginate.PaginateDBObjectsQueryUsingPipeline{
-			Pipeline:   pipeline,
-			Collection: dataagreement.Collection(),
-			Context:    context.Background(),
-			Limit:      limit,
-			Offset:     offset,
+		query := paginate.PaginateObjectsQuery{
+			Limit:  limit,
+			Offset: offset,
 		}
-		result, err := paginate.PaginateDBObjectsUsingPipeline(query, &dataAgreements)
-		if err != nil {
-			if errors.Is(err, paginate.EmptyDBError) {
-				emptyDataAgreements := make([]interface{}, 0)
-				resp = listDataAgreementsResp{
-					DataAgreements: emptyDataAgreements,
-					Pagination:     result.Pagination,
-				}
-				returnHTTPResponse(resp, w)
-				return
-			}
-			m := "Failed to paginate data agreement"
-			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-			return
+		result := paginate.PaginateObjects(query, activeDataAgreements)
 
-		}
 		resp = listDataAgreementsResp{
 			DataAgreements: result.Items,
 			Pagination:     result.Pagination,
 		}
-		returnHTTPResponse(resp, w)
+		common.ReturnHTTPResponse(resp, w)
 		return
 
 	} else {
@@ -153,5 +140,5 @@ func ServiceListDataAgreements(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	returnHTTPResponse(resp, w)
+	common.ReturnHTTPResponse(resp, w)
 }

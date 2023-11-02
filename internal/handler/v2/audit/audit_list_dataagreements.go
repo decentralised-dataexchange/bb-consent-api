@@ -32,7 +32,7 @@ func AuditListDataAgreements(w http.ResponseWriter, r *http.Request) {
 
 	var resp listDataAgreementsResp
 
-	pipeline, err := dataagreement.CreatePipelineForFilteringDataAgreements(organisationId)
+	pipeline, err := dataagreement.CreatePipelineForFilteringDataAgreements(organisationId, true)
 	if err != nil {
 		m := "Failed to create pipeline"
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)

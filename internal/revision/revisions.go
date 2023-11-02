@@ -384,6 +384,18 @@ func CreateRevisionForDraftDataAgreement(newDataAgreement dataagreement.DataAgre
 	return revision, err
 }
 
+func RecreateDataAgreementFromObjectData(objectData string) (interface{}, error) {
+
+	// Deserialise data agreement
+	var da interface{}
+	err := json.Unmarshal([]byte(objectData), &da)
+	if err != nil {
+		return nil, err
+	}
+
+	return da, nil
+}
+
 type dataAgreementRecordForObjectData struct {
 	Id                        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	DataAgreementId           string             `json:"dataAgreementId"`
