@@ -84,16 +84,16 @@ type Configuration struct {
 		UserName string
 		Password string
 	}
-	ApplicationMode  string
-	Organization     Organization
-	Type             OrgType
-	User             User
-	ApiSecretKey     string
-	Iam              Iam
-	Twilio           Twilio
-	PrivacyDashboard PrivacyDashboard
-	Smtp             SmtpConfig
-	Webhooks         WebhooksConfig
+	ApplicationMode            string
+	Organization               Organization
+	Type                       OrgType
+	User                       User
+	ApiSecretKey               string
+	Iam                        Iam
+	Twilio                     Twilio
+	PrivacyDashboardDeployment PrivacyDashboard
+	Smtp                       SmtpConfig
+	Webhooks                   WebhooksConfig
 }
 
 // Load the config file

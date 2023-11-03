@@ -18,7 +18,7 @@ var PrivacyDashboard config.PrivacyDashboard
 
 // Init Initialize the Privacy Dashboard
 func Init(config *config.Configuration) {
-	PrivacyDashboard = config.PrivacyDashboard
+	PrivacyDashboard = config.PrivacyDashboardDeployment
 }
 
 // Note: Dont change the ID(s) if new type is needed then add at the end
