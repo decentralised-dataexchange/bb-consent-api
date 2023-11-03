@@ -94,7 +94,7 @@ func LoadOrganisationAdminAvatarImageAssets(u user.User, hostUrl string) (user.U
 		return u, nil
 	}
 
-	avatarImagePath := AssetsPath + "logo.jpeg"
+	avatarImagePath := AssetsPath + "avatar.jpeg"
 
 	// Convert avatar image to bytes
 	avatarImageBytes, err := loadImageAndReturnBytes(avatarImagePath)
