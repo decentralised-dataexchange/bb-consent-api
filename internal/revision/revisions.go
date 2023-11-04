@@ -111,7 +111,7 @@ type policyForObjectData struct {
 	Url                     string             `json:"url" valid:"required"`
 	Jurisdiction            string             `json:"jurisdiction"`
 	IndustrySector          string             `json:"industrySector"`
-	DataRetentionPeriodDays int                `json:"dataRetentionPeriod"`
+	DataRetentionPeriodDays int                `json:"dataRetentionPeriodDays"`
 	GeographicRestriction   string             `json:"geographicRestriction"`
 	StorageLocation         string             `json:"storageLocation"`
 }
@@ -140,7 +140,7 @@ func CreateRevisionForPolicy(newPolicy policy.Policy, orgAdminId string) (Revisi
 }
 
 // UpdateRevisionForPolicy
-func UpdateRevisionForPolicy(updatedPolicy policy.Policy, previousRevision *Revision, orgAdminId string) (Revision, error) {
+func UpdateRevisionForPolicy(updatedPolicy policy.Policy, orgAdminId string) (Revision, error) {
 	// Object data
 	objectData := policyForObjectData{
 		Id:                      updatedPolicy.Id,
@@ -155,11 +155,37 @@ func UpdateRevisionForPolicy(updatedPolicy policy.Policy, previousRevision *Revi
 	}
 
 	// Update revision
-	revision := Revision{}
-	revision.Init(objectData.Id.Hex(), orgAdminId, config.Policy)
-	err := revision.UpdateRevision(nil, objectData)
+	r := Revision{}
+	r.Init(objectData.Id.Hex(), orgAdminId, config.Policy)
+	// Query for previous revisions
+	previousRevision, err := GetLatestByPolicyId(updatedPolicy.Id.Hex())
+	if err != nil {
+		// Previous revision is not present
+		err = r.UpdateRevision(nil, objectData)
+		if err != nil {
+			return r, err
+		}
+	} else {
+		// Previous revision is present
+		err = r.UpdateRevision(&previousRevision, objectData)
+		if err != nil {
+			return r, err
+		}
 
-	return revision, err
+		// Save the previous revision to db
+		_, err = Update(previousRevision)
+		if err != nil {
+			return r, err
+		}
+	}
+
+	// Save the new revision to db
+	_, err = Add(r)
+	if err != nil {
+		return r, err
+	}
+
+	return r, err
 }
 
 func RecreatePolicyFromRevision(revision Revision) (policy.Policy, error) {

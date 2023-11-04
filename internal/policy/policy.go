@@ -142,3 +142,20 @@ func CreatePipelineForFilteringPolicies(organisationId string) ([]primitive.M, e
 
 	return pipeline, nil
 }
+
+// GetFirstPolicy
+func (prepo *PolicyRepository) GetFirstPolicy() (Policy, error) {
+
+	var result Policy
+	err := Collection().FindOne(context.TODO(), prepo.DefaultFilter).Decode(&result)
+
+	return result, err
+}
+
+// DeleteAllPolicies
+func DeleteAllPolicies(organisationId string) error {
+
+	_, err := Collection().DeleteMany(context.TODO(), bson.M{"organisationid": organisationId})
+
+	return err
+}

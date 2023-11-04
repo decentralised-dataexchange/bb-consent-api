@@ -37,18 +37,6 @@ type SmtpConfig struct {
 	AdminEmail string
 }
 
-// KafkaBrokerConfig Kafka broker configuration
-type KafkaBrokerConfig struct {
-	URL     string
-	GroupID string
-}
-
-// KafkaConfig Kafka cluster configuration
-type KafkaConfig struct {
-	Broker KafkaBrokerConfig
-	Topic  string
-}
-
 // WebhooksConfig webhooks configuration (kafka broker cluster, topic e.t.c)
 type WebhooksConfig struct {
 	Events []string `json:"events"`
@@ -62,10 +50,6 @@ type Organization struct {
 	EulaURL     string
 }
 
-type OrgType struct {
-	Name string `valid:"required"`
-}
-
 type User struct {
 	Username string `valid:"required"`
 	Password string `valid:"required"`
@@ -74,6 +58,13 @@ type User struct {
 type PrivacyDashboard struct {
 	Hostname string
 	Version  string
+}
+type GlobalPolicy struct {
+	Name                  string `json:"name"`
+	Url                   string `json:"url"`
+	IndustrySector        string `json:"industrySector"`
+	GeographicRestriction string `json:"geographicRestriction"`
+	StorageLocation       string `json:"storageLocation"`
 }
 
 // Configuration data type
@@ -86,7 +77,6 @@ type Configuration struct {
 	}
 	ApplicationMode            string
 	Organization               Organization
-	Type                       OrgType
 	User                       User
 	ApiSecretKey               string
 	Iam                        Iam
@@ -94,6 +84,7 @@ type Configuration struct {
 	PrivacyDashboardDeployment PrivacyDashboard
 	Smtp                       SmtpConfig
 	Webhooks                   WebhooksConfig
+	Policy                     GlobalPolicy
 }
 
 // Load the config file

@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 
-	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/database"
 	"go.mongodb.org/mongo-driver/bson"
@@ -135,19 +134,12 @@ func DeleteAllTypes() (*mongo.DeleteResult, error) {
 }
 
 // AddOrganizationType Adds an organization type
-func AddOrganizationType(typeReq config.OrgType) (OrgType, error) {
-
-	// validating request payload
-	valid, err := govalidator.ValidateStruct(typeReq)
-	if !valid {
-		log.Printf("Failed to add organization type: Missing mandatory param - Type")
-		return OrgType{}, err
-	}
+func AddOrganizationType(typeReq config.GlobalPolicy) (OrgType, error) {
 
 	var orgType OrgType
-	orgType.Type = typeReq.Name
+	orgType.Type = typeReq.IndustrySector
 
-	orgType, err = Add(orgType)
+	orgType, err := Add(orgType)
 	if err != nil {
 		log.Printf("Failed to add organization type: %v", orgType)
 		return OrgType{}, err

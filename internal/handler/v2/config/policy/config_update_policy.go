@@ -97,12 +97,6 @@ func ConfigUpdatePolicy(w http.ResponseWriter, r *http.Request) {
 		common.HandleErrorV2(w, http.StatusInternalServerError, err.Error(), err)
 		return
 	}
-	// Get revision from db
-	currentRevision, err := revision.GetLatestByPolicyId(policyId)
-	if err != nil {
-		common.HandleErrorV2(w, http.StatusInternalServerError, err.Error(), err)
-		return
-	}
 
 	// Update policy from request body
 	toBeUpdatedPolicy = updatePolicyFromRequestBody(policyReq, toBeUpdatedPolicy)
@@ -117,7 +111,7 @@ func ConfigUpdatePolicy(w http.ResponseWriter, r *http.Request) {
 	toBeUpdatedPolicy.Version = updatedVersion
 
 	// Update revision
-	newRevision, err := revision.UpdateRevisionForPolicy(toBeUpdatedPolicy, &currentRevision, orgAdminId)
+	newRevision, err := revision.UpdateRevisionForPolicy(toBeUpdatedPolicy, orgAdminId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to update revision for policy: %v", policyId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
@@ -132,18 +126,10 @@ func ConfigUpdatePolicy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Save the previous revision to db
-	updatedRevision, err := revision.Update(currentRevision)
+	// updates organisation policy url
+	err = updateOrganisationPolicyUrl(savedPolicy.Url, organisationId)
 	if err != nil {
-		m := fmt.Sprintf("Failed to update revision: %v", updatedRevision.Id)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
-
-	// Save the revision to db
-	savedRevision, err := revision.Add(newRevision)
-	if err != nil {
-		m := fmt.Sprintf("Failed to create new policy: %v", newRevision.Id)
+		m := fmt.Sprintf("Failed to update organisation policy url: %v", organisationId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
@@ -153,7 +139,7 @@ func ConfigUpdatePolicy(w http.ResponseWriter, r *http.Request) {
 	resp.Policy = savedPolicy
 
 	var revisionForHTTPResponse revision.RevisionForHTTPResponse
-	revisionForHTTPResponse.Init(savedRevision)
+	revisionForHTTPResponse.Init(newRevision)
 	resp.Revision = revisionForHTTPResponse
 
 	response, _ := json.Marshal(resp)

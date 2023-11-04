@@ -2,13 +2,17 @@ package tenant
 
 import (
 	"log"
+	"strings"
 
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/fixture"
 	"github.com/bb-consent/api/internal/org"
 	"github.com/bb-consent/api/internal/orgtype"
+	"github.com/bb-consent/api/internal/policy"
+	"github.com/bb-consent/api/internal/revision"
 	"github.com/bb-consent/api/internal/user"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -38,7 +42,7 @@ func createOrganisationType(config *config.Configuration) orgtype.OrgType {
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			log.Printf("Organization type doesn't exist, creating organization type.")
-			orgType, err = orgtype.AddOrganizationType(config.Type)
+			orgType, err = orgtype.AddOrganizationType(config.Policy)
 			if err != nil {
 				log.Println("failed to add organization")
 				panic(err)
@@ -113,6 +117,90 @@ func deleteAllOrganisations() {
 	}
 }
 
+func deleteAllPolicies(organisationId string) {
+	// Repository
+	prepo := policy.PolicyRepository{}
+	prepo.Init(organisationId)
+
+	count, err := prepo.GetPolicyCountByOrganisation()
+	if err != nil {
+		log.Println("failed to count policy")
+		panic(err)
+	}
+	if count > 1 {
+		err := policy.DeleteAllPolicies(organisationId)
+		if err != nil {
+			log.Println("failed to delete policies")
+			panic(err)
+		}
+	}
+}
+
+// createDefaultPolicy
+func createDefaultPolicy(config *config.Configuration, org org.Organization, orgAdminId string) (policy.Policy, error) {
+
+	var newPolicy policy.Policy
+	newPolicy.Id = primitive.NewObjectID()
+	newPolicy.Name = config.Policy.Name
+	newPolicy.Url = org.PolicyURL
+	newPolicy.Jurisdiction = org.Location
+	newPolicy.IndustrySector = config.Policy.IndustrySector
+	newPolicy.DataRetentionPeriodDays = 1095
+	newPolicy.GeographicRestriction = config.Policy.GeographicRestriction
+	newPolicy.StorageLocation = config.Policy.StorageLocation
+	newPolicy.ThirdPartyDataSharing = true
+	newPolicy.OrganisationId = org.ID.Hex()
+	newPolicy.IsDeleted = false
+
+	version := common.IntegerToSemver(1)
+	newPolicy.Version = version
+
+	if len(strings.TrimSpace(config.Policy.Url)) > 1 {
+		newPolicy.Url = config.Policy.Url
+		updateOrganisationPolicyUrl(config.Policy.Url, org)
+	}
+
+	// Update revision
+	_, err := revision.UpdateRevisionForPolicy(newPolicy, orgAdminId)
+	if err != nil {
+		return newPolicy, err
+	}
+
+	return newPolicy, nil
+}
+
+func updateOrganisationPolicyUrl(policyUrl string, organisation org.Organization) {
+	organisation.PolicyURL = policyUrl
+	_, err := org.Update(organisation)
+	if err != nil {
+		log.Println("failed to update policy url for organisation")
+		panic(err)
+	}
+}
+
+func createGlobalPolicy(config *config.Configuration, organisation org.Organization, orgAdminId string) {
+
+	// Repository
+	prepo := policy.PolicyRepository{}
+	prepo.Init(organisation.ID.Hex())
+
+	policyCount, _ := prepo.GetPolicyCountByOrganisation()
+	if policyCount == 0 {
+		log.Println("Failed to get global policy, creating new global policy.")
+		createdPolicy, err := createDefaultPolicy(config, organisation, orgAdminId)
+		if err != nil {
+			log.Println("failed to create global policy")
+			panic(err)
+		}
+
+		_, err = prepo.Add(createdPolicy)
+		if err != nil {
+			log.Println("failed to create global policy")
+			panic(err)
+		}
+	}
+}
+
 // SingleTenantConfiguration If the application starts in single tenant mode then create/update organisation, type, admin logic
 func SingleTenantConfiguration(config *config.Configuration) {
 
@@ -137,12 +225,18 @@ func SingleTenantConfiguration(config *config.Configuration) {
 	orgType := createOrganisationType(config)
 
 	// Create organisation
-	createOrganisation(config, orgType, organisationAdminId)
+	organisation := createOrganisation(config, orgType, organisationAdminId)
+
+	// delete all policies
+	deleteAllPolicies(organisation.ID.Hex())
 
 	// Load image assets for organisation
 	err := fixture.LoadImageAssetsForSingleTenantConfiguration()
 	if err != nil {
 		log.Println("Error occured while loading image assets for organisation")
 	}
+
+	// Create global policy
+	createGlobalPolicy(config, organisation, organisationAdminId)
 
 }
