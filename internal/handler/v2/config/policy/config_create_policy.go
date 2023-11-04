@@ -12,6 +12,7 @@ import (
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
 	m "github.com/bb-consent/api/internal/middleware"
+	"github.com/bb-consent/api/internal/org"
 	"github.com/bb-consent/api/internal/policy"
 	"github.com/bb-consent/api/internal/revision"
 	"github.com/bb-consent/api/internal/token"
@@ -70,6 +71,17 @@ func updatePolicyFromAddPolicyRequestBody(requestBody addPolicyReq, newPolicy po
 	newPolicy.StorageLocation = requestBody.Policy.StorageLocation
 	newPolicy.ThirdPartyDataSharing = requestBody.Policy.ThirdPartyDataSharing
 	return newPolicy
+}
+
+// update organistaion policy url
+func updateOrganisationPolicyUrl(policyUrl string, organisationId string) error {
+	organisation, err := org.Get(organisationId)
+	if err != nil {
+		return err
+	}
+	organisation.PolicyURL = policyUrl
+	_, err = org.Update(organisation)
+	return err
 }
 
 // ConfigCreatePolicy
@@ -138,6 +150,14 @@ func ConfigCreatePolicy(w http.ResponseWriter, r *http.Request) {
 	savedRevision, err := revision.Add(newRevision)
 	if err != nil {
 		m := fmt.Sprintf("Failed to create new revision: %v", newRevision.Id)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// updates organisation policy url
+	err = updateOrganisationPolicyUrl(savedPolicy.Url, organisationId)
+	if err != nil {
+		m := fmt.Sprintf("Failed to update organisation policy url: %v", organisationId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}

@@ -10,6 +10,9 @@ import (
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/org"
+	"github.com/bb-consent/api/internal/policy"
+	"github.com/bb-consent/api/internal/revision"
+	"github.com/bb-consent/api/internal/token"
 	"github.com/bb-consent/api/internal/user"
 )
 
@@ -24,15 +27,51 @@ type updateOrgResp struct {
 	Organization organizationResp `json:"organisation"`
 }
 
+// updatePolicyUrl
+func updatePolicyUrl(policyUrl string, organisationId string, orgAdminId string) error {
+	// Repository
+	prepo := policy.PolicyRepository{}
+	prepo.Init(organisationId)
+
+	toBeUpdatedPolicy, err := prepo.GetFirstPolicy()
+	if err != nil {
+		return err
+	}
+
+	toBeUpdatedPolicy.Url = policyUrl
+
+	// Bump major version for policy
+	updatedVersion, err := common.BumpMajorVersion(toBeUpdatedPolicy.Version)
+	if err != nil {
+		return err
+	}
+	toBeUpdatedPolicy.Version = updatedVersion
+
+	_, err = prepo.Update(toBeUpdatedPolicy)
+	if err != nil {
+		return err
+	}
+
+	// Update revision
+	_, err = revision.UpdateRevisionForPolicy(toBeUpdatedPolicy, orgAdminId)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
 // UpdateOrganization Updates an organization
 func UpdateOrganization(w http.ResponseWriter, r *http.Request) {
+	// Current user
+	orgAdminId := token.GetUserID(r)
+
 	var orgUpReq orgUpdateReq
 	b, _ := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
 
 	json.Unmarshal(b, &orgUpReq)
 
-	organizationID := r.Header.Get(config.OrganizationId)
+	organizationID := common.Sanitize(r.Header.Get(config.OrganizationId))
 
 	o, err := org.Get(organizationID)
 	if err != nil {
@@ -61,6 +100,14 @@ func UpdateOrganization(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	go user.UpdateOrganizationsSubscribedUsers(orgResp)
+
+	// update policy url
+	err = updatePolicyUrl(orgResp.PolicyURL, organizationID, orgAdminId)
+	if err != nil {
+		m := fmt.Sprintf("Failed to update global policy url: %v", organizationID)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
 
 	oResp := organizationResp{
 		ID:          orgResp.ID,
