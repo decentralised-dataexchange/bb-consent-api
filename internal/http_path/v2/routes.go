@@ -12,6 +12,7 @@ import (
 	webhookHandler "github.com/bb-consent/api/internal/handler/v2/config/webhook"
 	onboardHandler "github.com/bb-consent/api/internal/handler/v2/onboard"
 	serviceHandler "github.com/bb-consent/api/internal/handler/v2/service"
+	serviceDataSharingHandler "github.com/bb-consent/api/internal/handler/v2/service/datasharing"
 	serviceIndividualHandler "github.com/bb-consent/api/internal/handler/v2/service/individual"
 	m "github.com/bb-consent/api/internal/middleware"
 	"github.com/casbin/casbin/v2"
@@ -161,4 +162,6 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(OnboardUpdateOrganisationAdminAvatar, m.Chain(onboardHandler.OnboardUpdateOrganisationAdminAvatar, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
 
 	r.Handle(OnboardReadStatus, m.Chain(onboardHandler.OnboardReadStatus, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+
+	r.Handle(ServiceShowDataSharingUi, m.Chain(serviceDataSharingHandler.ServiceShowDataSharingUiHandler, m.LoggerNoAuth())).Methods("GET")
 }

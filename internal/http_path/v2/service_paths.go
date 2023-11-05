@@ -44,3 +44,6 @@ const ServiceCreateIndividual = "/v2/service/individual"
 const ServiceReadIndividual = "/v2/service/individual/{individualId}"
 const ServiceUpdateIndividual = "/v2/service/individual/{individualId}"
 const ServiceListIndividuals = "/v2/service/individuals"
+
+// Data sharing
+const ServiceShowDataSharingUi = "/data-sharing-ui"
