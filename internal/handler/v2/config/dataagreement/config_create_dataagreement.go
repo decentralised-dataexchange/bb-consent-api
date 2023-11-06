@@ -281,14 +281,13 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 	// Set controller details
 	newDataAgreement = setControllerFromReq(o, newDataAgreement)
 	newDataAgreement.IsDeleted = false
+	// Set data agreement version
+	newDataAgreement.Version = common.IntegerToSemver(1)
 
 	// If data agreement is published then:
-	// a. Set data agreement verion as 1.0.0
-	// b. Add a new revision
+	// a. Add a new revision
 	var newRevision revision.Revision
 	if newDataAgreement.Active {
-		// Set data agreement version
-		newDataAgreement.Version = common.IntegerToSemver(1)
 
 		// Update revision
 		newRevision, err = revision.UpdateRevisionForDataAgreement(newDataAgreement, orgAdminId)
@@ -300,9 +299,6 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 
 	} else {
 		// Data agreement is draft
-		// Set data agreement version 0.0.0
-		newDataAgreement.Version = common.IntegerToSemver(0)
-
 		// Create a revision on runtime
 		newRevision, err = revision.CreateRevisionForDraftDataAgreement(newDataAgreement, orgAdminId)
 		if err != nil {
