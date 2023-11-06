@@ -87,26 +87,34 @@ func ConfigUpdateDataAttribute(w http.ResponseWriter, r *http.Request) {
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
+	currentVersion := toBeUpdatedDataAgreement.Version
+	currentActiveStatus := toBeUpdatedDataAgreement.Active
 
 	// Set data attribute from request body
 	updatedDataAttributes, matchedIndex := updateDataAttributeFromReq(dataAttributeId, dataAttributeReq, toBeUpdatedDataAgreement.DataAttributes)
 	toBeUpdatedDataAgreement.DataAttributes = updatedDataAttributes
 
+	// Bump major version for data agreement
+	updatedVersion, err := common.BumpMajorVersion(toBeUpdatedDataAgreement.Version)
+	if err != nil {
+		m := fmt.Sprintf("Failed to bump major version for data agreement: %v", toBeUpdatedDataAgreement.Id.Hex())
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Increment data agreement version
+	toBeUpdatedDataAgreement.Version = updatedVersion
+
+	// if data agreement is in draft mode then
+	// version is not incremented
+	if !currentActiveStatus {
+		toBeUpdatedDataAgreement.Version = currentVersion
+	}
+
 	// Revision handling for data agreements
 	// If data agreement is published then:
-	// a. Update data agreement version
-	// b. Add a new revision
+	// a. Add a new revision
 	if toBeUpdatedDataAgreement.Active {
-		// Bump major version for data agreement
-		updatedVersion, err := common.BumpMajorVersion(toBeUpdatedDataAgreement.Version)
-		if err != nil {
-			m := fmt.Sprintf("Failed to bump major version for data agreement: %v", toBeUpdatedDataAgreement.Id.Hex())
-			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-			return
-		}
-
-		// Increment data agreement version
-		toBeUpdatedDataAgreement.Version = updatedVersion
 
 		// Update revision
 		_, err = revision.UpdateRevisionForDataAgreement(toBeUpdatedDataAgreement, orgAdminId)

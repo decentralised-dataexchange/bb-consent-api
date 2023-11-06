@@ -48,16 +48,29 @@ func validateUpdateDataAgreementRequestBody(dataAgreementReq updateDataAgreement
 	return nil
 }
 
-func updateDataAttributeFromUpdateDataAgreementRequestBody(requestBody updateDataAgreementReq) []dataagreement.DataAttribute {
+func dataAttributeIdExists(dataAttributeId primitive.ObjectID, currentDataAttributes []dataagreement.DataAttribute) bool {
+	for _, dataAttribute := range currentDataAttributes {
+		if dataAttributeId == dataAttribute.Id {
+			return true
+		}
+	}
+	return false
+}
+
+func updateDataAttributeFromUpdateDataAgreementRequestBody(requestBody updateDataAgreementReq, currentDataAttributes []dataagreement.DataAttribute) []dataagreement.DataAttribute {
 	var newDataAttributes []dataagreement.DataAttribute
 
 	for _, dA := range requestBody.DataAgreement.DataAttributes {
 		var dataAttribute dataagreement.DataAttribute
-		if dA.DataAttribute.Id.IsZero() {
-			dataAttribute.Id = primitive.NewObjectID()
+
+		dataAttributeId, _ := primitive.ObjectIDFromHex(dA.Id)
+		isExistingDataAttribute := dataAttributeIdExists(dataAttributeId, currentDataAttributes)
+		if isExistingDataAttribute {
+			dataAttribute.Id = dataAttributeId
 		} else {
-			dataAttribute.Id = dA.DataAttribute.Id
+			dataAttribute.Id = primitive.NewObjectID()
 		}
+
 		dataAttribute.Name = dA.Name
 		dataAttribute.Description = dA.Description
 		dataAttribute.Category = dA.Category
@@ -71,7 +84,6 @@ func updateDataAttributeFromUpdateDataAgreementRequestBody(requestBody updateDat
 
 func updateDataAgreementFromRequestBody(requestBody updateDataAgreementReq, toBeUpdatedDataAgreement dataagreement.DataAgreement) dataagreement.DataAgreement {
 
-	toBeUpdatedDataAgreement.Policy.Id = requestBody.DataAgreement.Policy.Policy.Id
 	toBeUpdatedDataAgreement.Policy.Name = requestBody.DataAgreement.Policy.Name
 	toBeUpdatedDataAgreement.Policy.Version = requestBody.DataAgreement.Policy.Version
 	toBeUpdatedDataAgreement.Policy.Url = requestBody.DataAgreement.Policy.Url
@@ -89,7 +101,6 @@ func updateDataAgreementFromRequestBody(requestBody updateDataAgreementReq, toBe
 	toBeUpdatedDataAgreement.DpiaDate = requestBody.DataAgreement.DpiaDate
 	toBeUpdatedDataAgreement.DpiaSummaryUrl = requestBody.DataAgreement.DpiaSummaryUrl
 
-	toBeUpdatedDataAgreement.Signature.Id = requestBody.DataAgreement.Signature.Signature.Id
 	toBeUpdatedDataAgreement.Signature.Payload = requestBody.DataAgreement.Signature.Payload
 	toBeUpdatedDataAgreement.Signature.Signature = requestBody.DataAgreement.Signature.Signature.Signature
 	toBeUpdatedDataAgreement.Signature.VerificationMethod = requestBody.DataAgreement.Signature.VerificationMethod
@@ -108,18 +119,12 @@ func updateDataAgreementFromRequestBody(requestBody updateDataAgreementReq, toBe
 	toBeUpdatedDataAgreement.Forgettable = requestBody.DataAgreement.Forgettable
 	toBeUpdatedDataAgreement.CompatibleWithVersionId = requestBody.DataAgreement.CompatibleWithVersionId
 
-	if requestBody.DataAgreement.Signature.Signature.Id.IsZero() {
-		toBeUpdatedDataAgreement.Signature.Id = primitive.NewObjectID()
-	}
-
-	if requestBody.DataAgreement.Policy.Policy.Id.IsZero() {
-		toBeUpdatedDataAgreement.Policy.Id = primitive.NewObjectID()
-	}
-
 	// Update life cycle based on active field
 	toBeUpdatedDataAgreement.Lifecycle = setDataAgreementLifecycle(requestBody.DataAgreement.Active)
 
-	toBeUpdatedDataAgreement.DataAttributes = updateDataAttributeFromUpdateDataAgreementRequestBody(requestBody)
+	dataAttributes := updateDataAttributeFromUpdateDataAgreementRequestBody(requestBody, toBeUpdatedDataAgreement.DataAttributes)
+
+	toBeUpdatedDataAgreement.DataAttributes = dataAttributes
 
 	return toBeUpdatedDataAgreement
 }
@@ -169,26 +174,33 @@ func ConfigUpdateDataAgreement(w http.ResponseWriter, r *http.Request) {
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
+	currentVersion := currentDataAgreement.Version
 
 	// Update data agreement from request body
 	toBeUpdatedDataAgreement := updateDataAgreementFromRequestBody(dataAgreementReq, currentDataAgreement)
 
+	// Bump major version for data agreement
+	updatedVersion, err := common.BumpMajorVersion(toBeUpdatedDataAgreement.Version)
+	if err != nil {
+		m := fmt.Sprintf("Failed to bump major version for data agreement: %v", dataAgreementId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Increment data agreement version
+	toBeUpdatedDataAgreement.Version = updatedVersion
+
 	var newRevision revision.Revision
 
-	// If data agreement is published then:
-	// a. Update data agreement version
-	// b. Add a new revision
-	if toBeUpdatedDataAgreement.Active {
-		// Bump major version for data agreement
-		updatedVersion, err := common.BumpMajorVersion(toBeUpdatedDataAgreement.Version)
-		if err != nil {
-			m := fmt.Sprintf("Failed to bump major version for data agreement: %v", dataAgreementId)
-			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-			return
-		}
+	// if data agreement is in draft mode then
+	// version is not incremented
+	if !currentDataAgreement.Active {
+		toBeUpdatedDataAgreement.Version = currentVersion
+	}
 
-		// Increment data agreement version
-		toBeUpdatedDataAgreement.Version = updatedVersion
+	// If data agreement is published then:
+	//a. Add a new revision
+	if toBeUpdatedDataAgreement.Active {
 
 		// Update revision
 		newRevision, err = revision.UpdateRevisionForDataAgreement(toBeUpdatedDataAgreement, orgAdminId)
