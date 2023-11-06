@@ -2,6 +2,7 @@ package onboard
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/iam"
 	"github.com/bb-consent/api/internal/token"
+	"github.com/bb-consent/api/internal/user"
 )
 
 type resetPasswordReq struct {
@@ -32,10 +34,20 @@ func OnboardResetPassword(w http.ResponseWriter, r *http.Request) {
 		common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
 		return
 	}
-	err = iam.ResetPassword(userIamID, resetReq.NewPassword)
+
+	// fetch the current user
+	user, err := user.GetByIamID(userIamID)
 	if err != nil {
-		log.Printf("Failed to reset user:%v password ")
-		common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
+		m := "Failed to fetch user"
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
+		return
+	}
+
+	// reset user password
+	err = iam.ResetPassword(userIamID, user.Email, resetReq.CurrentPassword, resetReq.NewPassword)
+	if err != nil {
+		m := fmt.Sprintf("Failed to reset user:%v password", userIamID)
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
 		return
 	}
 
