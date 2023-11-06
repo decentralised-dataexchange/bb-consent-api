@@ -117,10 +117,17 @@ func deleteAllOrganisations() {
 	}
 }
 
-func deleteAllPolicies(organisationId string) {
+func deleteAllPolicies() {
+
+	// Get first organisation
+	o, err := org.GetFirstOrganization()
+	if err != nil {
+		panic(err)
+	}
+
 	// Repository
 	prepo := policy.PolicyRepository{}
-	prepo.Init(organisationId)
+	prepo.Init(o.ID.Hex())
 
 	count, err := prepo.GetPolicyCountByOrganisation()
 	if err != nil {
@@ -128,7 +135,7 @@ func deleteAllPolicies(organisationId string) {
 		panic(err)
 	}
 	if count > 1 {
-		err := policy.DeleteAllPolicies(organisationId)
+		err := policy.DeleteAllPolicies(o.ID.Hex())
 		if err != nil {
 			log.Println("failed to delete policies")
 			panic(err)
@@ -178,16 +185,21 @@ func updateOrganisationPolicyUrl(policyUrl string, organisation org.Organization
 	}
 }
 
-func createGlobalPolicy(config *config.Configuration, organisation org.Organization, orgAdminId string) {
+func createGlobalPolicy(config *config.Configuration, orgAdminId string) {
+	// Get first organisation
+	o, err := org.GetFirstOrganization()
+	if err != nil {
+		panic(err)
+	}
 
 	// Repository
 	prepo := policy.PolicyRepository{}
-	prepo.Init(organisation.ID.Hex())
+	prepo.Init(o.ID.Hex())
 
 	policyCount, _ := prepo.GetPolicyCountByOrganisation()
 	if policyCount == 0 {
 		log.Println("Failed to get global policy, creating new global policy.")
-		createdPolicy, err := createDefaultPolicy(config, organisation, orgAdminId)
+		createdPolicy, err := createDefaultPolicy(config, o, orgAdminId)
 		if err != nil {
 			log.Println("failed to create global policy")
 			panic(err)
@@ -225,10 +237,10 @@ func SingleTenantConfiguration(config *config.Configuration) {
 	orgType := createOrganisationType(config)
 
 	// Create organisation
-	organisation := createOrganisation(config, orgType, organisationAdminId)
+	createOrganisation(config, orgType, organisationAdminId)
 
 	// delete all policies
-	deleteAllPolicies(organisation.ID.Hex())
+	deleteAllPolicies()
 
 	// Load image assets for organisation
 	err := fixture.LoadImageAssetsForSingleTenantConfiguration()
@@ -237,6 +249,6 @@ func SingleTenantConfiguration(config *config.Configuration) {
 	}
 
 	// Create global policy
-	createGlobalPolicy(config, organisation, organisationAdminId)
+	createGlobalPolicy(config, organisationAdminId)
 
 }
