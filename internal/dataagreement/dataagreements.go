@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func Collection() *mongo.Collection {
@@ -329,5 +330,24 @@ func GetAllDataAgreementsWithLatestRevisionsObjectData(organisationId string) ([
 		return results, err
 	}
 
+	return results, nil
+}
+
+// GetDataAgreementsByLifecycle
+func (darepo *DataAgreementRepository) GetDataAgreementsByLifecycle(lifecycle string) ([]DataAgreement, error) {
+	filter := common.CombineFilters(darepo.DefaultFilter, bson.M{"lifecycle": lifecycle})
+	options := options.Find().SetSort(bson.D{{Key: "timestamp", Value: -1}})
+
+	var results []DataAgreement
+	cursor, err := Collection().Find(context.TODO(), filter, options)
+	if err != nil {
+		return results, err
+	}
+
+	defer cursor.Close(context.TODO())
+
+	if err := cursor.All(context.TODO(), &results); err != nil {
+		return results, err
+	}
 	return results, nil
 }
