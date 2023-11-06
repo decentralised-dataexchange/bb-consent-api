@@ -105,15 +105,23 @@ type IamError struct {
 	Error     string `json:"error_description"`
 }
 
-func ResetPassword(userId string, password string) error {
+func ResetPassword(userId string, username string, currentPassword string, newPassword string) error {
 	client := GetClient()
+
+	ctx := context.Background()
+	clientId := IamConfig.ClientId
+	grantType := "password"
+	_, err := client.GetToken(ctx, IamConfig.Realm, gocloak.TokenOptions{Username: &username, Password: &currentPassword, ClientID: &clientId, GrantType: &grantType})
+	if err != nil {
+		return err
+	}
 
 	token, err := GetAdminToken(IamConfig.AdminUser, IamConfig.AdminPassword, "master", client)
 	if err != nil {
 		return err
 	}
 
-	err = client.SetPassword(context.Background(), token.AccessToken, userId, IamConfig.Realm, password, false)
+	err = client.SetPassword(context.Background(), token.AccessToken, userId, IamConfig.Realm, newPassword, false)
 	return err
 }
 
