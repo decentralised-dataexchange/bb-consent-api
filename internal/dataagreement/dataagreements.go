@@ -2,6 +2,7 @@ package dataagreement
 
 import (
 	"context"
+	"time"
 
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/database"
@@ -66,6 +67,7 @@ type DataAgreement struct {
 	DataAttributes          []DataAttribute    `json:"dataAttributes" valid:"required"`
 	OrganisationId          string             `json:"-"`
 	IsDeleted               bool               `json:"-"`
+	Timestamp               string             `json:"-"`
 }
 
 type DataAgreementWithObjectData struct {
@@ -84,6 +86,8 @@ func (darepo *DataAgreementRepository) Init(organisationId string) {
 
 // Add Adds the data agreement to the db
 func (darepo *DataAgreementRepository) Add(dataAgreement DataAgreement) (DataAgreement, error) {
+
+	dataAgreement.Timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 
 	_, err := Collection().InsertOne(context.TODO(), dataAgreement)
 	if err != nil {
@@ -109,6 +113,7 @@ func (darepo *DataAgreementRepository) Get(dataAgreementID string) (DataAgreemen
 
 // Update Updates the data agreement
 func (darepo *DataAgreementRepository) Update(dataAgreement DataAgreement) (DataAgreement, error) {
+	dataAgreement.Timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 
 	filter := common.CombineFilters(darepo.DefaultFilter, bson.M{"_id": dataAgreement.Id})
 	update := bson.M{"$set": dataAgreement}

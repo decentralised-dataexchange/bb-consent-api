@@ -32,16 +32,12 @@ func AuditListDataAgreements(w http.ResponseWriter, r *http.Request) {
 
 	var resp listDataAgreementsResp
 
-	pipeline, err := dataagreement.CreatePipelineForFilteringDataAgreements(organisationId, true)
-	if err != nil {
-		m := "Failed to create pipeline"
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
+	var pipeline []bson.M
+	pipeline = append(pipeline, bson.M{"$match": bson.M{"organisationid": organisationId, "isdeleted": false}})
+	pipeline = append(pipeline, bson.M{"$sort": bson.M{"timestamp": -1}})
 
 	// Return all data agreements
 	var dataAgreements []dataagreement.DataAgreement
-	pipeline = append(pipeline, bson.M{"$sort": bson.M{"timestamp": -1}})
 	query := paginate.PaginateDBObjectsQueryUsingPipeline{
 		Pipeline:   pipeline,
 		Collection: dataagreement.Collection(),
