@@ -12,6 +12,7 @@ import (
 
 type ApiKey struct {
 	Id             primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Name           string             `json:"name"`
 	Scopes         []string           `json:"scopes" valid:"required"`
 	Apikey         string             `json:"apiKey"`
 	ExpiryInDays   int                `json:"expiryInDays"`

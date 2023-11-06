@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/internal/apikey"
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
@@ -43,6 +44,14 @@ func ConfigCreateApiKey(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	json.Unmarshal(b, &apiKeyReq)
 
+	// validating request payload
+	valid, err := govalidator.ValidateStruct(apiKeyReq)
+	if !valid {
+		m := "missing mandatory params for creating api key"
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
 	// Repository
 	apiKeyRepo := apikey.ApiKeyRepository{}
 	apiKeyRepo.Init(organisationId)
@@ -65,6 +74,7 @@ func ConfigCreateApiKey(w http.ResponseWriter, r *http.Request) {
 
 	var newApiKey apikey.ApiKey
 	newApiKey.Id = primitive.NewObjectID()
+	newApiKey.Name = apiKeyReq.Apikey.Name
 	newApiKey.Scopes = apiKeyReq.Apikey.Scopes
 	newApiKey.Apikey = key
 	newApiKey.ExpiryInDays = apiKeyReq.Apikey.ExpiryInDays
