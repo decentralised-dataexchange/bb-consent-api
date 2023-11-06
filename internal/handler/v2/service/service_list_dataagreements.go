@@ -52,12 +52,14 @@ func activeDataAgreementsFromObjectData(organisationId string) ([]interface{}, e
 	}
 
 	for _, dataAgreement := range dataAgreements {
-		// Recreate data agreement from revision
-		activeDataAgreement, err := revision.RecreateDataAgreementFromObjectData(dataAgreement.ObjectData)
-		if err != nil {
-			return activeDataAgreements, err
+		if len(dataAgreement.ObjectData) >= 1 {
+			// Recreate data agreement from revision
+			activeDataAgreement, err := revision.RecreateDataAgreementFromObjectData(dataAgreement.ObjectData)
+			if err != nil {
+				return activeDataAgreements, err
+			}
+			activeDataAgreements = append(activeDataAgreements, activeDataAgreement)
 		}
-		activeDataAgreements = append(activeDataAgreements, activeDataAgreement)
 	}
 
 	return activeDataAgreements, nil
