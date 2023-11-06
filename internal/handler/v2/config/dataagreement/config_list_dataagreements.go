@@ -61,6 +61,60 @@ func ParseListDataAgreementsLifecycleQueryParams(r *http.Request) (lifecycle str
 	return "", LifecycleIsMissingError
 }
 
+func activeDataAgreementsFromObjectData(organisationId string) ([]interface{}, error) {
+	var activeDataAgreements []interface{}
+	dataAgreements, err := dataagreement.GetAllDataAgreementsWithLatestRevisionsObjectData(organisationId)
+	if err != nil {
+		return activeDataAgreements, err
+	}
+
+	for _, dataAgreement := range dataAgreements {
+		if len(dataAgreement.ObjectData) >= 1 {
+			// Recreate data agreement from revision
+			activeDataAgreement, err := revision.RecreateDataAgreementFromObjectData(dataAgreement.ObjectData)
+			if err != nil {
+				return activeDataAgreements, err
+			}
+			activeDataAgreements = append(activeDataAgreements, activeDataAgreement)
+		}
+	}
+
+	return activeDataAgreements, nil
+}
+
+// list data agreements based on lifecycle
+func listDataAgreementsBasedOnLifecycle(lifecycle string, organisationId string) ([]interface{}, error) {
+	darepo := dataagreement.DataAgreementRepository{}
+	darepo.Init(organisationId)
+
+	var dataAgreements []interface{}
+	var err error
+
+	switch lifecycle {
+	case config.Complete:
+		dataAgreements, err = activeDataAgreementsFromObjectData(organisationId)
+		if err != nil {
+			return dataAgreements, err
+		}
+	case config.Draft:
+		draftDataAgreements, err := darepo.GetDataAgreementsByLifecycle(lifecycle)
+		if err != nil {
+			return dataAgreements, err
+		}
+		dataAgreements = dataAgreementsToInterfaceSlice(draftDataAgreements)
+
+	}
+	return dataAgreements, nil
+}
+
+func dataAgreementsToInterfaceSlice(dataAgreements []dataagreement.DataAgreement) []interface{} {
+	interfaceSlice := make([]interface{}, len(dataAgreements))
+	for i, r := range dataAgreements {
+		interfaceSlice[i] = r
+	}
+	return interfaceSlice
+}
+
 type listDataAgreementsResp struct {
 	DataAgreements interface{}         `json:"dataAgreements"`
 	Pagination     paginate.Pagination `json:"pagination"`
@@ -130,44 +184,28 @@ func ConfigListDataAgreements(w http.ResponseWriter, r *http.Request) {
 			returnHTTPResponse(resp, w)
 			return
 		} else {
-			pipeline, err := dataagreement.CreatePipelineForFilteringDataAgreementsUsingLifecycle(organisationId, lifecycle)
-			if err != nil {
-				m := "Failed to create pipeline"
-				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-				return
-			}
-			// Return liecycle filtered data agreements
-			var dataAgreements []dataagreement.DataAgreement
-			pipeline = append(pipeline, bson.M{"$sort": bson.M{"timestamp": -1}})
-			query := paginate.PaginateDBObjectsQueryUsingPipeline{
-				Pipeline:   pipeline,
-				Collection: dataagreement.Collection(),
-				Context:    context.Background(),
-				Limit:      limit,
-				Offset:     offset,
-			}
-			result, err := paginate.PaginateDBObjectsUsingPipeline(query, &dataAgreements)
-			if err != nil {
-				if errors.Is(err, paginate.EmptyDBError) {
-					emptyDataAgreements := make([]interface{}, 0)
-					resp = listDataAgreementsResp{
-						DataAgreements: emptyDataAgreements,
-						Pagination:     result.Pagination,
-					}
-					returnHTTPResponse(resp, w)
-					return
-				}
-				m := "Failed to paginate data agreement"
-				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-				return
 
+			dataAgreements, err := listDataAgreementsBasedOnLifecycle(lifecycle, organisationId)
+			if err != nil {
+				m := "Failed to fetch data agreements"
+				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+				return
 			}
+
+			// Return liecycle filtered data agreements
+			query := paginate.PaginateObjectsQuery{
+				Limit:  limit,
+				Offset: offset,
+			}
+			result := paginate.PaginateObjects(query, dataAgreements)
+
 			resp = listDataAgreementsResp{
 				DataAgreements: result.Items,
 				Pagination:     result.Pagination,
 			}
-			returnHTTPResponse(resp, w)
+			common.ReturnHTTPResponse(resp, w)
 			return
+
 		}
 
 	} else {
