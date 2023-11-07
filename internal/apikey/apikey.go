@@ -18,6 +18,7 @@ type ApiKey struct {
 	ExpiryInDays   int                `json:"expiryInDays"`
 	OrganisationId string             `json:"-"`
 	IsDeleted      bool               `json:"-"`
+	Timestamp      string             `json:"-"`
 }
 
 var ApiSecretKey string

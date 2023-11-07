@@ -50,7 +50,7 @@ func ConfigUpdateApiKey(w http.ResponseWriter, r *http.Request) {
 	valid, err := govalidator.ValidateStruct(apiKeyReq)
 	if !valid {
 		m := "missing mandatory params for updating api key"
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
 		return
 	}
 

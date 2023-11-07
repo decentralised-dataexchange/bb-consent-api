@@ -10,6 +10,7 @@ import (
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/paginate"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type listApiKeyResp struct {
@@ -34,8 +35,13 @@ func ConfigListApiKey(w http.ResponseWriter, r *http.Request) {
 
 	// Return all api keys
 	var apikeys []apikey.ApiKey
-	query := paginate.PaginateDBObjectsQuery{
-		Filter:     apiKeyRepo.DefaultFilter,
+
+	var pipeline []bson.M
+	pipeline = append(pipeline, bson.M{"$match": bson.M{"organisationid": organisationId, "isdeleted": false}})
+	pipeline = append(pipeline, bson.M{"$sort": bson.M{"timestamp": -1}})
+
+	query := paginate.PaginateDBObjectsQueryUsingPipeline{
+		Pipeline:   pipeline,
 		Collection: apikey.Collection(),
 		Context:    context.Background(),
 		Limit:      limit,
@@ -43,7 +49,7 @@ func ConfigListApiKey(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var resp listApiKeyResp
-	result, err := paginate.PaginateDBObjects(query, &apikeys)
+	result, err := paginate.PaginateDBObjectsUsingPipeline(query, &apikeys)
 	if err != nil {
 		if errors.Is(err, paginate.EmptyDBError) {
 			emptyApikeys := make([]interface{}, 0)
