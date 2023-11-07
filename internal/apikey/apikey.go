@@ -76,3 +76,22 @@ func Decode(apiKey string) (claims Claims, err error) {
 	}
 	return claims, nil
 }
+
+func ValidateScopes(scopes []string) bool {
+	allowedScopes := []string{"service", "audit", "config", "onboard"}
+
+	for _, scope := range scopes {
+		found := false
+		for _, allowed := range allowedScopes {
+			if scope == allowed {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+
+	return true
+}
