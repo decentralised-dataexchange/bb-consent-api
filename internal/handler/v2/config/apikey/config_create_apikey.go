@@ -52,6 +52,14 @@ func ConfigCreateApiKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// validate scopes
+	validScopes := apikey.ValidateScopes(apiKeyReq.Apikey.Scopes)
+	if !validScopes {
+		m := "Invalid scopes provided for creating api key"
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
+		return
+	}
+
 	// Repository
 	apiKeyRepo := apikey.ApiKeyRepository{}
 	apiKeyRepo.Init(organisationId)
