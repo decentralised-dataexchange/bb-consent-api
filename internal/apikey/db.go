@@ -2,6 +2,7 @@ package apikey
 
 import (
 	"context"
+	"time"
 
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/database"
@@ -25,6 +26,7 @@ func (apiKeyRepo *ApiKeyRepository) Init(organisationId string) {
 
 // Add Adds the data agreement to the db
 func (apiKeyRepo *ApiKeyRepository) Add(apiKey ApiKey) (ApiKey, error) {
+	apiKey.Timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 
 	_, err := Collection().InsertOne(context.TODO(), apiKey)
 	if err != nil {
@@ -50,6 +52,8 @@ func (apiKeyRepo *ApiKeyRepository) Get(apiKeyID string) (ApiKey, error) {
 
 // Update Updates the data agreement
 func (apiKeyRepo *ApiKeyRepository) Update(apiKey ApiKey) (ApiKey, error) {
+
+	apiKey.Timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 
 	filter := common.CombineFilters(apiKeyRepo.DefaultFilter, bson.M{"_id": apiKey.Id})
 	update := bson.M{"$set": apiKey}

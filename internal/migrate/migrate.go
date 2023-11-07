@@ -18,6 +18,7 @@ func Migrate() {
 	migrateThirdPartyDataSharingToTrueInDataAgreementsCollection()
 	migrateNameInApiKeyCollection()
 	migrateTimestampInDataAgreementsCollection()
+	migrateTimestampInApiKeyCollection()
 }
 
 func migrateThirdPartyDataSharingToTrueInPolicyCollection() {
@@ -102,4 +103,18 @@ func migrateTimestampInDataAgreementsCollection() {
 		}
 	}
 
+}
+
+func migrateTimestampInApiKeyCollection() {
+	apiKeyCollection := apikey.Collection()
+
+	timestamp := time.Now().UTC().Format("2006-01-02T15:04:05Z")
+
+	filter := bson.M{"timestamp": bson.M{"$exists": false}}
+	update := bson.M{"$set": bson.M{"timestamp": timestamp}}
+
+	_, err := apiKeyCollection.UpdateMany(context.TODO(), filter, update)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
