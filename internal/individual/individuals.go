@@ -96,3 +96,14 @@ func (iRepo *IndividualRepository) GetIndividualByEmail(email string) (Individua
 
 	return result, err
 }
+
+// GetByIamID Gets a single individual by given iam id
+func (iRepo *IndividualRepository) GetByIamID(iamId string) (Individual, error) {
+	var result Individual
+
+	filter := common.CombineFilters(iRepo.DefaultFilter, bson.M{"iamid": iamId})
+
+	err := Collection().FindOne(context.TODO(), filter).Decode(&result)
+
+	return result, err
+}

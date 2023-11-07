@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"strings"
 
@@ -16,7 +17,30 @@ import (
 	"github.com/bb-consent/api/internal/token"
 	"github.com/bb-consent/api/internal/user"
 	"github.com/coreos/go-oidc/v3/oidc"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+func createIndividual(externalId string, r *http.Request, organisationId string, idpId string) (individual.Individual, error) {
+	var newIndividual individual.Individual
+	// Repository
+	individualRepo := individual.IndividualRepository{}
+	individualRepo.Init(organisationId)
+
+	newIndividual.Id = primitive.NewObjectID()
+	newIndividual.Email = token.GetUserName(r)
+	newIndividual.ExternalId = externalId
+	newIndividual.Name = token.GetName(r)
+	newIndividual.OrganisationId = organisationId
+	newIndividual.IsOnboardedFromId = true
+	newIndividual.IdentityProviderId = idpId
+
+	newIndividual, err := individualRepo.Add(newIndividual)
+	if err != nil {
+		return newIndividual, err
+	}
+
+	return newIndividual, nil
+}
 
 func getAccessTokenFromHeader(w http.ResponseWriter, r *http.Request) (headerType int, headerValue string) {
 	headerType, headerValue, err := token.DecodeAuthHeader(r)
@@ -32,26 +56,29 @@ func storeAccessTokenInRequestContext(headerValue string, w http.ResponseWriter,
 
 	t, err := token.ParseToken(headerValue)
 	if err != nil {
-		m := "Invalid token, Authorization failed"
-		error_handler.Exit(http.StatusUnauthorized, m)
+		t, err = token.ParseTokenUnverified(headerValue)
+		if err != nil {
+			m := "Invalid token, Authorization failed"
+			error_handler.Exit(http.StatusUnauthorized, m)
+		}
 	}
 	token.Set(r, t)
 }
 
 func verifyTokenAndIdentifyRole(accessToken string, r *http.Request) error {
-	// Verify token against Consent BB IDP
-	consentBBIssuerUrl := iam.IamConfig.URL + "/realms/" + iam.IamConfig.Realm
-	consentBBJwksUrl := iam.IamConfig.URL + "/realms/" + iam.IamConfig.Realm + "/protocol/openid-connect/certs"
-	jwks := oidc.NewRemoteKeySet(context.Background(), consentBBJwksUrl)
-	c := oidc.NewVerifier(consentBBIssuerUrl, jwks, &oidc.Config{SkipClientIDCheck: true})
-	tokenPayload, err := c.Verify(context.Background(), accessToken)
-
 	// Get organisation
 	organization, err := org.GetFirstOrganization()
 	if err != nil {
 		m := "Failed to fetch organisation"
 		error_handler.Exit(http.StatusInternalServerError, m)
 	}
+
+	// Verify token against Consent BB IDP
+	consentBBIssuerUrl := iam.IamConfig.URL + "/realms/" + iam.IamConfig.Realm
+	consentBBJwksUrl := iam.IamConfig.URL + "/realms/" + iam.IamConfig.Realm + "/protocol/openid-connect/certs"
+	jwks := oidc.NewRemoteKeySet(context.Background(), consentBBJwksUrl)
+	c := oidc.NewVerifier(consentBBIssuerUrl, jwks, &oidc.Config{SkipClientIDCheck: true})
+	tokenPayload, err := c.Verify(context.Background(), accessToken)
 
 	// Repository
 	individualRepo := individual.IndividualRepository{}
@@ -87,10 +114,15 @@ func verifyTokenAndIdentifyRole(accessToken string, r *http.Request) error {
 		// Query individual by `externalId` to
 		// check if an existing individuals is present.
 		externalId := tokenPayload.Subject
-		individual, err := individualRepo.GetByExternalId(externalId)
+		var individual individual.Individual
+		individual, err = individualRepo.GetByExternalId(externalId)
 		if err != nil {
-			m := "User does not exist, Authorization failed"
-			error_handler.Exit(http.StatusBadRequest, m)
+			log.Println("Creating individual")
+			individual, err = createIndividual(externalId, r, organization.ID.Hex(), idp.Id.Hex())
+			if err != nil {
+				m := "User does not exist, Authorization failed"
+				error_handler.Exit(http.StatusBadRequest, m)
+			}
 		}
 
 		// Set user Id and user roles to request context
@@ -107,7 +139,7 @@ func verifyTokenAndIdentifyRole(accessToken string, r *http.Request) error {
 	if err != nil {
 
 		// Get individual
-		individual, err := individualRepo.Get(iamId)
+		individual, err := individualRepo.GetByIamID(iamId)
 		if err != nil {
 			m := "User does not exist, Authorization failed"
 			error_handler.Exit(http.StatusBadRequest, m)

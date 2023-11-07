@@ -56,11 +56,11 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(ConfigListWebhookPayloadContentTypes, m.Chain(webhookHandler.ConfigListWebhookPayloadContentTypes, m.Logger(), m.LogApiCalls(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Organisation identity provider related API(s)
-	r.Handle(AddIdentityProvider, m.Chain(idpHandler.ConfigCreateIdp, m.Logger(), m.LogApiCalls(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("POST")
-	r.Handle(UpdateIdentityProvider, m.Chain(idpHandler.UpdateIdentityProvider, m.Logger(), m.LogApiCalls(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("PUT")
-	r.Handle(DeleteIdentityProvider, m.Chain(idpHandler.DeleteIdentityProvider, m.Logger(), m.LogApiCalls(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("DELETE")
-	r.Handle(GetIdentityProvider, m.Chain(idpHandler.GetIdentityProvider, m.Logger(), m.LogApiCalls(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("GET")
-	r.Handle(ConfigListIdentityProviders, m.Chain(idpHandler.ConfigListIdps, m.Logger(), m.LogApiCalls(), m.Authorize(e), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(AddIdentityProvider, m.Chain(idpHandler.ConfigCreateIdp, m.Logger(), m.LogApiCalls(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	r.Handle(UpdateIdentityProvider, m.Chain(idpHandler.UpdateIdentityProvider, m.Logger(), m.LogApiCalls(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
+	r.Handle(DeleteIdentityProvider, m.Chain(idpHandler.DeleteIdentityProvider, m.Logger(), m.LogApiCalls(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("DELETE")
+	r.Handle(GetIdentityProvider, m.Chain(idpHandler.GetIdentityProvider, m.Logger(), m.LogApiCalls(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ConfigListIdentityProviders, m.Chain(idpHandler.ConfigListIdps, m.Logger(), m.LogApiCalls(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Individual related api(s)
 	r.Handle(ConfigReadIndividual, m.Chain(configIndividualHandler.ConfigReadIndividual, m.Logger(), m.LogApiCalls(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
