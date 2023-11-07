@@ -7,6 +7,7 @@ import (
 
 	"github.com/bb-consent/api/internal/apikey"
 	"github.com/bb-consent/api/internal/dataagreement"
+	"github.com/bb-consent/api/internal/idp"
 	"github.com/bb-consent/api/internal/org"
 	"github.com/bb-consent/api/internal/policy"
 	"go.mongodb.org/mongo-driver/bson"
@@ -19,6 +20,7 @@ func Migrate() {
 	migrateNameInApiKeyCollection()
 	migrateTimestampInDataAgreementsCollection()
 	migrateTimestampInApiKeyCollection()
+	migrateOrganisationIdInIDPCollection()
 }
 
 func migrateThirdPartyDataSharingToTrueInPolicyCollection() {
@@ -114,6 +116,24 @@ func migrateTimestampInApiKeyCollection() {
 	update := bson.M{"$set": bson.M{"timestamp": timestamp}}
 
 	_, err := apiKeyCollection.UpdateMany(context.TODO(), filter, update)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func migrateOrganisationIdInIDPCollection() {
+	organization, err := org.GetFirstOrganization()
+	if err != nil {
+		fmt.Println(err)
+	}
+	organizationId := organization.ID.Hex()
+
+	idpCollection := idp.Collection()
+
+	filter := bson.M{"organisationid": ""}
+	update := bson.M{"$set": bson.M{"organisationid": organizationId}}
+
+	_, err = idpCollection.UpdateMany(context.TODO(), filter, update)
 	if err != nil {
 		fmt.Println(err)
 	}

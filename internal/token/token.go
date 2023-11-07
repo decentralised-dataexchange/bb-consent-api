@@ -36,7 +36,7 @@ func Init(config *config.Configuration) {
 func DecodeAuthHeader(r *http.Request) (authType int, key string, err error) {
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
-		return AuthorizationUnknown, "", errors.New("Missing Auth header")
+		return AuthorizationUnknown, "", errors.New("missing Auth header")
 	}
 	// Check for Bearer prefix in the header
 	primaryToken := strings.TrimPrefix(authHeader, "Bearer ")
@@ -50,7 +50,7 @@ func DecodeAuthHeader(r *http.Request) (authType int, key string, err error) {
 		return AuthorizationAPIKey, apiKey, nil
 	}
 
-	return AuthorizationUnknown, "", errors.New("Incorrect Auth header format")
+	return AuthorizationUnknown, "", errors.New("incorrect Auth header format")
 }
 
 type roles struct {
@@ -97,13 +97,13 @@ func ParseToken(tokenString string) (AccessToken, error) {
 		return pubKey, nil
 	})
 
-	if err != nil || token.Valid != true {
+	if err != nil || !token.Valid {
 		return accToken, err
 	}
 
 	//Check the token expiry
 	if int64(accToken.Exp) < time.Now().Unix() {
-		return accToken, errors.New("Token expired")
+		return accToken, errors.New("token expired")
 	}
 	return accToken, nil
 }
@@ -134,6 +134,12 @@ func GetIamID(r *http.Request) string {
 func GetUserName(r *http.Request) string {
 	t := context.Get(r, tokenKey).(AccessToken)
 	return t.Email
+}
+
+// GetName Get Name from context
+func GetName(r *http.Request) string {
+	t := context.Get(r, tokenKey).(AccessToken)
+	return t.Name
 }
 
 // SetUserID Set UserID to context
@@ -197,4 +203,22 @@ func SetUserToRequestContext(r *http.Request, userID string, userRole string) {
 		r.Header.Set(config.IndividualHeaderKey, userID)
 	}
 
+}
+
+// ParseTokenUnverified parses the token and returns the accessToken struct
+func ParseTokenUnverified(tokenString string) (AccessToken, error) {
+	accToken := AccessToken{}
+
+	// Parse the JWT token without validation
+	_, _, err := new(jwt.Parser).ParseUnverified(tokenString, &accToken)
+	if err != nil {
+		return accToken, errors.New("failed to parse token")
+	}
+
+	// Check the token expiry
+	if int64(accToken.Exp) < time.Now().Unix() {
+		return accToken, errors.New("token expired")
+	}
+
+	return accToken, nil
 }
