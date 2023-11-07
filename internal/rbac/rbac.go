@@ -83,6 +83,7 @@ func GetRbacPolicies() [][]string {
 		{"user", "/v2/service/individuals", "GET"},
 		{"user", "/v2/service/individual", "POST"},
 		{"user", "/v2/service/individual/{individualId}", "(GET)|(PUT)"},
+		{"user", "/v2/service/image/{imageId}", "GET"},
 	}
 
 	return policies
