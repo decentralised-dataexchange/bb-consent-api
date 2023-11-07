@@ -45,11 +45,11 @@ func ExchangeAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	organisationId = common.Sanitize(organisationId)
 
 	// Query params
-	oauthRedirectURI := r.URL.Query().Get("redirect_uri")
-	oauthAuthorizationCode := r.URL.Query().Get("code")
+	oauthRedirectURI := r.URL.Query().Get(config.RedirectUri)
+	oauthAuthorizationCode := r.URL.Query().Get(config.AuthorisationCode)
 
 	if len(strings.TrimSpace(oauthRedirectURI)) == 0 || len(strings.TrimSpace(oauthAuthorizationCode)) == 0 {
-		log.Printf("Missing mandatory query params redirect_uri or code for exchanging authorization code \n")
+		log.Printf("Missing mandatory query params for exchanging authorization code \n")
 		m := fmt.Sprintf("Failed to exchange authorization code for org:%v", organisationId)
 		common.HandleError(w, http.StatusNotFound, m, errors.New(m))
 		return
@@ -88,20 +88,46 @@ func ExchangeAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	// Exchange authorisation code for access token from organisation's IDP
 	token, err := oauth2Config.Exchange(context.Background(), oauthAuthorizationCode)
 	if err != nil {
-		m := "Failed to exchange token"
-		common.HandleError(w, http.StatusInternalServerError, m, err)
+		m := "Invalid grant code not valid"
+		common.HandleError(w, http.StatusBadRequest, m, err)
 		return
 	}
+	var individualEmail string
+	var individualExternalId string
+	var individualEmailVerified bool
+	var individualProfile string
 
 	//  Fetch user information from the UserInfo endpoint
 	userInfo, err := provider.UserInfo(context.Background(), oauth2.StaticTokenSource(token))
 	if err != nil {
-		m := "Failed to fetch user information from the UserInfo endpoint"
-		common.HandleError(w, http.StatusNotFound, m, err)
-		return
+
+		jwks := oidc.NewRemoteKeySet(context.Background(), idp.JWKSURL)
+		c := oidc.NewVerifier(idp.IssuerUrl, jwks, &oidc.Config{SkipClientIDCheck: true})
+		tokenPayload, err := c.Verify(context.Background(), token.AccessToken)
+		if err != nil {
+			m := "Failed to fetch user information from token"
+			common.HandleError(w, http.StatusNotFound, m, err)
+			return
+		}
+		var claims struct {
+			Email         string `json:"email"`
+			EmailVerified bool   `json:"email_verified"`
+		}
+		if err := tokenPayload.Claims(&claims); err != nil {
+			m := "Failed to fetch user information from token"
+			common.HandleError(w, http.StatusNotFound, m, err)
+			return
+		}
+		individualEmail = claims.Email
+		individualExternalId = tokenPayload.Subject
+		individualEmailVerified = claims.EmailVerified
+
+	} else {
+		individualEmail = userInfo.Email
+		individualExternalId = userInfo.Subject
+		individualEmailVerified = userInfo.EmailVerified
+		individualProfile = userInfo.Profile
 	}
-	individualEmail := userInfo.Email
-	individualExternalId := userInfo.Subject
 
 	_, err = individualRepo.GetByExternalId(individualExternalId)
 	if err != nil {
@@ -121,10 +147,10 @@ func ExchangeAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 		TokenType:    token.TokenType,
 	}
 	u := userInfoResp{
-		Subject:       userInfo.Subject,
-		Profile:       userInfo.Profile,
-		Email:         userInfo.Email,
-		EmailVerified: userInfo.EmailVerified,
+		Subject:       individualExternalId,
+		Profile:       individualProfile,
+		Email:         individualEmail,
+		EmailVerified: individualEmailVerified,
 	}
 
 	response, _ := json.Marshal(exchangeAuthorizationResp{u, t})

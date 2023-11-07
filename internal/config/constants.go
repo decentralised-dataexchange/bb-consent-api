@@ -31,6 +31,8 @@ const (
 	RevisionId            = "revisionId"
 	LawfulBasis           = "lawfulBasis"
 	Id                    = "id"
+	AuthorisationCode     = "authorisationCode"
+	RedirectUri           = "redirectUri"
 )
 
 // Schemas
