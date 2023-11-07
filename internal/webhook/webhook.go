@@ -11,7 +11,7 @@ import (
 
 	"github.com/bb-consent/api/internal/actionlog"
 	"github.com/bb-consent/api/internal/config"
-	"github.com/bb-consent/api/internal/user"
+	"github.com/bb-consent/api/internal/individual"
 	"github.com/bb-consent/api/internal/webhook_dispatcher"
 )
 
@@ -117,13 +117,13 @@ var DeliveryStatus = map[int]string{
 
 // ConsentWebhookEvent Details of consent events
 type ConsentWebhookEvent struct {
-	OrganisationID string   `json:"organisationID"`
-	UserID         string   `json:"userID"`
-	ConsentID      string   `json:"consentID"`
-	PurposeID      string   `json:"purposeID"`
-	Attributes     []string `json:"attribute"`
-	Days           int      `json:"days"`
-	TimeStamp      string   `json:"timestamp"`
+	OrganisationID  string   `json:"organisationID"`
+	UserID          string   `json:"userID"`
+	ConsentRecordID string   `json:"consentRecordID"`
+	DataAgreementID string   `json:"dataAgreementID"`
+	Attributes      []string `json:"attribute"`
+	Days            int      `json:"days"`
+	TimeStamp       string   `json:"timestamp"`
 }
 
 // GetOrganisationID Returns organisation ID
@@ -199,8 +199,12 @@ func PingWebhook(webhook Webhook) (req *http.Request, resp *http.Response, execu
 // TriggerWebhooks Trigger webhooks based on event type
 func TriggerWebhooks(webhookEventData WebhookEventData, webhookEventType string) {
 
+	// Repository
+	individualRepo := individual.IndividualRepository{}
+	individualRepo.Init(webhookEventData.GetOrganisationID())
+
 	// Get the user
-	u, err := user.Get(webhookEventData.GetUserID())
+	individual, err := individualRepo.Get(webhookEventData.GetUserID())
 	if err != nil {
 		log.Printf("Failed to fetch user details;Failed to trigger webhook for event:<%s>, org:<%s>", webhookEventType, webhookEventData.GetOrganisationID())
 		return
@@ -209,7 +213,7 @@ func TriggerWebhooks(webhookEventData WebhookEventData, webhookEventType string)
 	// Get the active webhooks for the organisation
 	activeWebhooks, err := GetActiveWebhooksByOrgID(webhookEventData.GetOrganisationID())
 	if err != nil {
-		log.Printf("Failed to fetch active webhooks;Failed to trigger webhook for event:<%s>, user:<%s>, org:<%s>", webhookEventType, u.ID.Hex(), webhookEventData.GetOrganisationID())
+		log.Printf("Failed to fetch active webhooks;Failed to trigger webhook for event:<%s>, user:<%s>, org:<%s>", webhookEventType, individual.Id.Hex(), webhookEventData.GetOrganisationID())
 		return
 	}
 
@@ -228,7 +232,7 @@ func TriggerWebhooks(webhookEventData WebhookEventData, webhookEventType string)
 		// Constructing webhook payload
 		we := WebhookEvent{
 			WebhookID: toBeProcessedWebhook.ID.Hex(),
-			Timestamp: strconv.FormatInt(time.Now().UTC().Unix(), 10),
+			Timestamp: time.Now().UTC().Format("2006-01-02T15:04:05Z"),
 			Data:      webhookEventData,
 			Type:      webhookEventType,
 		}
@@ -236,15 +240,15 @@ func TriggerWebhooks(webhookEventData WebhookEventData, webhookEventType string)
 		// Converting the webhook event data to bytes
 		b, err := json.Marshal(we)
 		if err != nil {
-			log.Printf("Failed to convert webhook event data to bytes, error:%v, Failed to trigger webhook for event:<%s>, user:<%s>, org:<%s>", err.Error(), webhookEventType, u.ID.Hex(), webhookEventData.GetOrganisationID())
+			log.Printf("Failed to convert webhook event data to bytes, error:%v, Failed to trigger webhook for event:<%s>, user:<%s>, org:<%s>", err.Error(), webhookEventType, individual.Id.Hex(), webhookEventData.GetOrganisationID())
 			return
 		}
 
 		go webhook_dispatcher.ProcessWebhooks(webhookEventType, b)
 
 		// Log webhook calls in webhooks category
-		aLog := fmt.Sprintf("Organization webhook: %v triggered by user: %v by event: %v", toBeProcessedWebhook.PayloadURL, u.Email, webhookEventType)
-		actionlog.LogOrgWebhookCalls(u.ID.Hex(), u.Email, webhookEventData.GetOrganisationID(), aLog)
+		aLog := fmt.Sprintf("Organization webhook: %v triggered by user: %v by event: %v", toBeProcessedWebhook.PayloadURL, individual.Email, webhookEventType)
+		actionlog.LogOrgWebhookCalls(individual.Id.Hex(), individual.Email, webhookEventData.GetOrganisationID(), aLog)
 	}
 
 }
@@ -263,17 +267,20 @@ func TriggerOrgSubscriptionWebhookEvent(userID, orgID string, eventType string) 
 }
 
 // TriggerConsentWebhookEvent Trigger webhook for consent related events
-func TriggerConsentWebhookEvent(userID, purposeID, consentID, orgID, eventType, timeStamp string, days int, attributes []string) {
+func TriggerConsentWebhookEvent(userID, DataAgreementID, ConsentRecordID, orgID, eventType string, days int, attributes []string) {
+	if days <= 0 {
+		days = 30
+	}
 
 	// Constructing webhook event data attribute
 	consentWebhookEvent := ConsentWebhookEvent{
-		OrganisationID: orgID,
-		UserID:         userID,
-		ConsentID:      consentID,
-		PurposeID:      purposeID,
-		Attributes:     attributes,
-		Days:           days,
-		TimeStamp:      timeStamp,
+		OrganisationID:  orgID,
+		UserID:          userID,
+		ConsentRecordID: ConsentRecordID,
+		DataAgreementID: DataAgreementID,
+		Attributes:      attributes,
+		Days:            days,
+		TimeStamp:       time.Now().UTC().Format("2006-01-02T15:04:05Z"),
 	}
 	for _, e := range WebhooksConfiguration.Events {
 		if e == eventType {
