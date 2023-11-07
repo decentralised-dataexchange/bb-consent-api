@@ -230,9 +230,6 @@ func SingleTenantConfiguration(config *config.Configuration) {
 	organisationAdmin := createOrganisationAdmin(config)
 	organisationAdminId := organisationAdmin.ID.Hex()
 
-	// TODO: If wrong password is provided, the application panics
-	user.GetOrganisationAdminToken(config.User, config.Iam)
-
 	// Create organisation type
 	orgType := createOrganisationType(config)
 
