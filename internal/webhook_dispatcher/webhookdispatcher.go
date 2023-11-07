@@ -12,7 +12,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -95,7 +94,7 @@ func ProcessWebhooks(webhookEventType string, value []byte) {
 	var webhookDelivery WebhookDelivery
 
 	// Recording webhook processing start timestamp
-	executionStartTimeStamp = strconv.FormatInt(time.Now().UTC().Unix(), 10)
+	executionStartTimeStamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 
 	// To store incoming webhook events
 	var webhookEvent WebhookEvent
@@ -155,7 +154,7 @@ func ProcessWebhooks(webhookEventType string, value []byte) {
 	requestPayload, _ := json.Marshal(&webhookEvent)
 
 	// Current UTC timestamp
-	timestamp := strconv.FormatInt(time.Now().UTC().Unix(), 10)
+	timestamp := time.Now().UTC().Format("2006-01-02T15:04:05Z")
 
 	// Constructing SHA256 payload
 	sha256Payload := timestamp + "." + string(requestPayload)
@@ -202,7 +201,7 @@ func ProcessWebhooks(webhookEventType string, value []byte) {
 		log.Printf("HTTP POST request failed err:%v;Failed processing webhook:%s triggered by user:%s of org:%s for event:%s", err.Error(), webhookEvent.WebhookID, userID, orgID, webhookEventType)
 
 		// Recording webhook processing end timestamp
-		executionEndTimeStamp = strconv.FormatInt(time.Now().UTC().Unix(), 10)
+		executionEndTimeStamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 
 		// Recording webhook delivery details to db
 		webhookDelivery.RequestHeaders = req.Header
@@ -225,7 +224,7 @@ func ProcessWebhooks(webhookEventType string, value []byte) {
 	if err != nil {
 
 		// Recording webhook processing end timestamp
-		executionEndTimeStamp = strconv.FormatInt(time.Now().UTC().Unix(), 10)
+		executionEndTimeStamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 
 		// Recording webhook delivery details to db
 		webhookDelivery.RequestHeaders = req.Header
@@ -247,7 +246,7 @@ func ProcessWebhooks(webhookEventType string, value []byte) {
 	}
 
 	// Recording webhook processing end timestamp
-	executionEndTimeStamp = strconv.FormatInt(time.Now().UTC().Unix(), 10)
+	executionEndTimeStamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 
 	// Recording webhook delivery details to db
 	webhookDelivery.RequestHeaders = req.Header

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
@@ -125,7 +123,7 @@ func ServiceCreatePairedDataAgreementRecord(w http.ResponseWriter, r *http.Reque
 		eventType = webhook.EventTypes[31]
 	}
 
-	go webhook.TriggerConsentWebhookEvent(individualId, savedDataAgreementRecord.DataAgreementId, savedDataAgreementRecord.Id.Hex(), organisationId, eventType, strconv.FormatInt(time.Now().UTC().Unix(), 10), 0, consentedAttributes)
+	go webhook.TriggerConsentWebhookEvent(individualId, savedDataAgreementRecord.DataAgreementId, savedDataAgreementRecord.Id.Hex(), organisationId, eventType, 0, consentedAttributes)
 
 	// Add data agreement record history
 	darH := daRecordHistory.DataAgreementRecordsHistory{}

@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/internal/common"
@@ -128,7 +126,7 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 		eventType = webhook.EventTypes[31]
 	}
 
-	go webhook.TriggerConsentWebhookEvent(individualId, dataAgreementId, dataAgreementRecordId, organisationId, eventType, strconv.FormatInt(time.Now().UTC().Unix(), 10), 0, consentedAttributes)
+	go webhook.TriggerConsentWebhookEvent(individualId, dataAgreementId, dataAgreementRecordId, organisationId, eventType, 0, consentedAttributes)
 	// Add data agreement record history
 	darH := daRecordHistory.DataAgreementRecordsHistory{}
 	darH.DataAgreementId = savedDaRecord.DataAgreementId
