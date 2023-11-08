@@ -102,9 +102,9 @@ func (darRepo *DataAgreementRecordRepository) CountDataAgreementRecords(dataAgre
 	return count, nil
 }
 
-// CreatePipelineForFilteringDataAgreementRecords This pipeline is used for filtering data agreement records by `id` and `lawfulBasis`
+// DataAgreementRecordsWithRevisionsFilteredById This is used for filtering data agreement records by `id` and fetch all revisions
 // `id` has 3 possible values - dataAgreementRecordId, dataAgreementId, individualId
-func CreatePipelineForFilteringDataAgreementRecords(organisationId string, id string, lawfulBasis string) ([]primitive.M, error) {
+func DataAgreementRecordsWithRevisionsFilteredById(organisationId string, id string) ([]DataAgreementRecordForAuditList, error) {
 
 	var pipeline []bson.M
 
@@ -131,28 +131,8 @@ func CreatePipelineForFilteringDataAgreementRecords(organisationId string, id st
 		}})
 	}
 
-	// Stage 3 - Lookup data agreement document by `dataAgreementId`
-	// This is done to obtain `policy` and `lawfulBasis` fields from data agreement document
-	pipeline = append(pipeline, bson.M{"$lookup": bson.M{
-		"from": "dataAgreements",
-		"let":  bson.M{"localId": "$dataagreementid"},
-		"pipeline": bson.A{
-			bson.M{
-				"$match": bson.M{
-					"$expr": bson.M{
-						"$eq": []interface{}{"$_id", bson.M{"$toObjectId": "$$localId"}},
-					},
-				},
-			},
-		},
-		"as": "dataAgreements",
-	}})
-
-	// Stage 4 - Unwind the data agreement fields
-	pipeline = append(pipeline, bson.M{"$unwind": "$dataAgreements"})
-
-	// Stage 5 - Lookup revision by `dataAgreementRecordId`
-	// This is done to obtain timestamp for the latest revision of the data agreement record.
+	// Stage 2 - Lookup revision by `dataAgreementRecordId`
+	// This is done to obtain all the revisions of the data agreement record.
 	pipeline = append(pipeline, bson.M{"$lookup": bson.M{
 		"from": "revisions",
 		"let":  bson.M{"localId": "$_id"},
@@ -167,40 +147,24 @@ func CreatePipelineForFilteringDataAgreementRecords(organisationId string, id st
 			bson.M{
 				"$sort": bson.M{"timestamp": -1},
 			},
-			bson.M{"$limit": int64(1)},
 		},
 		"as": "revisions",
 	}})
+	// Stage 3 - sort by revisions timestamp
+	pipeline = append(pipeline, bson.M{"$sort": bson.M{"revisions.timestamp": -1}})
 
-	// Stage 6 - Add the timestamp from revisions
-	pipeline = append(pipeline, bson.M{"$addFields": bson.M{"timestamp": bson.M{
-		"$let": bson.M{
-			"vars": bson.M{
-				"first": bson.M{
-					"$arrayElemAt": bson.A{"$revisions", 0},
-				},
-			},
-			"in": "$$first.timestamp",
-		},
-	}}})
+	var results []DataAgreementRecordForAuditList
+	cursor, err := Collection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return results, err
+	}
+	defer cursor.Close(context.Background())
 
-	// Stage 7 - Remove revisions field
-	pipeline = append(pipeline, bson.M{
-		"$project": bson.M{
-			"revisions": 0,
-		},
-	})
-
-	// Stage 8 - Match by lawful basis
-	if len(lawfulBasis) > 0 {
-		pipeline = append(pipeline, bson.M{
-			"$match": bson.M{
-				"dataAgreements.lawfulbasis": lawfulBasis,
-			},
-		})
+	if err := cursor.All(context.Background(), &results); err != nil {
+		return results, err
 	}
 
-	return pipeline, nil
+	return results, nil
 }
 
 // CreatePipelineForFilteringLatestDataAgreementRecords This pipeline is used for filtering data agreement records
