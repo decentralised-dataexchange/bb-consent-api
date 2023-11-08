@@ -85,6 +85,8 @@ func GetRbacPolicies() [][]string {
 		{"user", "/v2/service/individual/{individualId}", "(GET)|(PUT)"},
 		{"user", "/v2/service/image/{imageId}", "GET"},
 		{"user", "/v2/service/individual/record", "DELETE"},
+		{"user", "/v2/onboard/logout", "POST"},
+		{"organisation_admin", "/v2/onboard/logout", "POST"},
 	}
 
 	return policies
