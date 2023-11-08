@@ -20,7 +20,7 @@ const ServiceCreateDraftConsentRecord = "/v2/service/individual/record/consent-r
 const ServiceCreateDataAgreementRecord = "/v2/service/individual/record/data-agreement/{dataAgreementId}"
 const ServiceReadDataAgreementRecord = "/v2/service/individual/record/data-agreement/{dataAgreementId}"
 const ServiceUpdateDataAgreementRecord = "/v2/service/individual/record/consent-record/{consentRecordId}"
-const ServiceDeleteIndividualDataAgreementRecords = "/v2/service/individual/record/consent-record"
+const ServiceDeleteIndividualDataAgreementRecords = "/v2/service/individual/record"
 const ServiceCreatePairedDataAgreementRecord = "/v2/service/individual/record/consent-record"
 
 const ServiceCreateBlankSignature = "/v2/service/individual/record/consent-record/{consentRecordId}/signature"

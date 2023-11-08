@@ -54,7 +54,7 @@ func GetRbacPolicies() [][]string {
 		{"user", "/v2/service/individual/record/consent-record/draft", "POST"},
 		{"user", "/v2/service/individual/record/data-agreement/{dataAgreementId}", "(GET)|(POST)"},
 		{"user", "/v2/service/individual/record/consent-record/{consentRecordId}", "PUT"},
-		{"user", "/v2/service/individual/record/consent-record", "(GET)|(POST)|(DELETE)"},
+		{"user", "/v2/service/individual/record/consent-record", "(GET)|(POST)"},
 		{"user", "/v2/service/individual/record/consent-record/{consentRecordId}/signature", "(POST)|(PUT)"},
 		{"user", "/v2/service/individual/record/data-agreement/{dataAgreementId}/all", "GET"},
 		{"organisation_admin", "/v2/audit/consent-records", "GET"},
@@ -84,6 +84,7 @@ func GetRbacPolicies() [][]string {
 		{"user", "/v2/service/individual", "POST"},
 		{"user", "/v2/service/individual/{individualId}", "(GET)|(PUT)"},
 		{"user", "/v2/service/image/{imageId}", "GET"},
+		{"user", "/v2/service/individual/record", "DELETE"},
 	}
 
 	return policies
