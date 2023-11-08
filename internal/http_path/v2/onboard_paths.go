@@ -3,6 +3,7 @@ package http_path
 // login
 const LoginAdminUser = "/v2/onboard/admin/login"
 const LoginUser = "/v2/onboard/individual/login"
+const OnboardLogoutUser = "/v2/onboard/logout"
 
 const OnboardResetPassword = "/v2/onboard/password/reset"
 const OnboardForgotPassword = "/v2/onboard/password/forgot"

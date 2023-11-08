@@ -183,3 +183,12 @@ func UnregisterIndividual(iamUserID string) error {
 	err = client.DeleteUser(context.Background(), token.AccessToken, IamConfig.Realm, iamUserID)
 	return err
 }
+
+// LogoutUser logout user
+func LogoutUser(accessToken string, refreshToken string) error {
+	client := GetClient()
+
+	err := client.LogoutPublicClient(context.Background(), IamConfig.ClientId, IamConfig.Realm, accessToken, refreshToken)
+
+	return err
+}
