@@ -103,7 +103,7 @@ func ServiceCreatePairedDataAgreementRecord(w http.ResponseWriter, r *http.Reque
 	daRepo := dataagreement.DataAgreementRepository{}
 	daRepo.Init(organisationId)
 
-	da, err := daRepo.Get(savedDataAgreementRecord.DataAgreementId)
+	_, err = daRepo.Get(savedDataAgreementRecord.DataAgreementId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch data agreement: %v", savedDataAgreementRecord.DataAgreementId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
@@ -111,10 +111,6 @@ func ServiceCreatePairedDataAgreementRecord(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Trigger webhooks
-	var consentedAttributes []string
-	for _, pConsent := range da.DataAttributes {
-		consentedAttributes = append(consentedAttributes, pConsent.Id.Hex())
-	}
 	var eventType string
 	if savedDataAgreementRecord.OptIn {
 		eventType = webhook.EventTypes[30]
@@ -123,7 +119,7 @@ func ServiceCreatePairedDataAgreementRecord(w http.ResponseWriter, r *http.Reque
 		eventType = webhook.EventTypes[31]
 	}
 
-	go webhook.TriggerConsentWebhookEvent(individualId, savedDataAgreementRecord.DataAgreementId, savedDataAgreementRecord.Id.Hex(), organisationId, eventType, 0, consentedAttributes)
+	go webhook.TriggerConsentWebhookEvent(savedDataAgreementRecord, organisationId, eventType)
 
 	// Add data agreement record history
 	darH := daRecordHistory.DataAgreementRecordsHistory{}
