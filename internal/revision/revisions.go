@@ -456,13 +456,13 @@ func CreateRevisionForDataAgreementRecord(newDataAgreementRecord daRecord.DataAg
 }
 
 // UpdateRevisionForDataAgreementRecord
-func UpdateRevisionForDataAgreementRecord(updatedDataAgreementRecord daRecord.DataAgreementRecord, previousRevision *Revision, orgAdminId string) (Revision, error) {
+func UpdateRevisionForDataAgreementRecord(updatedDataAgreementRecord daRecord.DataAgreementRecord, previousRevision *Revision, orgAdminId string, dataAgreementRevision Revision) (Revision, error) {
 	// Object data
 	objectData := dataAgreementRecordForObjectData{
 		Id:                        updatedDataAgreementRecord.Id,
 		DataAgreementId:           updatedDataAgreementRecord.DataAgreementId,
-		DataAgreementRevisionId:   updatedDataAgreementRecord.DataAgreementRevisionId,
-		DataAgreementRevisionHash: updatedDataAgreementRecord.DataAgreementRevisionHash,
+		DataAgreementRevisionId:   dataAgreementRevision.Id.Hex(),
+		DataAgreementRevisionHash: dataAgreementRevision.SerializedHash,
 		IndividualId:              updatedDataAgreementRecord.IndividualId,
 		OptIn:                     updatedDataAgreementRecord.OptIn,
 		State:                     updatedDataAgreementRecord.State,
@@ -475,4 +475,16 @@ func UpdateRevisionForDataAgreementRecord(updatedDataAgreementRecord daRecord.Da
 	err := revision.UpdateRevision(previousRevision, objectData)
 
 	return revision, err
+}
+
+func RecreateConsentRecordFromObjectData(objectData string) (daRecord.DataAgreementRecord, error) {
+
+	// Deserialise data agreement record
+	var da daRecord.DataAgreementRecord
+	err := json.Unmarshal([]byte(objectData), &da)
+	if err != nil {
+		return da, err
+	}
+
+	return da, nil
 }

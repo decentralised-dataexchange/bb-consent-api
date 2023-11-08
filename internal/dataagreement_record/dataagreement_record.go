@@ -20,26 +20,14 @@ type DataAgreementRecord struct {
 	IsDeleted                 bool               `json:"-"`
 }
 
-type DataAgreementForListDataAgreementRecord struct {
-	Purpose     string `json:"purpose"`
-	LawfulBasis string `json:"lawfulBasis"`
-}
-
 type RevisionForListDataAgreementRecord struct {
-	Timestamp string `json:"timestamp"`
+	ObjectData string
+	Timestamp  string `json:"timestamp"`
 }
 
 type DataAgreementRecordForAuditList struct {
-	Id                        primitive.ObjectID                      `json:"id" bson:"_id,omitempty"`
-	DataAgreementId           string                                  `json:"dataAgreementId"`
-	DataAgreementRevisionId   string                                  `json:"dataAgreementRevisionId"`
-	DataAgreementRevisionHash string                                  `json:"dataAgreementRevisionHash"`
-	IndividualId              string                                  `json:"individualId"`
-	OptIn                     bool                                    `json:"optIn"`
-	State                     string                                  `json:"state" valid:"required"`
-	SignatureId               string                                  `json:"signatureId"`
-	DataAgreements            DataAgreementForListDataAgreementRecord `json:"dataAgreement"`
-	Timestamp                 string                                  `json:"timestamp"`
+	Id        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Revisions []RevisionForListDataAgreementRecord
 }
 
 // DataAgreementRecordError is an error enumeration for create consent record API.

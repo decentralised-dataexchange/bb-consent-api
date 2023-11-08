@@ -90,8 +90,15 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	currentDataAgreementRevision, err := revision.GetLatestByObjectId(dataAgreementId)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch latest revision for data agreement: %v", dataAgreementId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
 	// Create new revision
-	newRevision, err := revision.UpdateRevisionForDataAgreementRecord(toBeUpdatedDaRecord, &currentDataAgreementRecordRevision, individualId)
+	newRevision, err := revision.UpdateRevisionForDataAgreementRecord(toBeUpdatedDaRecord, &currentDataAgreementRecordRevision, individualId, currentDataAgreementRevision)
 	if err != nil {
 		m := "Failed to create revision for new data agreement record"
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)

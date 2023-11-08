@@ -1,7 +1,6 @@
 package audit
 
 import (
-	"context"
 	"errors"
 	"log"
 	"net/http"
@@ -10,12 +9,85 @@ import (
 	"github.com/bb-consent/api/internal/config"
 	daRecord "github.com/bb-consent/api/internal/dataagreement_record"
 	"github.com/bb-consent/api/internal/paginate"
-	"go.mongodb.org/mongo-driver/bson"
+	"github.com/bb-consent/api/internal/revision"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type DataAgreementForListDataAgreementRecord struct {
-	Id      string `json:"id" bson:"_id,omitempty"`
-	Purpose string `json:"purpose"`
+type dataAgreementForListDataAgreementRecord struct {
+	Purpose     string `json:"purpose"`
+	LawfulBasis string `json:"lawfulBasis"`
+	Version     string `json:"version"`
+}
+
+type listDataAgreementRecord struct {
+	Id                        primitive.ObjectID                      `json:"id" bson:"_id,omitempty"`
+	DataAgreementId           string                                  `json:"dataAgreementId"`
+	DataAgreementRevisionId   string                                  `json:"dataAgreementRevisionId"`
+	DataAgreementRevisionHash string                                  `json:"dataAgreementRevisionHash"`
+	IndividualId              string                                  `json:"individualId"`
+	OptIn                     bool                                    `json:"optIn"`
+	State                     string                                  `json:"state" valid:"required"`
+	SignatureId               string                                  `json:"signatureId"`
+	Timestamp                 string                                  `json:"timestamp"`
+	DataAgreement             dataAgreementForListDataAgreementRecord `json:"dataAgreement"`
+}
+
+func dataAgreementRecordsToInterfaceSlice(dataAgreementRecords []listDataAgreementRecord) []interface{} {
+	interfaceSlice := make([]interface{}, len(dataAgreementRecords))
+	for i, r := range dataAgreementRecords {
+		interfaceSlice[i] = r
+	}
+	return interfaceSlice
+}
+
+// recreateDataAgreementRecordsFromRevisions
+func recreateDataAgreementRecordsFromRevisions(dataAgreementRecords []daRecord.DataAgreementRecordForAuditList, lawfulbasis string) ([]listDataAgreementRecord, error) {
+	var consentRecords []listDataAgreementRecord
+
+	for _, dARecord := range dataAgreementRecords {
+		for _, dARevision := range dARecord.Revisions {
+			var consentRecord listDataAgreementRecord
+			// recreate consent record from revisions objectdata
+			tempDARecord, err := revision.RecreateConsentRecordFromObjectData(dARevision.ObjectData)
+			if err != nil {
+				return consentRecords, err
+			}
+			// populate the data agreement revision values
+			consentRecord.Id = tempDARecord.Id
+			consentRecord.DataAgreementId = tempDARecord.DataAgreementId
+			consentRecord.DataAgreementRevisionHash = tempDARecord.DataAgreementRevisionHash
+			consentRecord.DataAgreementRevisionId = tempDARecord.DataAgreementRevisionId
+			consentRecord.IndividualId = tempDARecord.IndividualId
+			consentRecord.OptIn = tempDARecord.OptIn
+			consentRecord.State = tempDARecord.State
+			consentRecord.SignatureId = tempDARecord.SignatureId
+			consentRecord.Timestamp = dARevision.Timestamp
+			// fetch corresponding data agreement revision
+			dataAgreementRevision, err := revision.GetByRevisionId(tempDARecord.DataAgreementRevisionId)
+			if err != nil {
+				return consentRecords, err
+			}
+			// recreate data agreement from revision
+			dataAgreement, err := revision.RecreateDataAgreementFromRevision(dataAgreementRevision)
+			if err != nil {
+				return consentRecords, err
+			}
+			// populate data agreement values obtained after recreating data agreement
+			consentRecord.DataAgreement.LawfulBasis = dataAgreement.LawfulBasis
+			consentRecord.DataAgreement.Purpose = dataAgreement.Purpose
+			consentRecord.DataAgreement.Version = dataAgreement.Version
+			// filter by lawful basis
+			if len(lawfulbasis) > 0 {
+				if consentRecord.DataAgreement.LawfulBasis == lawfulbasis {
+					consentRecords = append(consentRecords, consentRecord)
+				}
+			} else {
+				consentRecords = append(consentRecords, consentRecord)
+			}
+
+		}
+	}
+	return consentRecords, nil
 }
 
 type fetchDataAgreementRecordsResp struct {
@@ -46,40 +118,27 @@ func AuditListDataAgreementRecords(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 
-	pipeline, err := daRecord.CreatePipelineForFilteringDataAgreementRecords(organisationId, id, lawfulBasis)
+	dataAgreementRecords, err := daRecord.DataAgreementRecordsWithRevisionsFilteredById(organisationId, id)
 	if err != nil {
-		m := "Failed to create pipeline"
+		m := "Failed to fetch all data agreement records"
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+	consentRecords, err := recreateDataAgreementRecordsFromRevisions(dataAgreementRecords, lawfulBasis)
+	if err != nil {
+		m := "Failed to recreate data agreement records from revisions"
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 
-	pipeline = append(pipeline, bson.M{"$sort": bson.M{"timestamp": -1}})
-	var daRecords []daRecord.DataAgreementRecordForAuditList
-	query := paginate.PaginateDBObjectsQueryUsingPipeline{
-		Pipeline:   pipeline,
-		Collection: daRecord.Collection(),
-		Context:    context.Background(),
-		Limit:      limit,
-		Offset:     offset,
+	query := paginate.PaginateObjectsQuery{
+		Limit:  limit,
+		Offset: offset,
 	}
-	var resp fetchDataAgreementRecordsResp
-	result, err := paginate.PaginateDBObjectsUsingPipeline(query, &daRecords)
-	if err != nil {
-		if errors.Is(err, paginate.EmptyDBError) {
-			emptyDaRecords := make([]interface{}, 0)
-			resp = fetchDataAgreementRecordsResp{
-				DataAgreementRecords: emptyDaRecords,
-				Pagination:           result.Pagination,
-			}
-			common.ReturnHTTPResponse(resp, w)
-			return
-		}
-		m := "Failed to paginate data agreement records"
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
+	interfaceSlice := dataAgreementRecordsToInterfaceSlice(consentRecords)
+	result := paginate.PaginateObjects(query, interfaceSlice)
 
-	}
-	resp = fetchDataAgreementRecordsResp{
+	resp := fetchDataAgreementRecordsResp{
 		DataAgreementRecords: result.Items,
 		Pagination:           result.Pagination,
 	}
