@@ -117,8 +117,8 @@ func ProcessWebhooks(webhookEventType string, value []byte) {
 
 	// Quick fix
 	// Retrieving user and organisation ID from webhook data attribute
-	userID := webhookEventData["userID"].(string)
-	orgID := webhookEventData["organisationID"].(string)
+	userID := webhookEventData["individualId"].(string)
+	orgID := webhookEventData["organisationId"].(string)
 
 	log.Printf("Processing webhook:%s triggered by user:%s of org:%s for event:%s", webhookEvent.WebhookID, userID, orgID, webhookEventType)
 

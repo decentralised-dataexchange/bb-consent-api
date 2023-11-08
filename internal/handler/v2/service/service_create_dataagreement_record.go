@@ -8,7 +8,6 @@ import (
 
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
-	"github.com/bb-consent/api/internal/dataagreement"
 	daRecord "github.com/bb-consent/api/internal/dataagreement_record"
 	daRecordHistory "github.com/bb-consent/api/internal/dataagreement_record_history"
 	"github.com/bb-consent/api/internal/revision"
@@ -112,24 +111,9 @@ func ServiceCreateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Repository
-	daRepo := dataagreement.DataAgreementRepository{}
-	daRepo.Init(organisationId)
-
-	da, err := daRepo.Get(dataAgreementId)
-	if err != nil {
-		m := fmt.Sprintf("Failed to fetch data agreement: %v", dataAgreementId)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
-
 	// Trigger webhooks
-	var consentedAttributes []string
-	for _, pConsent := range da.DataAttributes {
-		consentedAttributes = append(consentedAttributes, pConsent.Id.Hex())
-	}
+	go webhook.TriggerConsentWebhookEvent(savedDaRecord, organisationId, webhook.EventTypes[30])
 
-	go webhook.TriggerConsentWebhookEvent(individualId, dataAgreementId, savedDaRecord.Id.Hex(), organisationId, webhook.EventTypes[30], 0, consentedAttributes)
 	// Add data agreement record history
 	darH := daRecordHistory.DataAgreementRecordsHistory{}
 	darH.DataAgreementId = dataAgreementId

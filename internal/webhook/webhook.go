@@ -11,6 +11,7 @@ import (
 
 	"github.com/bb-consent/api/internal/actionlog"
 	"github.com/bb-consent/api/internal/config"
+	daRecord "github.com/bb-consent/api/internal/dataagreement_record"
 	"github.com/bb-consent/api/internal/individual"
 	"github.com/bb-consent/api/internal/webhook_dispatcher"
 )
@@ -115,62 +116,26 @@ var DeliveryStatus = map[int]string{
 	DeliveryStatusFailed:    "failed",
 }
 
-// ConsentWebhookEvent Details of consent events
-type ConsentWebhookEvent struct {
-	OrganisationID  string   `json:"organisationID"`
-	UserID          string   `json:"userID"`
-	ConsentRecordID string   `json:"consentRecordID"`
-	DataAgreementID string   `json:"dataAgreementID"`
-	Attributes      []string `json:"attribute"`
-	Days            int      `json:"days"`
-	TimeStamp       string   `json:"timestamp"`
+type ConsentRecordWebhookEvent struct {
+	ConsentRecordId           string `json:"consentRecordId"`
+	DataAgreementId           string `json:"dataAgreementId"`
+	DataAgreementRevisionId   string `json:"dataAgreementRevisionId"`
+	DataAgreementRevisionHash string `json:"dataAgreementRevisionHash"`
+	IndividualId              string `json:"individualId"`
+	OptIn                     bool   `json:"optIn"`
+	State                     string `json:"state"`
+	SignatureId               string `json:"signatureId"`
+	OrganisationId            string `json:"organisationId"`
 }
 
 // GetOrganisationID Returns organisation ID
-func (e ConsentWebhookEvent) GetOrganisationID() string {
-	return e.OrganisationID
+func (e ConsentRecordWebhookEvent) GetOrganisationID() string {
+	return e.OrganisationId
 }
 
 // GetUserID Returns user ID
-func (e ConsentWebhookEvent) GetUserID() string {
-	return e.UserID
-}
-
-// DataRequestWebhookEvent Details of user data request events (delete, download)
-type DataRequestWebhookEvent struct {
-	OrganisationID string `json:"organisationID"`
-	UserID         string `json:"userID"`
-	DataRequestID  string `json:"dataRequestID"`
-}
-
-// GetOrganisationID Returns organisation ID
-func (e DataRequestWebhookEvent) GetOrganisationID() string {
-	return e.OrganisationID
-}
-
-// GetUserID Returns user ID
-func (e DataRequestWebhookEvent) GetUserID() string {
-	return e.UserID
-}
-
-// DataUpdateRequestWebhookEvent Details of user data update request event
-type DataUpdateRequestWebhookEvent struct {
-	OrganisationID string `json:"organisationID"`
-	UserID         string `json:"userID"`
-	DataRequestID  string `json:"dataRequestID"`
-	ConsentID      string `json:"consentID"`
-	PurposeID      string `json:"purposeID"`
-	AttributeID    string `json:"attributeID"`
-}
-
-// GetOrganisationID Returns organisation ID
-func (e DataUpdateRequestWebhookEvent) GetOrganisationID() string {
-	return e.OrganisationID
-}
-
-// GetUserID Returns user ID
-func (e DataUpdateRequestWebhookEvent) GetUserID() string {
-	return e.UserID
+func (e ConsentRecordWebhookEvent) GetUserID() string {
+	return e.IndividualId
 }
 
 // PingWebhook Pings webhook payload URL to check the status
@@ -267,57 +232,26 @@ func TriggerOrgSubscriptionWebhookEvent(userID, orgID string, eventType string) 
 }
 
 // TriggerConsentWebhookEvent Trigger webhook for consent related events
-func TriggerConsentWebhookEvent(userID, DataAgreementID, ConsentRecordID, orgID, eventType string, days int, attributes []string) {
-	if days <= 0 {
-		days = 30
-	}
+func TriggerConsentWebhookEvent(consentRecord daRecord.DataAgreementRecord, organisationId string, eventType string) {
 
 	// Constructing webhook event data attribute
-	consentWebhookEvent := ConsentWebhookEvent{
-		OrganisationID:  orgID,
-		UserID:          userID,
-		ConsentRecordID: ConsentRecordID,
-		DataAgreementID: DataAgreementID,
-		Attributes:      attributes,
-		Days:            days,
-		TimeStamp:       time.Now().UTC().Format("2006-01-02T15:04:05Z"),
+	consentRecordWebhookEvent := ConsentRecordWebhookEvent{
+		ConsentRecordId:           consentRecord.Id.Hex(),
+		DataAgreementId:           consentRecord.DataAgreementId,
+		DataAgreementRevisionId:   consentRecord.DataAgreementRevisionId,
+		DataAgreementRevisionHash: consentRecord.DataAgreementRevisionHash,
+		IndividualId:              consentRecord.IndividualId,
+		OptIn:                     consentRecord.OptIn,
+		State:                     consentRecord.State,
+		SignatureId:               consentRecord.SignatureId,
+		OrganisationId:            consentRecord.OrganisationId,
 	}
+
 	for _, e := range WebhooksConfiguration.Events {
 		if e == eventType {
 			// triggering the webhook
-			TriggerWebhooks(consentWebhookEvent, eventType)
+			TriggerWebhooks(consentRecordWebhookEvent, eventType)
 		}
 
 	}
-}
-
-// TriggerDataRequestWebhookEvent Trigger webhook for user data request events
-func TriggerDataRequestWebhookEvent(userID string, orgID string, dataRequestID string, eventType string) {
-
-	// Constructing webhook event data attribute
-	dataRequestWebhookEvent := DataRequestWebhookEvent{
-		OrganisationID: orgID,
-		UserID:         userID,
-		DataRequestID:  dataRequestID,
-	}
-
-	// triggering the webhook
-	TriggerWebhooks(dataRequestWebhookEvent, eventType)
-}
-
-// TriggerDataUpdateRequestWebhookEvent Trigger webhook for user data update request events
-func TriggerDataUpdateRequestWebhookEvent(userID, attributeID, purposeID, consentID, orgID, dataRequestID string, eventType string) {
-
-	// Constructing webhook event data attribute
-	dataUpdateRequestWebhookEvent := DataUpdateRequestWebhookEvent{
-		OrganisationID: orgID,
-		UserID:         userID,
-		DataRequestID:  dataRequestID,
-		ConsentID:      consentID,
-		PurposeID:      purposeID,
-		AttributeID:    attributeID,
-	}
-
-	// triggering the webhook
-	TriggerWebhooks(dataUpdateRequestWebhookEvent, eventType)
 }
