@@ -1,6 +1,7 @@
 package audit
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -68,7 +69,7 @@ func recreateDataAgreementRecordsFromRevisions(dataAgreementRecords []daRecord.D
 				return consentRecords, err
 			}
 			// recreate data agreement from revision
-			dataAgreement, err := revision.RecreateDataAgreementFromRevision(dataAgreementRevision)
+			dataAgreement, err := recreateDataAgreementFromObjectData(dataAgreementRevision.ObjectData)
 			if err != nil {
 				return consentRecords, err
 			}
@@ -88,6 +89,18 @@ func recreateDataAgreementRecordsFromRevisions(dataAgreementRecords []daRecord.D
 		}
 	}
 	return consentRecords, nil
+}
+
+func recreateDataAgreementFromObjectData(objectData string) (dataAgreementForListDataAgreementRecord, error) {
+
+	// Deserialise data agreement
+	var da dataAgreementForListDataAgreementRecord
+	err := json.Unmarshal([]byte(objectData), &da)
+	if err != nil {
+		return da, err
+	}
+
+	return da, nil
 }
 
 type fetchDataAgreementRecordsResp struct {
