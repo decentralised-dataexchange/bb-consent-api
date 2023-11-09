@@ -21,7 +21,7 @@ type Webhook struct {
 	Disabled            bool               `json:"disabled"`                          // Disabled or not
 	SecretKey           string             `json:"secretKey" valid:"required"`        // For calculating SHA256 HMAC to verify data integrity and authenticity
 	SkipSSLVerification bool               `json:"skipSslVerification"`               // Skip SSL certificate verification or not (expiry is checked)
-	TimeStamp           string             `json:"timestamp" valid:"required"`        // UTC timestamp
+	TimeStamp           string             `json:"timestamp"`                         // UTC timestamp
 	IsDeleted           bool               `json:"-"`
 }
 
