@@ -7,13 +7,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/dataagreement"
 	"github.com/bb-consent/api/internal/paginate"
+	"github.com/bb-consent/api/internal/policy"
 	"github.com/bb-consent/api/internal/revision"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // ListDataAgreementsError is an error enumeration for list data agreement API.
@@ -59,6 +63,20 @@ func ParseListDataAgreementsLifecycleQueryParams(r *http.Request) (lifecycle str
 	}
 
 	return "", LifecycleIsMissingError
+}
+
+func parseIncludeRevisionsQueryParams(r *http.Request) (includeRevisions bool, err error) {
+	// Check if includeRevisions query param is provided.
+	includeRevisionsString := r.URL.Query().Get("includeRevisions")
+	if len(strings.TrimSpace(includeRevisionsString)) >= 1 {
+		includeRevisions, err := strconv.ParseBool(includeRevisionsString)
+		if err != nil {
+			return false, err
+		}
+		return includeRevisions, nil
+	}
+
+	return false, nil
 }
 
 func activeDataAgreementsFromObjectData(organisationId string) ([]interface{}, error) {
@@ -115,6 +133,93 @@ func dataAgreementsToInterfaceSlice(dataAgreements []dataagreement.DataAgreement
 	return interfaceSlice
 }
 
+func setDataAgreementWithRevisions(dataAgreement dataagreement.DataAgreement, revisions []revision.Revision) dataAgreementWithRevisions {
+	var dataAgreementWithRevision dataAgreementWithRevisions
+	// Policy
+	dataAgreementWithRevision.Policy = dataAgreement.Policy
+
+	// Signature
+	dataAgreementWithRevision.Signature = dataAgreement.Signature
+
+	// Other details
+	dataAgreementWithRevision.Purpose = dataAgreement.Purpose
+	dataAgreementWithRevision.PurposeDescription = dataAgreement.PurposeDescription
+	dataAgreementWithRevision.LawfulBasis = dataAgreement.LawfulBasis
+	dataAgreementWithRevision.MethodOfUse = dataAgreement.MethodOfUse
+	dataAgreementWithRevision.DpiaDate = dataAgreement.DpiaDate
+	dataAgreementWithRevision.DpiaSummaryUrl = dataAgreement.DpiaSummaryUrl
+	dataAgreementWithRevision.Active = dataAgreement.Active
+	dataAgreementWithRevision.Forgettable = dataAgreement.Forgettable
+	dataAgreementWithRevision.CompatibleWithVersionId = dataAgreement.CompatibleWithVersionId
+	dataAgreementWithRevision.DataAttributes = dataAgreement.DataAttributes
+	dataAgreementWithRevision.Lifecycle = dataAgreement.Lifecycle
+	dataAgreementWithRevision.Id = dataAgreement.Id
+	dataAgreementWithRevision.ControllerId = dataAgreement.ControllerId
+	dataAgreementWithRevision.ControllerName = dataAgreement.ControllerName
+	dataAgreementWithRevision.ControllerUrl = dataAgreement.ControllerUrl
+	dataAgreementWithRevision.Version = dataAgreement.Version
+	dataAgreementWithRevision.Revisions = revisions
+
+	return dataAgreementWithRevision
+}
+
+func getDataAgreementsWithRevisions(organisationId string) ([]dataAgreementWithRevisions, error) {
+	darepo := dataagreement.DataAgreementRepository{}
+	darepo.Init(organisationId)
+
+	var tempDataAgreements []dataAgreementWithRevisions
+	dataAgreements, err := darepo.GetAll()
+	if err != nil {
+		return tempDataAgreements, err
+	}
+
+	for _, dataAgreement := range dataAgreements {
+		revisions, err := revision.ListAllByDataAgreementId(dataAgreement.Id.Hex())
+		if err != nil {
+			return tempDataAgreements, err
+		}
+		if len(revisions) > 0 {
+			tempDataAgreement := setDataAgreementWithRevisions(dataAgreement, revisions)
+			tempDataAgreements = append(tempDataAgreements, tempDataAgreement)
+		}
+
+	}
+	return tempDataAgreements, nil
+}
+
+type dataAgreementWithRevisions struct {
+	Id                      primitive.ObjectID            `json:"id" bson:"_id,omitempty"`
+	Version                 string                        `json:"version"`
+	ControllerId            string                        `json:"controllerId"`
+	ControllerUrl           string                        `json:"controllerUrl" valid:"required"`
+	ControllerName          string                        `json:"controllerName" valid:"required"`
+	Policy                  policy.Policy                 `json:"policy" valid:"required"`
+	Purpose                 string                        `json:"purpose" valid:"required"`
+	PurposeDescription      string                        `json:"purposeDescription" valid:"required"`
+	LawfulBasis             string                        `json:"lawfulBasis" valid:"required"`
+	MethodOfUse             string                        `json:"methodOfUse" valid:"required"`
+	DpiaDate                string                        `json:"dpiaDate"`
+	DpiaSummaryUrl          string                        `json:"dpiaSummaryUrl"`
+	Signature               dataagreement.Signature       `json:"signature"`
+	Active                  bool                          `json:"active"`
+	Forgettable             bool                          `json:"forgettable"`
+	CompatibleWithVersionId string                        `json:"compatibleWithVersionId"`
+	Lifecycle               string                        `json:"lifecycle" valid:"required"`
+	DataAttributes          []dataagreement.DataAttribute `json:"dataAttributes" valid:"required"`
+	OrganisationId          string                        `json:"-"`
+	IsDeleted               bool                          `json:"-"`
+	Timestamp               string                        `json:"-"`
+	Revisions               []revision.Revision           `json:"revisions"`
+}
+
+func dataAgreementsWithRevisionsToInterfaceSlice(dataAgreements []dataAgreementWithRevisions) []interface{} {
+	interfaceSlice := make([]interface{}, len(dataAgreements))
+	for i, r := range dataAgreements {
+		interfaceSlice[i] = r
+	}
+	return interfaceSlice
+}
+
 type listDataAgreementsResp struct {
 	DataAgreements interface{}         `json:"dataAgreements"`
 	Pagination     paginate.Pagination `json:"pagination"`
@@ -138,6 +243,39 @@ func ConfigListDataAgreements(w http.ResponseWriter, r *http.Request) {
 	// Query params
 	offset, limit := paginate.ParsePaginationQueryParams(r)
 	log.Printf("Offset: %v and limit: %v\n", offset, limit)
+
+	includeRevisions, err := parseIncludeRevisionsQueryParams(r)
+	if err != nil {
+		m := "Failed to parse query param includeRevisions"
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	if includeRevisions {
+		dataAgreements, err := getDataAgreementsWithRevisions(organisationId)
+		if err != nil {
+			m := "Failed to fetch data agreements"
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
+
+		interfaceSlice := dataAgreementsWithRevisionsToInterfaceSlice(dataAgreements)
+
+		// Return liecycle filtered data agreements
+		query := paginate.PaginateObjectsQuery{
+			Limit:  limit,
+			Offset: offset,
+		}
+		result := paginate.PaginateObjects(query, interfaceSlice)
+
+		resp = listDataAgreementsResp{
+			DataAgreements: result.Items,
+			Pagination:     result.Pagination,
+		}
+		common.ReturnHTTPResponse(resp, w)
+		return
+	}
+
 	revisionId, err := ParseListDataAgreementsQueryParams(r)
 	revisionId = common.Sanitize(revisionId)
 	if err != nil && errors.Is(err, RevisionIDIsMissingError) {

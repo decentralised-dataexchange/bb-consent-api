@@ -284,7 +284,8 @@ func (darepo *DataAgreementRepository) GetByMethodOfUse(methodOfUse string) ([]D
 func (darepo *DataAgreementRepository) GetAll() ([]DataAgreement, error) {
 
 	var results []DataAgreement
-	cursor, err := Collection().Find(context.TODO(), darepo.DefaultFilter)
+	opts := options.Find().SetSort(bson.M{"timestamp": -1})
+	cursor, err := Collection().Find(context.TODO(), darepo.DefaultFilter, opts)
 	if err != nil {
 		return results, err
 	}
