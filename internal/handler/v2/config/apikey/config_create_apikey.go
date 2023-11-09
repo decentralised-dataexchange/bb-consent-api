@@ -79,6 +79,10 @@ func ConfigCreateApiKey(w http.ResponseWriter, r *http.Request) {
 		common.HandleError(w, http.StatusInternalServerError, m, err)
 		return
 	}
+	// Convert the int timestamp to a time.Time value
+	expiryTime := time.Unix(expiryAt, 0)
+
+	expiryTimestamp := expiryTime.UTC().Format("2006-01-02T15:04:05Z")
 
 	var newApiKey apikey.ApiKey
 	newApiKey.Id = primitive.NewObjectID()
@@ -88,6 +92,7 @@ func ConfigCreateApiKey(w http.ResponseWriter, r *http.Request) {
 	newApiKey.ExpiryInDays = apiKeyReq.Apikey.ExpiryInDays
 	newApiKey.OrganisationId = organisationId
 	newApiKey.IsDeleted = false
+	newApiKey.ExpiryTimestamp = expiryTimestamp
 
 	apiKey, err := apiKeyRepo.Add(newApiKey)
 	if err != nil {
