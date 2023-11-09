@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/asaskevich/govalidator"
@@ -86,10 +87,19 @@ func ConfigUpdateApiKey(w http.ResponseWriter, r *http.Request) {
 		common.HandleError(w, http.StatusInternalServerError, m, err)
 		return
 	}
-	toBeUpdatedApiKey.Name = apiKeyReq.Apikey.Name
+	// Convert the int timestamp to a time.Time value
+	expiryTime := time.Unix(expiryAt, 0)
+
+	expiryTimestamp := expiryTime.UTC().Format("2006-01-02T15:04:05Z")
+
+	if len(strings.TrimSpace(apiKeyReq.Apikey.Name)) > 0 {
+		toBeUpdatedApiKey.Name = apiKeyReq.Apikey.Name
+	}
+
 	toBeUpdatedApiKey.Apikey = currentApiKey
 	toBeUpdatedApiKey.ExpiryInDays = apiKeyReq.Apikey.ExpiryInDays
 	toBeUpdatedApiKey.Scopes = apiKeyReq.Apikey.Scopes
+	toBeUpdatedApiKey.ExpiryTimestamp = expiryTimestamp
 
 	// Updates apikey
 	savedApiKey, err := apiKeyRepo.Update(toBeUpdatedApiKey)

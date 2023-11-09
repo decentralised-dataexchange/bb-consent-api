@@ -21,6 +21,7 @@ func Migrate() {
 	migrateTimestampInDataAgreementsCollection()
 	migrateTimestampInApiKeyCollection()
 	migrateOrganisationIdInIDPCollection()
+	migrateExpiryTimestampInApiKeyCollection()
 }
 
 func migrateThirdPartyDataSharingToTrueInPolicyCollection() {
@@ -137,4 +138,42 @@ func migrateOrganisationIdInIDPCollection() {
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+func migrateExpiryTimestampInApiKeyCollection() {
+	apiKeyCollection := apikey.Collection()
+
+	var results []apikey.ApiKey
+
+	cursor, err := apiKeyCollection.Find(context.TODO(), bson.M{})
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer cursor.Close(context.TODO())
+
+	if err := cursor.All(context.TODO(), &results); err != nil {
+		fmt.Println(err)
+	}
+
+	for _, apiKey := range results {
+		createTimestamp := apiKey.Timestamp
+		expiryInDays := apiKey.ExpiryInDays
+		// Parse the timestamp
+		creationTime, err := time.Parse(time.RFC3339, createTimestamp)
+		if err != nil {
+			fmt.Println(err)
+		}
+		expiryTime := creationTime.Add(time.Duration(24*expiryInDays) * time.Hour)
+
+		expiryTimestamp := expiryTime.UTC().Format("2006-01-02T15:04:05Z")
+
+		filter := bson.M{"_id": apiKey.Id, "expirytimestamp": bson.M{"$exists": false}}
+		update := bson.M{"$set": bson.M{"expirytimestamp": expiryTimestamp}}
+
+		_, err = apiKeyCollection.UpdateOne(context.TODO(), filter, update)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
 }
