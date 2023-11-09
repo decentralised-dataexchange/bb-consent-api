@@ -102,7 +102,7 @@ func UpdateWebhook(webhook Webhook) (Webhook, error) {
 
 // GetActiveWebhooksByOrgID Gets all active webhooks for a particular organisation
 func GetActiveWebhooksByOrgID(orgID string) (results []Webhook, err error) {
-	filter := bson.M{"orgid": orgID, "disabled": false}
+	filter := bson.M{"orgid": orgID, "disabled": false, "isdeleted": false}
 
 	cursor, err := webhookCollection().Find(context.TODO(), filter)
 	if err != nil {
