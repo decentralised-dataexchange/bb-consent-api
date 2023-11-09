@@ -33,6 +33,7 @@ const (
 	Id                    = "id"
 	AuthorisationCode     = "authorisationCode"
 	RedirectUri           = "redirectUri"
+	IncludeRevisions      = "includeRevisions"
 )
 
 // Schemas
