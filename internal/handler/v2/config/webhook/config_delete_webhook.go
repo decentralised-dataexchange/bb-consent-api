@@ -36,6 +36,7 @@ func ConfigDeleteWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	toBeDeletedWebhook.Disabled = true
 	toBeDeletedWebhook.IsDeleted = true
 
 	// Save to db
