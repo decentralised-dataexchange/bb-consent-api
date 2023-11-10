@@ -11,6 +11,7 @@ import (
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/iam"
+	"github.com/bb-consent/api/internal/individual"
 	"github.com/bb-consent/api/internal/token"
 	"github.com/bb-consent/api/internal/user"
 )
@@ -22,6 +23,10 @@ type resetPasswordReq struct {
 
 // ResetPassword Resets an user password
 func OnboardResetPassword(w http.ResponseWriter, r *http.Request) {
+	// Headers
+	organisationId := r.Header.Get(config.OrganizationId)
+	organisationId = common.Sanitize(organisationId)
+
 	userIamID := token.GetIamID(r)
 
 	var resetReq resetPasswordReq
@@ -35,16 +40,27 @@ func OnboardResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// fetch the current user
-	user, err := user.GetByIamID(userIamID)
+	// Repository
+	individualRepo := individual.IndividualRepository{}
+	individualRepo.Init(organisationId)
+
+	//Get user details from DB
+	var email string
+	u, err := individualRepo.GetByIamID(userIamID)
 	if err != nil {
-		m := "Failed to fetch user"
-		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
-		return
+		u, err := user.GetByIamID(userIamID)
+		if err != nil {
+			m := "Failed to fetch user"
+			common.HandleErrorV2(w, http.StatusBadRequest, m, err)
+			return
+		}
+		email = u.Email
+	} else {
+		email = u.Email
 	}
 
 	// reset user password
-	err = iam.ResetPassword(userIamID, user.Email, resetReq.CurrentPassword, resetReq.NewPassword)
+	err = iam.ResetPassword(userIamID, email, resetReq.CurrentPassword, resetReq.NewPassword)
 	if err != nil {
 		m := fmt.Sprintf("Failed to reset user:%v password", userIamID)
 		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
