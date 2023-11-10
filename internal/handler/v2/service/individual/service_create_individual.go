@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/internal/common"
@@ -26,8 +27,19 @@ func updateIndividualFromAddRequestBody(requestBody addServiceIndividualReq, new
 	return newIndividual
 }
 
+type individualReq struct {
+	Id                 primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	ExternalId         string             `json:"externalId"`
+	ExternalIdType     string             `json:"externalIdType"`
+	IdentityProviderId string             `json:"identityProviderId"`
+	Name               string             `json:"name"`
+	IamId              string             `json:"iamId"`
+	Email              string             `json:"email"`
+	Phone              string             `json:"phone"`
+}
+
 type addServiceIndividualReq struct {
-	Individual individual.Individual `json:"individual"`
+	Individual individualReq `json:"individual"`
 }
 
 type addServiceIndividualResp struct {
@@ -53,21 +65,24 @@ func ServiceCreateIndividual(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Register user to keyclock
-	iamId, err := iam.RegisterUser(individualReq.Individual.Email, individualReq.Individual.Name)
-	if err != nil {
-		log.Printf("Failed to register user: %v err: %v", individualReq.Individual.Email, err)
-		common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
-		return
-	}
-
 	var newIndividual individual.Individual
 	newIndividual.Id = primitive.NewObjectID()
-	newIndividual.IamId = iamId
-	newIndividual = updateIndividualFromAddRequestBody(individualReq, newIndividual)
-	newIndividual.OrganisationId = organisationId
 	newIndividual.IsDeleted = false
 	newIndividual.IsOnboardedFromId = false
+	newIndividual.OrganisationId = organisationId
+
+	if len(strings.TrimSpace(individualReq.Individual.Email)) > 1 {
+		// Register user to keyclock
+		iamId, err := iam.RegisterUser(individualReq.Individual.Email, individualReq.Individual.Name)
+		if err != nil {
+			log.Printf("Failed to register user: %v err: %v", individualReq.Individual.Email, err)
+			common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
+			return
+		}
+
+		newIndividual.IamId = iamId
+		newIndividual = updateIndividualFromAddRequestBody(individualReq, newIndividual)
+	}
 
 	// Repository
 	individualRepo := individual.IndividualRepository{}
