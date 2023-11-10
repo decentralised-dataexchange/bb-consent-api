@@ -11,8 +11,9 @@ import (
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/iam"
+	"github.com/bb-consent/api/internal/individual"
 	"github.com/bb-consent/api/internal/token"
-	"github.com/bb-consent/api/internal/user"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type tokenResp struct {
@@ -24,8 +25,8 @@ type tokenResp struct {
 }
 
 type userLoginResp struct {
-	Individual user.UserV2 `json:"individual"`
-	Token      tokenResp   `json:"token"`
+	Individual individual.Individual `json:"individual"`
+	Token      tokenResp             `json:"token"`
 }
 
 // LoginUser Implements the user login
@@ -41,7 +42,6 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	// validating the request payload
 	valid, err := govalidator.ValidateStruct(lReq)
-
 	if !valid {
 		log.Printf("Invalid request params for authentication")
 		common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
@@ -63,9 +63,14 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
 		return
 	}
-	u, err := user.GetByIamIDV2(accessToken.IamID)
+	// Repository
+	individualRepo := individual.IndividualRepository{}
+	individualRepo.DefaultFilter = bson.M{"isdeleted": false}
+
+	//Get user details from DB
+	u, err := individualRepo.GetByIamID(accessToken.IamID)
 	if err != nil {
-		m := fmt.Sprintf("User: %v does not exist", lReq.Username)
+		m := "Failed to fetch user"
 		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
 		return
 	}
