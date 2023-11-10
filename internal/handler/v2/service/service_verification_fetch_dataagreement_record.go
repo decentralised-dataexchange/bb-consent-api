@@ -20,15 +20,15 @@ func ServiceVerificationFetchDataAgreementRecord(w http.ResponseWriter, r *http.
 
 	// Headers
 	organisationId := common.Sanitize(r.Header.Get(config.OrganizationId))
-	individualId := common.Sanitize(r.Header.Get(config.IndividualHeaderKey))
+	_ = common.Sanitize(r.Header.Get(config.IndividualHeaderKey))
 
-	dataAgreementId := common.Sanitize(mux.Vars(r)[config.DataAgreementId])
+	consentRecordId := common.Sanitize(mux.Vars(r)[config.ConsentRecordId])
 
 	// Repository
 	darRepo := daRecord.DataAgreementRecordRepository{}
 	darRepo.Init(organisationId)
 
-	daRecord, err := darRepo.GetByDataAgreementIdandIndividualId(dataAgreementId, individualId)
+	daRecord, err := darRepo.Get(consentRecordId)
 	if err != nil {
 		m := "Failed to fetch data agreement record"
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)

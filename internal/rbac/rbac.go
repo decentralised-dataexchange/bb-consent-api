@@ -49,7 +49,7 @@ func GetRbacPolicies() [][]string {
 		{"user", "/v2/service/data-agreement/{dataAgreementId}/data-attributes", "GET"},
 		{"user", "/v2/service/policy/{policyId}", "GET"},
 		{"user", "/v2/service/verification/data-agreements", "GET"},
-		{"user", "/v2/service/verification/data-agreement/{dataAgreementId}", "GET"},
+		{"user", "/v2/service/verification/consent-record/{consentRecordId}", "GET"},
 		{"user", "/v2/service/verification/consent-records", "GET"},
 		{"user", "/v2/service/individual/record/consent-record/draft", "POST"},
 		{"user", "/v2/service/individual/record/data-agreement/{dataAgreementId}", "(GET)|(POST)"},
