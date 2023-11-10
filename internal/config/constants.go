@@ -34,6 +34,7 @@ const (
 	AuthorisationCode     = "authorisationCode"
 	RedirectUri           = "redirectUri"
 	IncludeRevisions      = "includeRevisions"
+	ConsentRecordId       = "consentRecordId"
 )
 
 // Schemas
