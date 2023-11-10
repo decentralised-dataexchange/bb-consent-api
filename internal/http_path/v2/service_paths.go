@@ -48,3 +48,10 @@ const ServiceListIndividuals = "/v2/service/individuals"
 
 // Data sharing
 const ServiceShowDataSharingUi = "/data-sharing-ui"
+
+// login
+const ServiceLoginUser = "/v2/service/individual/login"
+const ServiceLogoutUser = "/v2/service/individual/logout"
+const ServiceResetPassword = "/v2/service/individual/password/reset"
+const ServiceForgotPassword = "/v2/service/individual/password/forgot"
+const ServiceRefreshToken = "/v2/service/individual/token/refresh"

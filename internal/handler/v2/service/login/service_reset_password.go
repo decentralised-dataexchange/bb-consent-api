@@ -1,0 +1,60 @@
+package login
+
+import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+
+	"github.com/asaskevich/govalidator"
+	"github.com/bb-consent/api/internal/common"
+	"github.com/bb-consent/api/internal/config"
+	"github.com/bb-consent/api/internal/iam"
+	"github.com/bb-consent/api/internal/individual"
+	"github.com/bb-consent/api/internal/token"
+)
+
+type resetPasswordReq struct {
+	CurrentPassword string `json:"currentPassword" valid:"required"`
+	NewPassword     string `json:"newPassword" valid:"required"`
+}
+
+// ServiceResetPassword Resets an user password
+func ServiceResetPassword(w http.ResponseWriter, r *http.Request) {
+	organisationId := r.Header.Get(config.OrganizationId)
+	userIamID := token.GetIamID(r)
+
+	var resetReq resetPasswordReq
+	b, _ := ioutil.ReadAll(r.Body)
+	json.Unmarshal(b, &resetReq)
+
+	valid, err := govalidator.ValidateStruct(resetReq)
+	if !valid {
+		log.Printf("Missing mandatory params required to reset password")
+		common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	// Repository
+	individualRepo := individual.IndividualRepository{}
+	individualRepo.Init(organisationId)
+
+	user, err := individualRepo.GetByIamID(userIamID)
+	if err != nil {
+		m := "Failed to fetch user"
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
+		return
+	}
+
+	// reset user password
+	err = iam.ResetPassword(userIamID, user.Email, resetReq.CurrentPassword, resetReq.NewPassword)
+	if err != nil {
+		m := fmt.Sprintf("Failed to reset user:%v password", userIamID)
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
+		return
+	}
+
+	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
+	w.WriteHeader(http.StatusOK)
+}

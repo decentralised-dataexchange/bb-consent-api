@@ -14,6 +14,7 @@ import (
 	serviceHandler "github.com/bb-consent/api/internal/handler/v2/service"
 	serviceDataSharingHandler "github.com/bb-consent/api/internal/handler/v2/service/datasharing"
 	serviceIndividualHandler "github.com/bb-consent/api/internal/handler/v2/service/individual"
+	serviceLoginHandler "github.com/bb-consent/api/internal/handler/v2/service/login"
 	m "github.com/bb-consent/api/internal/middleware"
 	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
@@ -124,6 +125,13 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(ServiceCreateIndividual, m.Chain(serviceIndividualHandler.ServiceCreateIndividual, m.Logger(), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
 	r.Handle(ServiceUpdateIndividual, m.Chain(serviceIndividualHandler.ServiceUpdateIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
 	r.Handle(ServiceListIndividuals, m.Chain(serviceIndividualHandler.ServiceListIndividuals, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+
+	// login
+	r.Handle(ServiceLoginUser, m.Chain(serviceLoginHandler.ServiceLoginUser, m.LoggerNoAuth(), m.SetApplicationMode(), m.AddContentType())).Methods("POST")
+	r.Handle(ServiceLogoutUser, m.Chain(serviceLoginHandler.ServiceLogoutUser, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	r.Handle(ServiceResetPassword, m.Chain(serviceLoginHandler.ServiceResetPassword, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("PUT")
+	r.Handle(ServiceRefreshToken, m.Chain(serviceLoginHandler.ServiceRefreshToken, m.AddContentType())).Methods("POST")
+	r.Handle(ServiceForgotPassword, m.Chain(serviceLoginHandler.ServiceForgotPassword, m.LoggerNoAuth(), m.SetApplicationMode())).Methods("PUT")
 
 	// Audit api(s)
 
