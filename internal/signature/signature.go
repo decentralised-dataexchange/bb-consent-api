@@ -2,6 +2,7 @@ package signature
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/bb-consent/api/internal/common"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -30,6 +31,7 @@ func (s *Signature) Init(ObjectType string, ObjectReference string, SignedWithou
 	s.SignedWithoutObjectReference = SignedWithoutObjectReference
 	s.ObjectType = ObjectType
 	s.ObjectReference = ObjectReference
+	s.Timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 }
 
 // CreateSignature

@@ -9,6 +9,7 @@ import (
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
 	daRecord "github.com/bb-consent/api/internal/dataagreement_record"
+	"github.com/bb-consent/api/internal/individual"
 	"github.com/bb-consent/api/internal/revision"
 	"github.com/bb-consent/api/internal/signature"
 )
@@ -34,8 +35,7 @@ type draftDataAgreementRecordResp struct {
 
 func ServiceCreateDraftConsentRecord(w http.ResponseWriter, r *http.Request) {
 	// Headers
-	_ = common.Sanitize(r.Header.Get(config.OrganizationId))
-	individualId := common.Sanitize(r.Header.Get(config.IndividualHeaderKey))
+	organisationId := common.Sanitize(r.Header.Get(config.OrganizationId))
 
 	// Parse query params
 	dataAgreementId, err := daRecord.ParseQueryParams(r, config.DataAgreementId, daRecord.DataAgreementIdIsMissingError)
@@ -43,6 +43,23 @@ func ServiceCreateDraftConsentRecord(w http.ResponseWriter, r *http.Request) {
 	if err != nil && errors.Is(err, daRecord.DataAgreementIdIsMissingError) {
 		m := "Query param dataAgreementId is required"
 		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
+		return
+	}
+	individualId, err := daRecord.ParseQueryParams(r, config.IndividualId, daRecord.IndividualIdIsMissingError)
+	individualId = common.Sanitize(individualId)
+	if err != nil && errors.Is(err, daRecord.IndividualIdIsMissingError) {
+		m := "Query param individualId is required"
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
+		return
+	}
+	// Repository
+	individualRepo := individual.IndividualRepository{}
+	individualRepo.Init(organisationId)
+
+	_, err = individualRepo.Get(individualId)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch individual: %v", individualId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 
