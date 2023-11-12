@@ -16,7 +16,7 @@ func parseQueryParams(r *http.Request) (dataAgreementId string, accessToken stri
 	thirdPartyOrgName = getStringQueryParam(query, "thirdPartyOrgName")
 	thirdPartyOrgLogoImageUrl = getStringQueryParam(query, "thirdPartyOrgLogoImageUrl")
 	dataSharingUiRedirectUrl = getStringQueryParam(query, "dataSharingUiRedirectUrl")
-	authorisationCode = getStringQueryParam(query, "authorisationCode")
+	authorisationCode = getStringQueryParam(query, "code")
 	authorisationRedirectUrl = getStringQueryParam(query, "authorisationRedirectUrl")
 
 	return dataAgreementId, accessToken, apiKey, individualId, thirdPartyOrgName, thirdPartyOrgLogoImageUrl, dataSharingUiRedirectUrl, authorisationCode, authorisationRedirectUrl
