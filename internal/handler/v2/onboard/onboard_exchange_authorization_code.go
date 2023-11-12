@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/idp"
@@ -38,17 +40,34 @@ type exchangeAuthorizationResp struct {
 	Token    tResp        `json:"token"`
 }
 
+type exchangeAuthorizationReq struct {
+	RedirectUri string `json:"redirectUri" valid:"required"`
+}
+
 // ExchangeAuthorizationCode Exchange the authorization code for an access token
 func ExchangeAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	// Headers
 	organisationId := r.Header.Get(config.OrganizationId)
 	organisationId = common.Sanitize(organisationId)
 
+	var req exchangeAuthorizationReq
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	json.Unmarshal(b, &req)
+
+	// validating the request payload
+	valid, err := govalidator.ValidateStruct(req)
+
+	if !valid {
+		log.Printf("Invalid request params!")
+		common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
 	// Query params
-	oauthRedirectURI := r.URL.Query().Get(config.RedirectUri)
 	oauthAuthorizationCode := r.URL.Query().Get(config.AuthorisationCode)
 
-	if len(strings.TrimSpace(oauthRedirectURI)) == 0 || len(strings.TrimSpace(oauthAuthorizationCode)) == 0 {
+	if len(strings.TrimSpace(oauthAuthorizationCode)) == 0 {
 		log.Printf("Missing mandatory query params for exchanging authorization code \n")
 		m := fmt.Sprintf("Failed to exchange authorization code for org:%v", organisationId)
 		common.HandleError(w, http.StatusNotFound, m, errors.New(m))
@@ -81,7 +100,7 @@ func ExchangeAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	oauth2Config := &oauth2.Config{
 		ClientID:     idp.ClientID,
 		ClientSecret: idp.ClientSecret,
-		RedirectURL:  oauthRedirectURI,
+		RedirectURL:  req.RedirectUri,
 		Endpoint:     provider.Endpoint(),
 	}
 

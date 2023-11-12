@@ -6,7 +6,7 @@ import (
 	"net/url"
 )
 
-func parseQueryParams(r *http.Request) (dataAgreementId string, accessToken string, apiKey string, individualId string, thirdPartyOrgName string, thirdPartyOrgLogoImageUrl string, dataSharingUiRedirectUrl string, authorisationCode string, authorisationRedirectUrl string) {
+func parseQueryParams(r *http.Request) (dataAgreementId string, accessToken string, apiKey string, individualId string, thirdPartyOrgName string, thirdPartyOrgLogoImageUrl string, dataSharingUiRedirectUrl string, authorisationCode string) {
 	query := r.URL.Query()
 
 	dataAgreementId = getStringQueryParam(query, "dataAgreementId")
@@ -17,9 +17,8 @@ func parseQueryParams(r *http.Request) (dataAgreementId string, accessToken stri
 	thirdPartyOrgLogoImageUrl = getStringQueryParam(query, "thirdPartyOrgLogoImageUrl")
 	dataSharingUiRedirectUrl = getStringQueryParam(query, "dataSharingUiRedirectUrl")
 	authorisationCode = getStringQueryParam(query, "code")
-	authorisationRedirectUrl = getStringQueryParam(query, "authorisationRedirectUrl")
 
-	return dataAgreementId, accessToken, apiKey, individualId, thirdPartyOrgName, thirdPartyOrgLogoImageUrl, dataSharingUiRedirectUrl, authorisationCode, authorisationRedirectUrl
+	return dataAgreementId, accessToken, apiKey, individualId, thirdPartyOrgName, thirdPartyOrgLogoImageUrl, dataSharingUiRedirectUrl, authorisationCode
 }
 
 func getStringQueryParam(query url.Values, param string) string {
@@ -32,7 +31,12 @@ func getStringQueryParam(query url.Values, param string) string {
 
 func ServiceShowDataSharingUiHandler(w http.ResponseWriter, r *http.Request) {
 	baseUrl := "https://" + r.Host + "/v2"
-	dataAgreementId, accessToken, apiKey, individualId, thirdPartyOrgName, thirdPartyOrgLogoImageUrl, dataSharingUiRedirectUrl, authorisationCode, authorisationRedirectUrl := parseQueryParams(r)
+	dataAgreementId, accessToken, apiKey, individualId, thirdPartyOrgName, thirdPartyOrgLogoImageUrl, dataSharingUiRedirectUrl, authorisationCode := parseQueryParams(r)
+
+	authorisationRedirectUrl := "https://" + r.Host + "/v2/service/data-sharing?dataAgreementId=" + dataAgreementId + "&thirdPartyOrgName=" + thirdPartyOrgName + "&dataSharingUiRedirectUrl=" + dataSharingUiRedirectUrl
+	if len(thirdPartyOrgLogoImageUrl) > 1 {
+		authorisationRedirectUrl += "&thirdPartyOrgLogoImageUrl=" + thirdPartyOrgLogoImageUrl
+	}
 	// HTML template
 	templateContent := `
 	<!DOCTYPE html>
@@ -43,7 +47,7 @@ func ServiceShowDataSharingUiHandler(w http.ResponseWriter, r *http.Request) {
 		<title>Consent BB Data Sharing UI</title>
 		<link
 		  rel="stylesheet"
-		  href="https://cdn.jsdelivr.net/gh/decentralised-dataexchange/bb-consent-data-sharing-ui@2023.11.3/dist/consentBbDataSharingUi.css"
+		  href="https://cdn.jsdelivr.net/gh/decentralised-dataexchange/bb-consent-data-sharing-ui@2023.11.7/dist/consentBbDataSharingUi.css"
 		/>
 	  </head>
 	  <body style="margin: 0px">
@@ -52,7 +56,7 @@ func ServiceShowDataSharingUiHandler(w http.ResponseWriter, r *http.Request) {
 		<script
 		  data-element-id="consentBbDataSharingUi"
 		  id="consentBbDataSharingUi-script"
-		  src="https://cdn.jsdelivr.net/gh/decentralised-dataexchange/bb-consent-data-sharing-ui@2023.11.3/dist/consentBbDataSharingUi.js"
+		  src="https://cdn.jsdelivr.net/gh/decentralised-dataexchange/bb-consent-data-sharing-ui@2023.11.7/dist/consentBbDataSharingUi.js"
 		></script>
 		<script>
 			window.ConsentBbDataSharingUi({
