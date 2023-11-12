@@ -47,7 +47,7 @@ const ServiceUpdateIndividual = "/v2/service/individual/{individualId}"
 const ServiceListIndividuals = "/v2/service/individuals"
 
 // Data sharing
-const ServiceShowDataSharingUi = "/data-sharing-ui"
+const ServiceShowDataSharingUi = "/v2/service/data-sharing"
 
 // login
 const ServiceLoginUser = "/v2/service/individual/login"
