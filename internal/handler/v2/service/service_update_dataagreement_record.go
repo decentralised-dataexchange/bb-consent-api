@@ -13,6 +13,7 @@ import (
 	"github.com/bb-consent/api/internal/dataagreement"
 	daRecord "github.com/bb-consent/api/internal/dataagreement_record"
 	daRecordHistory "github.com/bb-consent/api/internal/dataagreement_record_history"
+	"github.com/bb-consent/api/internal/individual"
 	"github.com/bb-consent/api/internal/revision"
 	"github.com/bb-consent/api/internal/webhook"
 	"github.com/gorilla/mux"
@@ -33,6 +34,17 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 
 	dataAgreementRecordId := common.Sanitize(mux.Vars(r)[config.DataAgreementRecordId])
 
+	// Repository
+	individualRepo := individual.IndividualRepository{}
+	individualRepo.Init(organisationId)
+
+	_, err := individualRepo.Get(individualId)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch individual: %v", individualId)
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
+		return
+	}
+
 	// Parse query params
 	dataAgreementId, err := daRecord.ParseQueryParams(r, config.DataAgreementId, daRecord.DataAgreementIdIsMissingError)
 	dataAgreementId = common.Sanitize(dataAgreementId)
@@ -52,7 +64,7 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 	valid, err := govalidator.ValidateStruct(dataAgreementRecordReq)
 	if !valid {
 		m := fmt.Sprintf("Failed to validate request body: %v", dataAgreementRecordId)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
 		return
 	}
 	// Repository
@@ -62,7 +74,7 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 	_, err = daRepo.Get(dataAgreementId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch data agreement: %v", dataAgreementId)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
 		return
 	}
 
@@ -76,12 +88,6 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
-	if toBeUpdatedDaRecord.OptIn == dataAgreementRecordReq.OptIn {
-		m := "Data agreement record opt in is same as provided value"
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
-	toBeUpdatedDaRecord.OptIn = dataAgreementRecordReq.OptIn
 
 	currentDataAgreementRecordRevision, err := revision.GetLatestByObjectId(dataAgreementRecordId)
 	if err != nil {
@@ -89,6 +95,17 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
+
+	if toBeUpdatedDaRecord.OptIn == dataAgreementRecordReq.OptIn {
+		// response
+		resp := updateDataAgreementRecordResp{
+			DataAgreementRecord: toBeUpdatedDaRecord,
+			Revision:            currentDataAgreementRecordRevision,
+		}
+		common.ReturnHTTPResponse(resp, w)
+		return
+	}
+	toBeUpdatedDaRecord.OptIn = dataAgreementRecordReq.OptIn
 
 	currentDataAgreementRevision, err := revision.GetLatestByObjectId(dataAgreementId)
 	if err != nil {
