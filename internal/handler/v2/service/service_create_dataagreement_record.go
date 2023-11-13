@@ -57,7 +57,7 @@ func ServiceCreateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 	}
 	if count > 0 {
 		m := fmt.Sprintf("Data agreement record for data agreement: %v and individual id : %s exists", dataAgreementId, individualId)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
 		return
 	}
 
