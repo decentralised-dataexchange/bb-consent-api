@@ -12,9 +12,15 @@ import (
 )
 
 type serviceIdp struct {
-	Id        string `json:"id"`
-	LogoutUrl string `json:"logoutUrl"`
-	ClientId  string `json:"clientId"`
+	Id               string `json:"id" bson:"_id,omitempty"`
+	IssuerUrl        string `json:"issuerUrl"`
+	AuthorizationURL string `json:"authorisationUrl"`
+	TokenURL         string `json:"tokenUrl"`
+	LogoutURL        string `json:"logoutUrl"`
+	ClientID         string `json:"clientId"`
+	JWKSURL          string `json:"jwksUrl"`
+	UserInfoURL      string `json:"userInfoUrl"`
+	DefaultScope     string `json:"defaultScope"`
 }
 
 type readIdpResp struct {
@@ -36,16 +42,22 @@ func ServiceReadIdp(w http.ResponseWriter, r *http.Request) {
 	idpRepo := idp.IdentityProviderRepository{}
 	idpRepo.Init(organisationId)
 
-	idp, err := idpRepo.Get(idpId)
+	idp, err := idpRepo.GetByOrgId()
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch identity provider: %v", idpId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 	idpResp := serviceIdp{
-		Id:        idp.Id.Hex(),
-		LogoutUrl: idp.LogoutURL,
-		ClientId:  idp.ClientID,
+		Id:               idp.Id.Hex(),
+		IssuerUrl:        idp.IssuerUrl,
+		AuthorizationURL: idp.AuthorizationURL,
+		TokenURL:         idp.TokenURL,
+		LogoutURL:        idp.LogoutURL,
+		ClientID:         idp.ClientID,
+		JWKSURL:          idp.JWKSURL,
+		UserInfoURL:      idp.UserInfoURL,
+		DefaultScope:     idp.DefaultScope,
 	}
 
 	resp := readIdpResp{

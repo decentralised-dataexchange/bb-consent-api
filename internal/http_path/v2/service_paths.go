@@ -32,7 +32,7 @@ const ServiceFetchRecordsForDataAgreement = "/v2/service/individual/record/data-
 const ServiceFetchRecordsHistory = "/v2/service/individual/record/consent-record/history"
 
 // Idp
-const ServiceReadIdp = "/v2/service/idp/open-id/{idpId}"
+const ServiceReadIdp = "/v2/service/idp/open-id"
 
 // Organisation
 const ServiceReadOrganisation = "/v2/service/organisation"
