@@ -10,6 +10,7 @@ import (
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
 	daRecord "github.com/bb-consent/api/internal/dataagreement_record"
+	"github.com/bb-consent/api/internal/revision"
 	"github.com/bb-consent/api/internal/signature"
 	"github.com/gorilla/mux"
 )
@@ -46,6 +47,7 @@ func ServiceUpdateSignatureObject(w http.ResponseWriter, r *http.Request) {
 
 	// Headers
 	organisationId := common.Sanitize(r.Header.Get(config.OrganizationId))
+	individualId := common.Sanitize(r.Header.Get(config.IndividualHeaderKey))
 
 	dataAgreementRecordId := common.Sanitize(mux.Vars(r)[config.DataAgreementRecordId])
 
@@ -74,6 +76,13 @@ func ServiceUpdateSignatureObject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	currentDataAgreementRevision, err := revision.GetLatestByObjectId(toBeUpdatedDaRecord.DataAgreementId)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch latest revision for data agreement: %v", toBeUpdatedDaRecord.DataAgreementId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
 	toBeUpdatedSignatureObject, err := signature.Get(toBeUpdatedDaRecord.SignatureId)
 	if err != nil {
 		m := "Failed to fetch signature for data agreement record"
@@ -98,6 +107,22 @@ func ServiceUpdateSignatureObject(w http.ResponseWriter, r *http.Request) {
 	_, err = darRepo.Update(toBeUpdatedDaRecord)
 	if err != nil {
 		m := "Failed to update data agreement record"
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Create new revision
+	newRevision, err := revision.UpdateRevisionForDataAgreementRecord(toBeUpdatedDaRecord, individualId, currentDataAgreementRevision)
+	if err != nil {
+		m := "Failed to create revision for new data agreement record"
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	// Save the revision to db
+	_, err = revision.Add(newRevision)
+	if err != nil {
+		m := fmt.Sprintf("Failed to create new revision: %v", newRevision.Id)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}

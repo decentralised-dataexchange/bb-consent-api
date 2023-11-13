@@ -456,7 +456,7 @@ func CreateRevisionForDataAgreementRecord(newDataAgreementRecord daRecord.DataAg
 }
 
 // UpdateRevisionForDataAgreementRecord
-func UpdateRevisionForDataAgreementRecord(updatedDataAgreementRecord daRecord.DataAgreementRecord, previousRevision *Revision, orgAdminId string, dataAgreementRevision Revision) (Revision, error) {
+func UpdateRevisionForDataAgreementRecord(updatedDataAgreementRecord daRecord.DataAgreementRecord, orgAdminId string, dataAgreementRevision Revision) (Revision, error) {
 	// Object data
 	objectData := dataAgreementRecordForObjectData{
 		Id:                        updatedDataAgreementRecord.Id,
@@ -472,7 +472,21 @@ func UpdateRevisionForDataAgreementRecord(updatedDataAgreementRecord daRecord.Da
 	// Update revision
 	revision := Revision{}
 	revision.Init(objectData.Id.Hex(), orgAdminId, config.DataAgreementRecord)
-	err := revision.UpdateRevision(previousRevision, objectData)
+	// Query for previous revisions
+	previousRevision, err := GetLatestByObjectId(updatedDataAgreementRecord.Id.Hex())
+	if err != nil {
+		return revision, err
+	}
+
+	err = revision.UpdateRevision(&previousRevision, objectData)
+	if err != nil {
+		return revision, err
+	}
+	// Save the previous revision to db
+	_, err = Update(previousRevision)
+	if err != nil {
+		return revision, err
+	}
 
 	return revision, err
 }
