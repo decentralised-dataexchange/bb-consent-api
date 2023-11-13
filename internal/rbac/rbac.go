@@ -76,7 +76,7 @@ func GetRbacPolicies() [][]string {
 		{"organisation_admin", "/v2/onboard/status", "GET"},
 		{"user", "/v2/onboard/password/reset", "PUT"},
 		{"user", "/v2/service/individual/record/consent-record/history", "GET"},
-		{"user", "/v2/service/idp/open-id/{idpId}", "GET"},
+		{"user", "/v2/service/idp/open-id", "GET"},
 		{"user", "/v2/service/organisation", "GET"},
 		{"user", "/v2/service/organisation/coverimage", "GET"},
 		{"user", "/v2/service/organisation/logoimage", "GET"},
