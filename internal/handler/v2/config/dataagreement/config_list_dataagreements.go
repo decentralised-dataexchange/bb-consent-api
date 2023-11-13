@@ -178,10 +178,8 @@ func getDataAgreementsWithRevisions(organisationId string) ([]dataAgreementWithR
 		if err != nil {
 			return tempDataAgreements, err
 		}
-		if len(revisions) > 0 {
-			tempDataAgreement := setDataAgreementWithRevisions(dataAgreement, revisions)
-			tempDataAgreements = append(tempDataAgreements, tempDataAgreement)
-		}
+		tempDataAgreement := setDataAgreementWithRevisions(dataAgreement, revisions)
+		tempDataAgreements = append(tempDataAgreements, tempDataAgreement)
 
 	}
 	return tempDataAgreements, nil
