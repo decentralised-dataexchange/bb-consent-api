@@ -1,14 +1,11 @@
 package service
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/idp"
-	"github.com/gorilla/mux"
 )
 
 type serviceIdp struct {
@@ -24,7 +21,7 @@ type serviceIdp struct {
 }
 
 type readIdpResp struct {
-	Idp serviceIdp `json:"idp"`
+	Idp interface{} `json:"idp"`
 }
 
 // ServiceReadIdp
@@ -34,18 +31,16 @@ func ServiceReadIdp(w http.ResponseWriter, r *http.Request) {
 	organisationId := r.Header.Get(config.OrganizationId)
 	organisationId = common.Sanitize(organisationId)
 
-	// Path params
-	idpId := mux.Vars(r)[config.IdpId]
-	idpId = common.Sanitize(idpId)
-
 	// Repository
 	idpRepo := idp.IdentityProviderRepository{}
 	idpRepo.Init(organisationId)
 
 	idp, err := idpRepo.GetByOrgId()
 	if err != nil {
-		m := fmt.Sprintf("Failed to fetch identity provider: %v", idpId)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		resp := readIdpResp{
+			Idp: nil,
+		}
+		common.ReturnHTTPResponse(resp, w)
 		return
 	}
 	idpResp := serviceIdp{
@@ -63,8 +58,5 @@ func ServiceReadIdp(w http.ResponseWriter, r *http.Request) {
 	resp := readIdpResp{
 		Idp: idpResp,
 	}
-	response, _ := json.Marshal(resp)
-	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+	common.ReturnHTTPResponse(resp, w)
 }
