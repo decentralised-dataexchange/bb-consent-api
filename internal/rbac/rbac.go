@@ -87,11 +87,6 @@ func GetRbacPolicies() [][]string {
 		{"user", "/v2/service/individual/record", "DELETE"},
 		{"user", "/v2/onboard/logout", "POST"},
 		{"organisation_admin", "/v2/onboard/logout", "POST"},
-		{"user", "/v2/service/individual/login", "POST"},
-		{"user", "/v2/service/individual/logout", "POST"},
-		{"user", "/v2/service/individual/password/reset", "PUT"},
-		{"user", "/v2/service/individual/password/forgot", "PUT"},
-		{"user", "/v2/service/individual/token/refresh", "POST"},
 	}
 
 	return policies
