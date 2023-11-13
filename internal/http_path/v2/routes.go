@@ -85,7 +85,7 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(ServiceListDataAgreements, m.Chain(serviceHandler.ServiceListDataAgreements, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Read an idp
-	r.Handle(ServiceReadIdp, m.Chain(serviceHandler.ServiceReadIdp, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ServiceReadIdp, m.Chain(serviceHandler.ServiceReadIdp, m.Logger(), m.SetApplicationMode(), m.AddContentType())).Methods("GET")
 
 	// Policy
 	r.Handle(ServiceReadPolicy, m.Chain(serviceHandler.ServiceReadPolicy, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.Authenticate(), m.AddContentType())).Methods("GET")
