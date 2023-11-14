@@ -1,17 +1,24 @@
 package service
 
 import (
-	"context"
-	"errors"
 	"log"
 	"net/http"
 
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
+	"github.com/bb-consent/api/internal/dataagreement"
 	daRecord "github.com/bb-consent/api/internal/dataagreement_record"
 	"github.com/bb-consent/api/internal/paginate"
 	"go.mongodb.org/mongo-driver/bson"
 )
+
+func dataAgreementRecordsToInterfaceSlice(dataAgreementRecords []daRecord.DataAgreementRecord) []interface{} {
+	interfaceSlice := make([]interface{}, len(dataAgreementRecords))
+	for i, r := range dataAgreementRecords {
+		interfaceSlice[i] = r
+	}
+	return interfaceSlice
+}
 
 type vFetchIndividualDataAgreementRecordsResp struct {
 	DataAgreementRecords interface{}         `json:"consentRecords"`
@@ -40,33 +47,35 @@ func ServiceFetchIndividualDataAgreementRecords(w http.ResponseWriter, r *http.R
 	}
 
 	// Return all data agreement records
-	var dataAgreementRecords []daRecord.DataAgreementRecord
 	pipeline = append(pipeline, bson.M{"$sort": bson.M{"timestamp": -1}})
-	query := paginate.PaginateDBObjectsQueryUsingPipeline{
-		Pipeline:   pipeline,
-		Collection: daRecord.Collection(),
-		Context:    context.Background(),
-		Limit:      limit,
-		Offset:     offset,
-	}
-	var resp vFetchIndividualDataAgreementRecordsResp
-	result, err := paginate.PaginateDBObjectsUsingPipeline(query, &dataAgreementRecords)
+
+	dataAgreementRecords, err := daRecord.GetAllUsingPipeline(pipeline)
 	if err != nil {
-		if errors.Is(err, paginate.EmptyDBError) {
-			emptyDataAgreementRecords := make([]interface{}, 0)
-			resp = vFetchIndividualDataAgreementRecordsResp{
-				DataAgreementRecords: emptyDataAgreementRecords,
-				Pagination:           result.Pagination,
-			}
-			common.ReturnHTTPResponse(resp, w)
-			return
-		}
-		m := "Failed to paginate data agreement records"
+		m := "Failed to fetch data agreement records"
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
-
 	}
-	resp = vFetchIndividualDataAgreementRecordsResp{
+
+	darepo := dataagreement.DataAgreementRepository{}
+	darepo.Init(organisationId)
+
+	// filter consent records that are associated with non deleted data agreements
+	var consentRecords []daRecord.DataAgreementRecord
+	for _, dataAgreementRecord := range dataAgreementRecords {
+		_, err := darepo.Get(dataAgreementRecord.DataAgreementId)
+		if err == nil {
+			consentRecords = append(consentRecords, dataAgreementRecord)
+		}
+	}
+
+	query := paginate.PaginateObjectsQuery{
+		Limit:  limit,
+		Offset: offset,
+	}
+	interfaceSlice := dataAgreementRecordsToInterfaceSlice(consentRecords)
+	result := paginate.PaginateObjects(query, interfaceSlice)
+
+	resp := vFetchIndividualDataAgreementRecordsResp{
 		DataAgreementRecords: result.Items,
 		Pagination:           result.Pagination,
 	}
