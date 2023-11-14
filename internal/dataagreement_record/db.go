@@ -319,3 +319,20 @@ func CreatePipelineForFilteringDataAgreementRecordsByDataAgreementId(organisatio
 
 	return pipeline, nil
 }
+
+// GetAllUsingPipeline
+func GetAllUsingPipeline(pipeline []bson.M) ([]DataAgreementRecord, error) {
+
+	var results []DataAgreementRecord
+	cursor, err := Collection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return results, err
+	}
+	defer cursor.Close(context.Background())
+
+	if err := cursor.All(context.Background(), &results); err != nil {
+		return results, err
+	}
+
+	return results, nil
+}
