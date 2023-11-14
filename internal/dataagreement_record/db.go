@@ -74,18 +74,11 @@ func (darRepo *DataAgreementRecordRepository) GetByDataAgreementIdandIndividualI
 }
 
 // Deletes all the data agreement records of individual
-func (darRepo *DataAgreementRecordRepository) DeleteAllRecordsForIndividual(individualId string) error {
+func (darRepo *DataAgreementRecordRepository) DeleteAllRecordsForIndividual(individualId string, organisationId string) error {
 
-	filter := common.CombineFilters(darRepo.DefaultFilter, bson.M{"individualid": individualId})
+	filter := bson.M{"organisationid": organisationId, "individualid": individualId}
 
-	// Update to set IsDeleted to true
-	update := bson.M{
-		"$set": bson.M{
-			"isdeleted": true,
-		},
-	}
-
-	_, err := Collection().UpdateMany(context.TODO(), filter, update)
+	_, err := Collection().DeleteMany(context.TODO(), filter)
 
 	return err
 }
