@@ -163,23 +163,52 @@ func setDataAgreementWithRevisions(dataAgreement dataagreement.DataAgreement, re
 	return dataAgreementWithRevision
 }
 
-func getDataAgreementsWithRevisions(organisationId string) ([]dataAgreementWithRevisions, error) {
+func getDataAgreementsWithRevisions(organisationId string, lifecycle string) ([]dataAgreementWithRevisions, error) {
 	darepo := dataagreement.DataAgreementRepository{}
 	darepo.Init(organisationId)
 
 	var tempDataAgreements []dataAgreementWithRevisions
-	dataAgreements, err := darepo.GetAll()
+	var dataAgreements []dataagreement.DataAgreement
+	var err error
+
+	dataAgreements, err = darepo.GetAll()
 	if err != nil {
 		return tempDataAgreements, err
 	}
 
 	for _, dataAgreement := range dataAgreements {
+		// list all revisions for data agreement
 		revisions, err := revision.ListAllByDataAgreementId(dataAgreement.Id.Hex())
 		if err != nil {
 			return tempDataAgreements, err
 		}
-		tempDataAgreement := setDataAgreementWithRevisions(dataAgreement, revisions)
-		tempDataAgreements = append(tempDataAgreements, tempDataAgreement)
+		if len(strings.TrimSpace(lifecycle)) > 1 {
+			// if lifecycle query param is present, return data agreements filtered by lifecycle
+			switch lifecycle {
+			case config.Complete:
+				// remove the draft data agreements by checking if revision is present
+				if len(revisions) >= 1 {
+					dAFromRevision, err := revision.RecreateDataAgreementFromRevision(revisions[0])
+					if err != nil {
+						return tempDataAgreements, err
+					}
+					tempDataAgreement := setDataAgreementWithRevisions(dAFromRevision, revisions)
+					tempDataAgreements = append(tempDataAgreements, tempDataAgreement)
+				}
+			case config.Draft:
+				// remove the data agreements which are active
+				if !dataAgreement.Active {
+					tempDataAgreement := setDataAgreementWithRevisions(dataAgreement, revisions)
+					tempDataAgreements = append(tempDataAgreements, tempDataAgreement)
+				}
+
+			}
+
+		} else {
+			// return data agreements with out lifecycle filtered
+			tempDataAgreement := setDataAgreementWithRevisions(dataAgreement, revisions)
+			tempDataAgreements = append(tempDataAgreements, tempDataAgreement)
+		}
 
 	}
 	return tempDataAgreements, nil
@@ -249,31 +278,6 @@ func ConfigListDataAgreements(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if includeRevisions {
-		dataAgreements, err := getDataAgreementsWithRevisions(organisationId)
-		if err != nil {
-			m := "Failed to fetch data agreements"
-			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-			return
-		}
-
-		interfaceSlice := dataAgreementsWithRevisionsToInterfaceSlice(dataAgreements)
-
-		// Return liecycle filtered data agreements
-		query := paginate.PaginateObjectsQuery{
-			Limit:  limit,
-			Offset: offset,
-		}
-		result := paginate.PaginateObjects(query, interfaceSlice)
-
-		resp = listDataAgreementsResp{
-			DataAgreements: result.Items,
-			Pagination:     result.Pagination,
-		}
-		common.ReturnHTTPResponse(resp, w)
-		return
-	}
-
 	revisionId, err := ParseListDataAgreementsQueryParams(r)
 	revisionId = common.Sanitize(revisionId)
 	if err != nil && errors.Is(err, RevisionIDIsMissingError) {
@@ -284,6 +288,32 @@ func ConfigListDataAgreements(w http.ResponseWriter, r *http.Request) {
 		darepo.Init(organisationId)
 
 		if err != nil && errors.Is(err, LifecycleIsMissingError) {
+
+			if includeRevisions {
+				dataAgreements, err := getDataAgreementsWithRevisions(organisationId, lifecycle)
+				if err != nil {
+					m := "Failed to fetch data agreements"
+					common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+					return
+				}
+
+				interfaceSlice := dataAgreementsWithRevisionsToInterfaceSlice(dataAgreements)
+
+				// Return liecycle filtered data agreements
+				query := paginate.PaginateObjectsQuery{
+					Limit:  limit,
+					Offset: offset,
+				}
+				result := paginate.PaginateObjects(query, interfaceSlice)
+
+				resp = listDataAgreementsResp{
+					DataAgreements: result.Items,
+					Pagination:     result.Pagination,
+				}
+				common.ReturnHTTPResponse(resp, w)
+				return
+			}
+
 			var pipeline []bson.M
 			pipeline = append(pipeline, bson.M{"$match": bson.M{"organisationid": organisationId, "isdeleted": false}})
 			pipeline = append(pipeline, bson.M{"$sort": bson.M{"timestamp": -1}})
@@ -320,7 +350,33 @@ func ConfigListDataAgreements(w http.ResponseWriter, r *http.Request) {
 			returnHTTPResponse(resp, w)
 			return
 		} else {
+			// Both lifecycle and includeRevisions are present
+			if includeRevisions {
+				dataAgreements, err := getDataAgreementsWithRevisions(organisationId, lifecycle)
+				if err != nil {
+					m := "Failed to fetch data agreements"
+					common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+					return
+				}
 
+				interfaceSlice := dataAgreementsWithRevisionsToInterfaceSlice(dataAgreements)
+
+				// Return liecycle filtered data agreements
+				query := paginate.PaginateObjectsQuery{
+					Limit:  limit,
+					Offset: offset,
+				}
+				result := paginate.PaginateObjects(query, interfaceSlice)
+
+				resp = listDataAgreementsResp{
+					DataAgreements: result.Items,
+					Pagination:     result.Pagination,
+				}
+				common.ReturnHTTPResponse(resp, w)
+				return
+			}
+
+			// if lifecycle is present
 			dataAgreements, err := listDataAgreementsBasedOnLifecycle(lifecycle, organisationId)
 			if err != nil {
 				m := "Failed to fetch data agreements"
