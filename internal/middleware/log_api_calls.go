@@ -18,7 +18,7 @@ func LogApiCalls() Middleware {
 		return func(w http.ResponseWriter, r *http.Request) {
 
 			organisationId := r.Header.Get(config.OrganizationId)
-			aLog := fmt.Sprintf("Organization API: %v called by user: %v", r.URL.Path, token.GetUserName(r))
+			aLog := fmt.Sprintf("%v: %v called by user: %v", r.Method, r.URL.Path, token.GetUserID(r))
 			actionlog.LogOrgAPICalls(token.GetUserID(r), token.GetUserName(r), organisationId, aLog)
 
 			// Call the next middleware/handler in chain
