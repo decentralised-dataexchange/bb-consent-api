@@ -22,6 +22,7 @@ func Migrate() {
 	migrateTimestampInApiKeyCollection()
 	migrateOrganisationIdInIDPCollection()
 	migrateExpiryTimestampInApiKeyCollection()
+	migrateUnusedFieldsFromOrganistaionColloction()
 }
 
 func migrateThirdPartyDataSharingToTrueInPolicyCollection() {
@@ -176,4 +177,28 @@ func migrateExpiryTimestampInApiKeyCollection() {
 		}
 	}
 
+}
+
+func migrateUnusedFieldsFromOrganistaionColloction() {
+
+	orgCollection := org.Collection()
+
+	filter := bson.M{}
+	update := bson.M{"$unset": bson.M{"jurisdiction": 1,
+		"disclosure":                        1,
+		"restriction":                       1,
+		"shared3pp":                         1,
+		"templates":                         1,
+		"purposes":                          1,
+		"hlcsupport":                        1,
+		"dataretention":                     1,
+		"identityproviderrepresentation":    1,
+		"keycloakopenidclient":              1,
+		"externalidentityprovideravailable": 1,
+	}}
+
+	_, err := orgCollection.UpdateMany(context.TODO(), filter, update)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
