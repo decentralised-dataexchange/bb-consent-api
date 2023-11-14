@@ -15,6 +15,8 @@ type DataAgreementRecordsHistory struct {
 	DataAgreementId string `json:"dataAgreementId"`
 	Log             string `json:"log"`
 	Timestamp       string `json:"timestamp"`
+	ConsentRecordId string `json:"consentRecordId"`
+	IndividualId    string `json:"individualId"`
 }
 
 func DataAgreementRecordHistoryAdd(darH DataAgreementRecordsHistory, optIn bool) error {

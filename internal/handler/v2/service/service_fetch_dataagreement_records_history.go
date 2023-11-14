@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/bb-consent/api/internal/common"
+	"github.com/bb-consent/api/internal/config"
 	daRecordHistory "github.com/bb-consent/api/internal/dataagreement_record_history"
 	"github.com/bb-consent/api/internal/paginate"
 	"go.mongodb.org/mongo-driver/bson"
@@ -18,6 +19,9 @@ type listDataAgreementRecordHistory struct {
 }
 
 func ServiceFetchRecordsHistory(w http.ResponseWriter, r *http.Request) {
+	// Headers
+	organisationId := common.Sanitize(r.Header.Get(config.OrganizationId))
+	individualId := common.Sanitize(r.Header.Get(config.IndividualHeaderKey))
 	// Query params
 	offset, limit := paginate.ParsePaginationQueryParams(r)
 	log.Printf("Offset: %v and limit: %v\n", offset, limit)
@@ -25,7 +29,7 @@ func ServiceFetchRecordsHistory(w http.ResponseWriter, r *http.Request) {
 	// Return all data agreement record histories
 	var darH []daRecordHistory.DataAgreementRecordsHistory
 	query := paginate.PaginateDBObjectsQueryUsingPipeline{
-		Pipeline:   []bson.M{{"$sort": bson.M{"timestamp": -1}}},
+		Pipeline:   []bson.M{{"$match": bson.M{"organisationid": organisationId, "individualid": individualId}}, {"$sort": bson.M{"timestamp": -1}}},
 		Collection: daRecordHistory.Collection(),
 		Context:    context.Background(),
 		Limit:      limit,

@@ -7,6 +7,7 @@ import (
 
 	"github.com/bb-consent/api/internal/apikey"
 	"github.com/bb-consent/api/internal/dataagreement"
+	dataagreementrecordhistory "github.com/bb-consent/api/internal/dataagreement_record_history"
 	"github.com/bb-consent/api/internal/idp"
 	"github.com/bb-consent/api/internal/individual"
 	"github.com/bb-consent/api/internal/org"
@@ -25,6 +26,7 @@ func Migrate() {
 	migrateExpiryTimestampInApiKeyCollection()
 	migrateUnusedFieldsFromOrganistaionColloction()
 	migrateIsOnboardedFromIDPInindividualCollection()
+	migrateConsentRecordIdAndIndividualIdInConsentHistoryCollection()
 }
 
 func migrateThirdPartyDataSharingToTrueInPolicyCollection() {
@@ -214,6 +216,17 @@ func migrateIsOnboardedFromIDPInindividualCollection() {
 	}
 
 	_, err := individualCollection.UpdateMany(context.TODO(), filter, update)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func migrateConsentRecordIdAndIndividualIdInConsentHistoryCollection() {
+	consentHistoryCollection := dataagreementrecordhistory.Collection()
+
+	filter := bson.M{"consentrecordid": bson.M{"$exists": false}}
+
+	_, err := consentHistoryCollection.DeleteMany(context.TODO(), filter)
 	if err != nil {
 		fmt.Println(err)
 	}
