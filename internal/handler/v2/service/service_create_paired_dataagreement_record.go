@@ -180,6 +180,8 @@ func ServiceCreatePairedDataAgreementRecord(w http.ResponseWriter, r *http.Reque
 	darH := daRecordHistory.DataAgreementRecordsHistory{}
 	darH.DataAgreementId = dataAgreementRecord.DataAgreementId
 	darH.OrganisationId = organisationId
+	darH.ConsentRecordId = savedDataAgreementRecord.Id.Hex()
+	darH.IndividualId = individual.Id.Hex()
 	err = daRecordHistory.DataAgreementRecordHistoryAdd(darH, savedDataAgreementRecord.OptIn)
 	if err != nil {
 		m := "Failed to add data agreement record history"

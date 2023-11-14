@@ -151,6 +151,8 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 	darH := daRecordHistory.DataAgreementRecordsHistory{}
 	darH.DataAgreementId = savedDaRecord.DataAgreementId
 	darH.OrganisationId = organisationId
+	darH.ConsentRecordId = savedDaRecord.Id.Hex()
+	darH.IndividualId = individualId
 	err = daRecordHistory.DataAgreementRecordHistoryAdd(darH, savedDaRecord.OptIn)
 	if err != nil {
 		m := "Failed to add data agreement record history"
