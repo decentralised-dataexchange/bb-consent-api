@@ -2,6 +2,7 @@ package onboard
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -31,8 +32,8 @@ func OnboardForgotPassword(w http.ResponseWriter, r *http.Request) {
 	// validating request params
 	valid, err := govalidator.ValidateStruct(fp)
 	if !valid {
-		log.Printf("Invalid request params for forgot password")
-		common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
+		m := "Invalid request params for forgot password"
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
 		return
 	}
 
@@ -50,8 +51,8 @@ func OnboardForgotPassword(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		u, err := user.GetByEmail(sanitizedUserName)
 		if err != nil {
-			log.Printf("User with %v doesnt exist", fp.Username)
-			common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
+			m := fmt.Sprintf("User with %v doesnt exist", fp.Username)
+			common.HandleErrorV2(w, http.StatusBadRequest, m, err)
 			return
 		}
 		iamId = u.IamID
