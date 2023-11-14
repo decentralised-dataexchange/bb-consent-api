@@ -18,7 +18,7 @@ func ServiceDeleteIndividualDataAgreementRecords(w http.ResponseWriter, r *http.
 	darRepo := daRecord.DataAgreementRecordRepository{}
 	darRepo.Init(organisationId)
 
-	err := darRepo.DeleteAllRecordsForIndividual(individualId)
+	err := darRepo.DeleteAllRecordsForIndividual(individualId, organisationId)
 	if err != nil {
 		m := "Failed to delete data agreement records for individual"
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
