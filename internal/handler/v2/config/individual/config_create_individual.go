@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/internal/common"
@@ -15,7 +16,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func updateIndividualFromRequestBody(requestBody addIndividualReq, newIndividual individual.Individual) individual.Individual {
+func updateIndividualFromRequestBody(requestBody addIndividualReq) individual.Individual {
+	var newIndividual individual.Individual
 	newIndividual.ExternalId = requestBody.Individual.ExternalId
 	newIndividual.ExternalIdType = requestBody.Individual.ExternalIdType
 	newIndividual.IdentityProviderId = requestBody.Individual.IdentityProviderId
@@ -63,21 +65,22 @@ func ConfigCreateIndividual(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Register user to keyclock
-	iamId, err := iam.RegisterUser(individualReq.Individual.Email, individualReq.Individual.Name)
-	if err != nil {
-		log.Printf("Failed to register user: %v err: %v", individualReq.Individual.Email, err)
-		common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
-		return
-	}
-
-	var newIndividual individual.Individual
+	newIndividual := updateIndividualFromRequestBody(individualReq)
 	newIndividual.Id = primitive.NewObjectID()
-	newIndividual.IamId = iamId
-	newIndividual = updateIndividualFromRequestBody(individualReq, newIndividual)
 	newIndividual.OrganisationId = organisationId
 	newIndividual.IsDeleted = false
-	newIndividual.IsOnboardedFromId = false
+	newIndividual.IsOnboardedFromIdp = false
+
+	if len(strings.TrimSpace(newIndividual.Email)) > 1 {
+		// Register user to keyclock
+		iamId, err := iam.RegisterUser(newIndividual.Email, newIndividual.Name)
+		if err != nil {
+			log.Printf("Failed to register user: %v err: %v", individualReq.Individual.Email, err)
+			common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
+			return
+		}
+		newIndividual.IamId = iamId
+	}
 
 	// Repository
 	individualRepo := individual.IndividualRepository{}

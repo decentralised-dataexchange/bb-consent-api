@@ -31,7 +31,7 @@ func createIndividual(externalId string, r *http.Request, organisationId string,
 	newIndividual.ExternalId = externalId
 	newIndividual.Name = token.GetName(r)
 	newIndividual.OrganisationId = organisationId
-	newIndividual.IsOnboardedFromId = true
+	newIndividual.IsOnboardedFromIdp = true
 	newIndividual.IdentityProviderId = idpId
 
 	newIndividual, err := individualRepo.Add(newIndividual)

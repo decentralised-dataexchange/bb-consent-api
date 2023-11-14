@@ -16,7 +16,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func updateIndividualFromAddRequestBody(requestBody addServiceIndividualReq, newIndividual individual.Individual) individual.Individual {
+func updateIndividualFromAddRequestBody(requestBody addServiceIndividualReq) individual.Individual {
+	var newIndividual individual.Individual
 	newIndividual.ExternalId = requestBody.Individual.ExternalId
 	newIndividual.ExternalIdType = requestBody.Individual.ExternalIdType
 	newIndividual.IdentityProviderId = requestBody.Individual.IdentityProviderId
@@ -65,23 +66,21 @@ func ServiceCreateIndividual(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var newIndividual individual.Individual
+	newIndividual := updateIndividualFromAddRequestBody(individualReq)
 	newIndividual.Id = primitive.NewObjectID()
 	newIndividual.IsDeleted = false
-	newIndividual.IsOnboardedFromId = false
+	newIndividual.IsOnboardedFromIdp = false
 	newIndividual.OrganisationId = organisationId
 
-	if len(strings.TrimSpace(individualReq.Individual.Email)) > 1 {
+	if len(strings.TrimSpace(newIndividual.Email)) > 1 {
 		// Register user to keyclock
-		iamId, err := iam.RegisterUser(individualReq.Individual.Email, individualReq.Individual.Name)
+		iamId, err := iam.RegisterUser(newIndividual.Email, newIndividual.Name)
 		if err != nil {
-			log.Printf("Failed to register user: %v err: %v", individualReq.Individual.Email, err)
+			log.Printf("Failed to register user: %v err: %v", newIndividual.Email, err)
 			common.HandleErrorV2(w, http.StatusBadRequest, err.Error(), err)
 			return
 		}
-
 		newIndividual.IamId = iamId
-		newIndividual = updateIndividualFromAddRequestBody(individualReq, newIndividual)
 	}
 
 	// Repository

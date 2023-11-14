@@ -8,6 +8,7 @@ import (
 	"github.com/bb-consent/api/internal/apikey"
 	"github.com/bb-consent/api/internal/dataagreement"
 	"github.com/bb-consent/api/internal/idp"
+	"github.com/bb-consent/api/internal/individual"
 	"github.com/bb-consent/api/internal/org"
 	"github.com/bb-consent/api/internal/policy"
 	"go.mongodb.org/mongo-driver/bson"
@@ -23,6 +24,7 @@ func Migrate() {
 	migrateOrganisationIdInIDPCollection()
 	migrateExpiryTimestampInApiKeyCollection()
 	migrateUnusedFieldsFromOrganistaionColloction()
+	migrateIsOnboardedFromIDPInindividualCollection()
 }
 
 func migrateThirdPartyDataSharingToTrueInPolicyCollection() {
@@ -198,6 +200,20 @@ func migrateUnusedFieldsFromOrganistaionColloction() {
 	}}
 
 	_, err := orgCollection.UpdateMany(context.TODO(), filter, update)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func migrateIsOnboardedFromIDPInindividualCollection() {
+	individualCollection := individual.Collection()
+
+	filter := bson.M{}
+	update := bson.M{
+		"$rename": bson.M{"isonboardedfromid": "isonboardedfromidp"},
+	}
+
+	_, err := individualCollection.UpdateMany(context.TODO(), filter, update)
 	if err != nil {
 		fmt.Println(err)
 	}
