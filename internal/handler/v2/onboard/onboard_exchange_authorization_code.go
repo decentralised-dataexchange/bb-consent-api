@@ -188,7 +188,7 @@ func createIndividualFromIdp(email string, externalId string, organisationId str
 	newIndividual.ExternalId = externalId
 	newIndividual.OrganisationId = organisationId
 	newIndividual.IsDeleted = false
-	newIndividual.IsOnboardedFromId = true
+	newIndividual.IsOnboardedFromIdp = true
 	newIndividual.IdentityProviderId = idpId
 
 	_, err := individualRepo.Add(newIndividual)

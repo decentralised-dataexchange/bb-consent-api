@@ -19,11 +19,11 @@ type Individual struct {
 	ExternalId         string             `json:"externalId"`
 	ExternalIdType     string             `json:"externalIdType"`
 	IdentityProviderId string             `json:"identityProviderId"`
-	Name               string             `json:"name" valid:"required"`
+	Name               string             `json:"name"`
 	IamId              string             `json:"iamId"`
-	Email              string             `json:"email" valid:"required"`
-	Phone              string             `json:"phone" valid:"required"`
-	IsOnboardedFromId  bool               `json:"-"`
+	Email              string             `json:"email"`
+	Phone              string             `json:"phone"`
+	IsOnboardedFromIdp bool               `json:"-"`
 	OrganisationId     string             `json:"-"`
 	IsDeleted          bool               `json:"-"`
 }
