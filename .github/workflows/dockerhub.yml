@@ -37,5 +37,6 @@ jobs:
 
       # Build docker image, publish docker image to docker hub
       - name: Build docker image, publish docker image to docker hub
+        shell: 'script -q -e -c "bash {0}"'
         run: |
           make build/docker/deployable/dockerhub publish/dockerhub
