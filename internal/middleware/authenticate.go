@@ -4,10 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"strings"
 
-	"github.com/bb-consent/api/internal/apikey"
-	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/error_handler"
 	"github.com/bb-consent/api/internal/iam"
 	"github.com/bb-consent/api/internal/idp"
@@ -159,39 +156,6 @@ func verifyTokenAndIdentifyRole(accessToken string, r *http.Request) error {
 	return nil
 }
 
-func decodeApiKey(headerValue string, w http.ResponseWriter) apikey.Claims {
-	claims, err := apikey.Decode(headerValue)
-
-	if err != nil {
-		m := "Invalid token, Authorization failed"
-		error_handler.Exit(http.StatusUnauthorized, m)
-	}
-
-	return claims
-}
-
-func performAPIKeyAuthentication(claims apikey.Claims, w http.ResponseWriter, r *http.Request) {
-	individualId := r.Header.Get(config.IndividualHeaderKey)
-
-	// Repository
-	individualRepo := individual.IndividualRepository{}
-	individualRepo.Init(claims.OrganisationId)
-
-	t := token.AccessToken{}
-	token.Set(r, t)
-	if len(strings.TrimSpace(individualId)) != 0 {
-		// fetch the individual
-		_, err := individualRepo.Get(individualId)
-		if err != nil {
-			m := "User does not exist, Authorization failed"
-			error_handler.Exit(http.StatusBadRequest, m)
-		}
-		token.SetUserToRequestContext(r, individualId, rbac.ROLE_USER)
-	} else {
-		token.SetUserToRequestContext(r, claims.OrganisationAdminId, rbac.ROLE_ADMIN)
-	}
-}
-
 // Authenticate Validates the token and sets the token to the context.
 func Authenticate() Middleware {
 
@@ -209,10 +173,6 @@ func Authenticate() Middleware {
 			if headerType == token.AuthorizationToken {
 				storeAccessTokenInRequestContext(headerValue, w, r)
 				verifyTokenAndIdentifyRole(headerValue, r)
-			}
-			if headerType == token.AuthorizationAPIKey {
-				claims := decodeApiKey(headerValue, w)
-				performAPIKeyAuthentication(claims, w, r)
 			}
 			// Call the next middleware/handler in chain
 			f(w, r)
