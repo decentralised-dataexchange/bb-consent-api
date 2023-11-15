@@ -1,0 +1,35 @@
+name: Release docker image to docker hub
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  setup-build-publish-deploy:
+    name: Setup, Build, Publish, and Deploy
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+
+      - name: Extract tag from version
+        id: extract_tag
+        run: echo ::set-output name=TAG::$(echo ${{ steps.get_version.outputs.VERSION }} | sed 's/refs\/tags\///')
+    
+      - name: Set Docker Tag
+        run: echo "DOCKER_HUB_TAG=${{steps.extract_tag.outputs.TAG}}" >> $GITHUB_ENV
+    
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+            username: ${{ secrets.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Build docker image, publish docker image to docker hub
+      - name: Build docker image, publish docker image to docker hub
+        run: |
+          make build/docker/deployable/dockerhub publish/dockerhub

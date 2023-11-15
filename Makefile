@@ -42,6 +42,7 @@ DEPLOY_VERSION = $(shell test -f $(DEPLOY_VERSION_FILE) && cat $(DEPLOY_VERSION_
 GCLOUD_HOSTNAME = eu.gcr.io
 GCLOUD_PROJECTID = jenkins-189019
 DOCKER_IMAGE := ${GCLOUD_HOSTNAME}/${GCLOUD_PROJECTID}/$(NAME)
+DOCKER_HUB_IMAGE := igrantio/bb-consent-api
 
 # tag based on git branch, date and commit
 DOCKER_TAG := $(GIT_BRANCH)-$(shell date +%Y%m%d%H%M%S)-$(GIT_COMMIT)
@@ -158,8 +159,17 @@ build/docker/deployable: $(DIST_FILE) ## Builds deployable docker image for prev
 	docker build --platform=linux/amd64 -t $(DOCKER_IMAGE):$(DOCKER_TAG) -f resources/docker/production/Dockerfile .
 	echo "$(DOCKER_IMAGE):$(DOCKER_TAG)" > $(DEPLOY_VERSION_FILE)
 
+.PHONY: build/docker/deployable/dockerhub
+build/docker/deployable/dockerhub: ## Builds deployable docker image for docker hub
+	docker build -t $(DOCKER_HUB_IMAGE):$(DOCKER_HUB_TAG) -f resources/docker/Dockerfile.dockerhub .
+	echo "$(DOCKER_HUB_IMAGE):$(DOCKER_HUB_TAG)" > $(DEPLOY_VERSION_FILE)
+
 .PHONY: publish
 publish: $(DEPLOY_VERSION_FILE) ## Publish latest production Docker image to docker hub
+	docker push $(DEPLOY_VERSION)
+
+.PHONY: publish/dockerhub
+publish/dockerhub: $(DEPLOY_VERSION_F ILE) ## Publish latest production Docker image to docker hub
 	docker push $(DEPLOY_VERSION)
 
 deploy/production: $(DEPLOY_VERSION_FILE) ## Deploy to K8s cluster (e.g. make deploy/{preview,staging,production})
