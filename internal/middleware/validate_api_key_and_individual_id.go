@@ -85,8 +85,8 @@ func getApiTag(route string) string {
 	}
 }
 
-// ScopeBasedApiAccess Validates the apikey.
-func ScopeBasedApiAccess() Middleware {
+// ValidateAPIKeyAndIndividualId Validates the apikey.
+func ValidateAPIKeyAndIndividualId() Middleware {
 
 	// Create a new Middleware
 	return func(f http.HandlerFunc) http.HandlerFunc {
