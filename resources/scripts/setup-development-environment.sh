@@ -49,5 +49,5 @@ docker run -d \
     -e KEYCLOAK_PASSWORD="$KEYCLOAK_PASSWORD" \
     -e DB_VENDOR="h2" \
     -v keycloak-datadir:/opt/jboss/keycloak/standalone/data \
-    -p 8080:8080 \
+    -p 9090:8080 \
     jboss/keycloak:latest  # Use the appropriate Keycloak image and ports
