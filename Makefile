@@ -160,7 +160,7 @@ build/docker/deployable: $(DIST_FILE) ## Builds deployable docker image for prev
 	echo "$(DOCKER_IMAGE):$(DOCKER_TAG)" > $(DEPLOY_VERSION_FILE)
 
 .PHONY: build/docker/deployable/dockerhub
-build/docker/deployable/dockerhub: ## Builds deployable docker image for docker hub
+build/docker/deployable/dockerhub: $(DIST_FILE) ## Builds deployable docker image for docker hub
 	docker build --platform=linux/amd64 -t $(DOCKER_HUB_IMAGE):$(DOCKER_HUB_TAG) -f resources/docker/production/Dockerfile.dockerhub .
 	echo "$(DOCKER_HUB_IMAGE):$(DOCKER_HUB_TAG)" > $(DEPLOY_VERSION_FILE)
 
