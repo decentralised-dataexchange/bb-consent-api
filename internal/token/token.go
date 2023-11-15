@@ -198,11 +198,6 @@ func SetUserToRequestContext(r *http.Request, userID string, userRole string) {
 	context.Set(r, userIDKey, userID)
 	context.Set(r, UserRoleKey, userRole)
 
-	// Set individual to request header if not present
-	if _, exists := r.Header[http.CanonicalHeaderKey(config.IndividualHeaderKey)]; !exists {
-		r.Header.Set(config.IndividualHeaderKey, userID)
-	}
-
 }
 
 // ParseTokenUnverified parses the token and returns the accessToken struct
