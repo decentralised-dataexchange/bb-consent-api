@@ -19,6 +19,7 @@ KEYCLOAK_USER=$(jq -r .Iam.AdminUser< "$CONFIG_FILE")
 KEYCLOAK_PASSWORD=$(jq -r .Iam.AdminPassword < "$CONFIG_FILE")
 
 (docker ps -af "name=${CONTAINER_MONGO}" | grep "${CONTAINER_MONGO}" > /dev/null) && docker rm -f "${CONTAINER_MONGO}" > /dev/null
+(docker ps -af "name=${CONTAINER_KEYCLOAK}" | grep "${CONTAINER_KEYCLOAK}" > /dev/null) && docker rm -f "${CONTAINER_KEYCLOAK}" > /dev/null
 
 ARCH=$(uname -m)
 
