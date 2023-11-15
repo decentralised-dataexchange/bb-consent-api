@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
@@ -274,7 +275,7 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 	darepo := dataagreement.DataAgreementRepository{}
 	darepo.Init(organisationId)
 
-	count, err := darepo.CountDocumentsByPurpose(dataAgreementReq.DataAgreement.Purpose)
+	count, err := darepo.CountDocumentsByPurpose(strings.TrimSpace(dataAgreementReq.DataAgreement.Purpose))
 	if err != nil {
 		m := "Failed to count data agreement by purpose"
 		common.HandleErrorV2(w, http.StatusNotFound, m, err)
