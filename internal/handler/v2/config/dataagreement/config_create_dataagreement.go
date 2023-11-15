@@ -270,6 +270,21 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 		common.HandleErrorV2(w, http.StatusNotFound, m, err)
 		return
 	}
+	// Repository
+	darepo := dataagreement.DataAgreementRepository{}
+	darepo.Init(organisationId)
+
+	count, err := darepo.CountDocumentsByPurpose(dataAgreementReq.DataAgreement.Purpose)
+	if err != nil {
+		m := "Failed to count data agreement by purpose"
+		common.HandleErrorV2(w, http.StatusNotFound, m, err)
+		return
+	}
+	if count >= 1 {
+		m := "Data agreement purpose exists"
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
+		return
+	}
 
 	// Initialise data agreement
 	var newDataAgreement dataagreement.DataAgreement
@@ -308,10 +323,6 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
-
-	// Repository
-	darepo := dataagreement.DataAgreementRepository{}
-	darepo.Init(organisationId)
 
 	// Save the data agreement to db
 	savedDataAgreement, err := darepo.Add(newDataAgreement)

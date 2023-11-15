@@ -167,6 +167,20 @@ func ConfigUpdateDataAgreement(w http.ResponseWriter, r *http.Request) {
 	daRepo := dataagreement.DataAgreementRepository{}
 	daRepo.Init(organisationId)
 
+	count, err := daRepo.CountDocumentsByPurposeExeptOneDataAgreement(dataAgreementReq.DataAgreement.Purpose, dataAgreementId)
+	if err != nil {
+		m := "Failed to count data agreements by purpose"
+		common.HandleErrorV2(w, http.StatusNotFound, m, err)
+		return
+	}
+	if count >= 1 {
+		m := "Data agreement purpose exists"
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
+		return
+	}
+
+	daRepo.Init(organisationId)
+
 	// Get data agreement from db
 	currentDataAgreement, err := daRepo.Get(dataAgreementId)
 	if err != nil {

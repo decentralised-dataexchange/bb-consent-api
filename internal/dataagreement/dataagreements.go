@@ -352,3 +352,33 @@ func (darepo *DataAgreementRepository) GetDataAgreementsByLifecycle(lifecycle st
 	}
 	return results, nil
 }
+
+func (darepo *DataAgreementRepository) CountDocumentsByPurpose(purpose string) (int64, error) {
+
+	filter := common.CombineFilters(darepo.DefaultFilter, bson.M{"purpose": purpose})
+
+	exists, err := Collection().CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return exists, err
+	}
+	return exists, nil
+}
+
+func (darepo *DataAgreementRepository) CountDocumentsByPurposeExeptOneDataAgreement(purpose string, dataAgreementID string) (int64, error) {
+
+	dataAgreementId, err := primitive.ObjectIDFromHex(dataAgreementID)
+	if err != nil {
+		return 0, err
+	}
+
+	filter := common.CombineFilters(darepo.DefaultFilter, bson.M{
+		"purpose": purpose,
+		"_id":     bson.M{"$ne": dataAgreementId},
+	})
+
+	exists, err := Collection().CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return exists, err
+	}
+	return exists, nil
+}
