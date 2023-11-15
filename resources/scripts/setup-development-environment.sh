@@ -6,6 +6,7 @@ set -x
 cd "$(dirname "${BASH_SOURCE[@]}")"
 
 CONTAINER_MONGO="mongo"
+CONTAINER_KEYCLOAK="keycloak"
 
 # Check for configuration file
 CONFIG_PATH="${PWD}/../config"
@@ -14,6 +15,8 @@ CONFIG_FILE="${CONFIG_PATH}/config-development.json"
 MONGODB_USER=$(jq -r .DataBase.username< "$CONFIG_FILE")
 MONGODB_PASSWORD=$(jq -r .DataBase.password < "$CONFIG_FILE")
 MONGODB_DATABASE=$(jq -r .DataBase.name < "$CONFIG_FILE")
+KEYCLOAK_USER=$(jq -r .Iam.AdminUser< "$CONFIG_FILE")
+KEYCLOAK_PASSWORD=$(jq -r .Iam.AdminPassword < "$CONFIG_FILE")
 
 (docker ps -af "name=${CONTAINER_MONGO}" | grep "${CONTAINER_MONGO}" > /dev/null) && docker rm -f "${CONTAINER_MONGO}" > /dev/null
 
@@ -39,3 +42,11 @@ docker run -d \
 #while ! docker exec mongo mysqladmin ping -h"127.0.0.1" -u"$MYSQL_USER" -p"$MYSQL_PASS" --silent &> /dev/null; do
 #    sleep 1
 #done
+docker run -d \
+    --name "$CONTAINER_KEYCLOAK" \
+    -e KEYCLOAK_USER="$KEYCLOAK_USER" \
+    -e KEYCLOAK_PASSWORD="$KEYCLOAK_PASSWORD" \
+    -e DB_VENDOR="h2" \
+    -v keycloak-datadir:/opt/jboss/keycloak/standalone/data \
+    -p 8080:8080 \
+    jboss/keycloak:latest  # Use the appropriate Keycloak image and ports
