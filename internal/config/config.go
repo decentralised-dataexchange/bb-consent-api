@@ -80,7 +80,6 @@ type Configuration struct {
 	User                       User
 	ApiSecretKey               string
 	Iam                        Iam
-	Twilio                     Twilio
 	PrivacyDashboardDeployment PrivacyDashboard
 	Smtp                       SmtpConfig
 	Webhooks                   WebhooksConfig

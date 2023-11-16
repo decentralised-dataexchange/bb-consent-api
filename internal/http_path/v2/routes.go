@@ -142,11 +142,6 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(OnboardResetPassword, m.Chain(onboardHandler.OnboardResetPassword, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("PUT")
 	r.Handle(OnboardLogoutUser, m.Chain(onboardHandler.OnboardLogoutUser, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("POST")
 
-	r.Handle(ValidateUserEmail, m.Chain(onboardHandler.ValidateUserEmail, m.LoggerNoAuth(), m.AddContentType())).Methods("POST")
-	r.Handle(ValidatePhoneNumber, m.Chain(onboardHandler.ValidatePhoneNumber, m.LoggerNoAuth(), m.AddContentType())).Methods("POST")
-	r.Handle(VerifyPhoneNumber, m.Chain(onboardHandler.VerifyPhoneNumber, m.LoggerNoAuth(), m.AddContentType())).Methods("POST")
-	r.Handle(VerifyOtp, m.Chain(onboardHandler.VerifyOtp, m.LoggerNoAuth(), m.AddContentType())).Methods("POST")
-
 	r.Handle(OnboardRefreshToken, m.Chain(onboardHandler.OnboardRefreshToken, m.AddContentType())).Methods("POST")
 	r.Handle(ExchangeAuthorizationCode, m.Chain(onboardHandler.ExchangeAuthorizationCode, m.LoggerNoAuth(), m.SetApplicationMode())).Methods("POST")
 	r.Handle(OnboardForgotPassword, m.Chain(onboardHandler.OnboardForgotPassword, m.LoggerNoAuth(), m.SetApplicationMode())).Methods("PUT")

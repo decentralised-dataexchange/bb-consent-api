@@ -14,7 +14,6 @@ import (
 	"github.com/bb-consent/api/internal/migrate"
 	privacyDashboard "github.com/bb-consent/api/internal/privacy_dashboard"
 	"github.com/bb-consent/api/internal/rbac"
-	"github.com/bb-consent/api/internal/sms"
 	"github.com/bb-consent/api/internal/tenant"
 	"github.com/bb-consent/api/internal/token"
 	"github.com/bb-consent/api/internal/webhook"
@@ -51,10 +50,6 @@ func StartApiCmdHandler(cmd *cobra.Command, args []string) {
 	// IAM
 	iam.Init(loadedConfig)
 	log.Println("Iam initialized")
-
-	// SMS
-	sms.Init(loadedConfig)
-	log.Println("SMS initialized")
 
 	// Email
 	email.Init(loadedConfig)
