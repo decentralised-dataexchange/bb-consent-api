@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/dataagreement"
 	"github.com/bb-consent/api/internal/paginate"
+	"github.com/bb-consent/api/internal/revision"
 	"github.com/gorilla/mux"
 )
 
@@ -45,7 +47,34 @@ func ServiceListDataAttributesForDataAgreement(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	dataAttributes := da.DataAttributes
+	revisionId, err := ParseListDataAgreementsQueryParams(r)
+	revisionId = common.Sanitize(revisionId)
+	var daRevision revision.Revision
+	if err != nil && errors.Is(err, RevisionIDIsMissingError) {
+
+		daRevision, err = revision.GetLatestByDataAgreementId(da.Id.Hex())
+		if err != nil {
+			m := fmt.Sprintf("Failed to fetch data agreement revision: %v", dataAgreementId)
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
+	} else {
+		daRevision, err = revision.GetByRevisionIdAndSchema(revisionId, config.DataAgreement)
+		if err != nil {
+			m := fmt.Sprintf("Failed to fetch data agreement revision: %v", dataAgreementId)
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
+	}
+
+	dataAgreement, err := revision.RecreateDataAgreementFromRevision(daRevision)
+	if err != nil {
+		m := fmt.Sprintf("Failed to recreate data agreement from revision: %v", dataAgreementId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
+
+	dataAttributes := dataAgreement.DataAttributes
 
 	// Query params
 	offset, limit := paginate.ParsePaginationQueryParams(r)
@@ -59,7 +88,7 @@ func ServiceListDataAttributesForDataAgreement(w http.ResponseWriter, r *http.Re
 	result := paginate.PaginateObjects(query, interfaceSlice)
 
 	var resp = listDataAttributesResp{
-		DataAgreement:  da,
+		DataAgreement:  dataAgreement,
 		DataAttributes: result.Items,
 		Pagination:     result.Pagination,
 	}

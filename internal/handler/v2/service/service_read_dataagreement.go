@@ -25,10 +25,6 @@ func ServiceReadDataAgreement(w http.ResponseWriter, r *http.Request) {
 	dataAgreementId := mux.Vars(r)[config.DataAgreementId]
 	dataAgreementId = common.Sanitize(dataAgreementId)
 
-	// Parse the URL query parameters
-	revisionId := r.URL.Query().Get("revisionId")
-	revisionId = common.Sanitize(revisionId)
-
 	// Repository
 	daRepo := dataagreement.DataAgreementRepository{}
 	daRepo.Init(organisationId)
@@ -41,27 +37,23 @@ func ServiceReadDataAgreement(w http.ResponseWriter, r *http.Request) {
 	}
 	var revisionResp revision.Revision
 
-	if revisionId != "" {
+	revisionResp, err = revision.GetLatestByDataAgreementId(da.Id.Hex())
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch revision: %v", dataAgreementId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
+	}
 
-		revisionResp, err = revision.GetByRevisionId(revisionId)
-		if err != nil {
-			m := fmt.Sprintf("Failed to fetch revision: %v", dataAgreementId)
-			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-			return
-		}
-
-	} else {
-		revisionResp, err = revision.GetLatestByDataAgreementId(dataAgreementId)
-		if err != nil {
-			m := fmt.Sprintf("Failed to fetch revision: %v", dataAgreementId)
-			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-			return
-		}
+	dataAgreement, err := revision.RecreateDataAgreementFromRevision(revisionResp)
+	if err != nil {
+		m := fmt.Sprintf("Failed to recreate data agreement from revision: %v", dataAgreementId)
+		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		return
 	}
 
 	// Constructing the response
 	var resp getDataAgreementResp
-	resp.DataAgreement = da
+	resp.DataAgreement = dataAgreement
 
 	var revisionForHTTPResponse revision.RevisionForHTTPResponse
 	revisionForHTTPResponse.Init(revisionResp)
