@@ -3,6 +3,7 @@ package iam
 import (
 	"context"
 	"log"
+	"strings"
 
 	"github.com/Nerzal/gocloak/v13"
 	"github.com/bb-consent/api/internal/email"
@@ -52,6 +53,12 @@ func CreateRealmAndConfigureSMTP(client *gocloak.GoCloak, ctx context.Context, t
 			"user":               email.SMTPConfig.AdminEmail,
 		},
 		EmailTheme: gocloak.StringP("keycloak"),
+	}
+
+	if strings.Contains(IamConfig.URL, "keycloak:8080") {
+		newRealm.Attributes = &map[string]string{
+			"frontendUrl": "http://localhost:9090",
+		}
 	}
 
 	realmID, err := client.CreateRealm(ctx, token.AccessToken, *newRealm)

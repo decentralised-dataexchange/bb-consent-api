@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/bb-consent/api/internal/error_handler"
-	"github.com/bb-consent/api/internal/iam"
 	"github.com/bb-consent/api/internal/idp"
 	"github.com/bb-consent/api/internal/individual"
 	"github.com/bb-consent/api/internal/org"
@@ -71,11 +70,7 @@ func verifyTokenAndIdentifyRole(accessToken string, r *http.Request) error {
 	}
 
 	// Verify token against Consent BB IDP
-	consentBBIssuerUrl := iam.IamConfig.URL + "/realms/" + iam.IamConfig.Realm
-	consentBBJwksUrl := iam.IamConfig.URL + "/realms/" + iam.IamConfig.Realm + "/protocol/openid-connect/certs"
-	jwks := oidc.NewRemoteKeySet(context.Background(), consentBBJwksUrl)
-	c := oidc.NewVerifier(consentBBIssuerUrl, jwks, &oidc.Config{SkipClientIDCheck: true})
-	tokenPayload, err := c.Verify(context.Background(), accessToken)
+	tokenPayload, err := token.ParseToken(accessToken)
 
 	// Repository
 	individualRepo := individual.IndividualRepository{}
@@ -131,7 +126,7 @@ func verifyTokenAndIdentifyRole(accessToken string, r *http.Request) error {
 
 	// If individual is present in Consent BB IDP
 	// Query by `iamId` and fetch individual
-	iamId := tokenPayload.Subject
+	iamId := tokenPayload.IamID
 	user, err := user.GetByIamID(iamId)
 	if err != nil {
 
