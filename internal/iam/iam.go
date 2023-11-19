@@ -2,6 +2,7 @@ package iam
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/Nerzal/gocloak/v13"
@@ -17,6 +18,11 @@ func Init(config *config.Configuration) {
 	Timeout = time.Duration(time.Duration(IamConfig.Timeout) * time.Second)
 }
 
+func GetClient() *gocloak.GoCloak {
+	client := gocloak.NewClient(IamConfig.URL)
+	return client
+}
+
 func GetAdminToken(username string, password string, realm string, client *gocloak.GoCloak) (*gocloak.JWT, error) {
 	ctx := context.Background()
 	token, err := client.LoginAdmin(ctx, username, password, realm)
@@ -26,6 +32,40 @@ func GetAdminToken(username string, password string, realm string, client *goclo
 
 	return token, err
 }
+
+func GetAdminTokenAndClient() (*gocloak.GoCloak, *gocloak.JWT, error) {
+	client := gocloak.NewClient(IamConfig.URL)
+	ctx := context.Background()
+	token, err := client.LoginAdmin(ctx, IamConfig.AdminUser, IamConfig.AdminPassword, "master")
+	if err != nil {
+		return client, token, err
+	}
+
+	return client, token, nil
+}
+
+func GetPublicKey() (rsaRawN string, rsaRawE string, err error) {
+	ctx := context.Background()
+
+	client, _, err := GetAdminTokenAndClient()
+	if err != nil {
+		return "", "", err
+	}
+
+	certs, err := client.GetCerts(ctx, IamConfig.Realm)
+	if err != nil {
+		return "", "", err
+	}
+
+	for _, key := range *certs.Keys {
+		if *key.Alg == "RS256" {
+			return *key.N, *key.E, nil
+		}
+	}
+
+	return "", "", errors.New("RS256 key not found")
+}
+
 func GetToken(username string, password string, realm string, client *gocloak.GoCloak) (*gocloak.JWT, error) {
 	ctx := context.Background()
 	clientId := IamConfig.ClientId
@@ -64,11 +104,6 @@ func ForgotPassword(iamId string) error {
 
 	err = client.ExecuteActionsEmail(context.Background(), token.AccessToken, IamConfig.Realm, params)
 	return err
-}
-
-func GetClient() *gocloak.GoCloak {
-	client := gocloak.NewClient(IamConfig.URL)
-	return client
 }
 
 // UpdateIamUser Update user info on IAM server end.

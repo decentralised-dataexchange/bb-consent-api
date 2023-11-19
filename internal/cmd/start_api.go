@@ -15,7 +15,6 @@ import (
 	privacyDashboard "github.com/bb-consent/api/internal/privacy_dashboard"
 	"github.com/bb-consent/api/internal/rbac"
 	"github.com/bb-consent/api/internal/tenant"
-	"github.com/bb-consent/api/internal/token"
 	"github.com/bb-consent/api/internal/webhook"
 	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
@@ -55,10 +54,6 @@ func StartApiCmdHandler(cmd *cobra.Command, args []string) {
 	email.Init(loadedConfig)
 	log.Println("Email initialized")
 
-	// Token
-	token.Init(loadedConfig)
-	log.Println("Token initialized")
-
 	// Privacy Dashboard
 	privacyDashboard.Init(loadedConfig)
 	log.Println("Privacy Dashboard initialized")
@@ -69,6 +64,9 @@ func StartApiCmdHandler(cmd *cobra.Command, args []string) {
 
 	apikey.Init(loadedConfig)
 	log.Println("Api key initialized")
+
+	// Create realm and client if not exists in Keycloak
+	iam.CreateRealmAndClientIfNotExists()
 
 	// Setup Casbin auth rules
 	authEnforcer, err := casbin.NewEnforcer(rbac.CreateRbacModel(), false)

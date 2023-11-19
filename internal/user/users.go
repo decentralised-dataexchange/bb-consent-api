@@ -784,7 +784,7 @@ func RegisterUser(regReq config.User, iamConfig config.Iam) (User, error) {
 }
 
 func GetOrganisationAdminToken(userConfig config.User, iamConfig config.Iam) {
-	_, _, iamErr, err := getToken(userConfig.Username, userConfig.Password, "igrant-ios-app", iamConfig.Realm, iamConfig.URL)
+	_, _, iamErr, err := getToken(userConfig.Username, userConfig.Password, iamConfig.ClientId, iamConfig.Realm, iamConfig.URL)
 	if err != nil {
 		log.Printf("Failed to get admin token:%v with error: %s", userConfig.Username, iamErr)
 		panic(err)

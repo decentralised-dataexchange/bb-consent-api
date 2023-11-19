@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/bb-consent/api/internal/config"
+	"github.com/bb-consent/api/internal/iam"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/context"
 )
@@ -23,14 +24,6 @@ const (
 	// AuthorizationToken Uses jwt token for API access
 	AuthorizationToken = 3
 )
-
-// JWKS.json from iam.igrant.io
-var jwks config.JSONWebKeys
-
-// Init Initialize the IAM handler
-func Init(config *config.Configuration) {
-	jwks = config.Iam.Jwks
-}
 
 // DecodeAuthHeader Decodes Authorization header and returns type and key
 func DecodeAuthHeader(r *http.Request) (authType int, key string, err error) {
@@ -74,7 +67,14 @@ type AccessToken struct {
 // ParseToken parses the token and returns the accessToken struct
 func ParseToken(tokenString string) (AccessToken, error) {
 	accToken := AccessToken{}
-	decodedE, err := base64.RawURLEncoding.DecodeString(jwks.RsaRawE)
+
+	// Get public key from keycloak
+	rsaRawN, rsaRawE, err := iam.GetPublicKey()
+	if err != nil {
+		return accToken, err
+	}
+
+	decodedE, err := base64.RawURLEncoding.DecodeString(rsaRawE)
 	if err != nil {
 		return accToken, err
 	}
@@ -87,7 +87,7 @@ func ParseToken(tokenString string) (AccessToken, error) {
 		N: &big.Int{},
 		E: int(binary.BigEndian.Uint32(decodedE[:])),
 	}
-	decodedN, err := base64.RawURLEncoding.DecodeString(jwks.RsaRawN)
+	decodedN, err := base64.RawURLEncoding.DecodeString(rsaRawN)
 	if err != nil {
 		return accToken, err
 	}

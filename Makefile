@@ -16,6 +16,7 @@ VERSION   ?= $(shell git describe --tags --abbrev=0)
 CANDIDATE ?= "dev"
 CONTAINER_API ?= "bb-consent_api_dev"
 DB_CONTAINER_NAME = "mongo"
+KEYCLOAK_CONTAINER_NAME = "keycloak"
 
 # kafka configuration
 KAFKA_TOPIC_NAME = "example_topic"
@@ -110,6 +111,7 @@ api/run: ## Run API locally for development purposes
 		--expose 80 \
 		-p 8080:80 \
 		--link=${DB_CONTAINER_NAME} \
+		--link=${KEYCLOAK_CONTAINER_NAME} \
 		-e VIRTUAL_HOST=$(APP).$(PROJECT).dev \
 		--name "${CONTAINER_API}" \
 		$(DOCKER_IMAGE):builder \

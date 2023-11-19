@@ -5,18 +5,11 @@ import (
 	"os"
 )
 
-// JSONWebKeys The jwks keys needed to validate the tokens
-type JSONWebKeys struct {
-	RsaRawN string
-	RsaRawE string
-}
-
 // Iam Holds the IAM config details.
 type Iam struct {
 	URL           string
 	Realm         string
 	ClientId      string
-	Jwks          JSONWebKeys
 	AdminUser     string
 	AdminPassword string
 	Timeout       int
