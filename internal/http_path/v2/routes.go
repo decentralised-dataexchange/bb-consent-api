@@ -7,6 +7,7 @@ import (
 	dataAttributeHandler "github.com/bb-consent/api/internal/handler/v2/config/dataattribute"
 	idpHandler "github.com/bb-consent/api/internal/handler/v2/config/idp"
 	configIndividualHandler "github.com/bb-consent/api/internal/handler/v2/config/individual"
+	logHandler "github.com/bb-consent/api/internal/handler/v2/config/log"
 	policyHandler "github.com/bb-consent/api/internal/handler/v2/config/policy"
 	privacyDashboardHandler "github.com/bb-consent/api/internal/handler/v2/config/privacy_dashboard"
 	webhookHandler "github.com/bb-consent/api/internal/handler/v2/config/webhook"
@@ -77,6 +78,9 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 	r.Handle(ConfigCreateIndividualsInBulk, m.Chain(configIndividualHandler.ConfigCreateIndividualsInBulk, m.Logger(), m.LogApiCalls(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("POST")
 
 	r.Handle(ConfigReadPrivacyDashboard, m.Chain(privacyDashboardHandler.ConfigReadPrivacyDashboard, m.Logger(), m.LogApiCalls(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("GET")
+
+	// Purge logs
+	r.Handle(ConfigPurgeOrgLogs, m.Chain(logHandler.ConfigPurgeOrgLogs, m.Logger(), m.LogApiCalls(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("DELETE")
 
 	// Service api(s)
 

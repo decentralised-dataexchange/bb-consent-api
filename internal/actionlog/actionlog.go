@@ -4,10 +4,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/database"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Log type const
@@ -89,4 +91,45 @@ func (actionLogRepo *ActionLogRepository) GetAccessLogByOrgID() (results []Actio
 		return nil, err
 	}
 	return results, err
+}
+
+// Count logs
+func (actionLogRepo *ActionLogRepository) CountLogs() (int64, error) {
+	filter := actionLogRepo.DefaultFilter
+
+	count, err := Collection().CountDocuments(context.Background(), filter)
+	if err != nil {
+		return count, nil
+	}
+
+	return count, nil
+}
+
+// GetLogOfIndexHundread
+func (actionLogRepo *ActionLogRepository) GetLogOfIndexHundread() (ActionLog, error) {
+
+	var result ActionLog
+	filter := actionLogRepo.DefaultFilter
+	opts := options.FindOne().SetSort(bson.M{"timestamp": -1}).SetSkip(100)
+	err := Collection().FindOne(context.TODO(), filter, opts).Decode(&result)
+	if err != nil {
+		return result, err
+	}
+
+	return result, err
+}
+
+// DeleteLogsLessThanTimestamp
+func (actionLogRepo *ActionLogRepository) DeleteLogsLessThanTimestamp(timestamp string) error {
+
+	filter := common.CombineFilters(actionLogRepo.DefaultFilter, bson.M{
+		"timestamp": bson.M{"$lt": timestamp},
+	})
+
+	_, err := Collection().DeleteMany(context.Background(), filter)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
