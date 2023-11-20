@@ -62,3 +62,5 @@ const ConfigDeleteApiKey = "/v2/config/admin/apikey/{apiKeyId}"
 const ConfigListApiKey = "/v2/config/admin/apikeys"
 
 const ConfigReadPrivacyDashboard = "/v2/config/privacy-dashboard"
+
+const ConfigPurgeOrgLogs = "/v2/config/logs/purge"

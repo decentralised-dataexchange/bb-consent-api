@@ -154,6 +154,8 @@ func GetRbacPolicies() [][]string {
 		{"onboard", "/v2/onboard/admin/avatarimage", "(GET)|(PUT)"},
 		{"onboard", "/v2/onboard/status", "GET"},
 		{"onboard", "/v2/onboard/logout", "POST"},
+		{"config", "/v2/config/logs/purge", "DELETE"},
+		{"organisation_admin", "/v2/config/logs/purge", "DELETE"},
 	}
 
 	return policies
