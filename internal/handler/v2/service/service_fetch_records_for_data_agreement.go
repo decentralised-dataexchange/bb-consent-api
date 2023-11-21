@@ -23,6 +23,7 @@ func ServiceFetchRecordsForDataAgreement(w http.ResponseWriter, r *http.Request)
 
 	// Headers
 	organisationId := common.Sanitize(r.Header.Get(config.OrganizationId))
+	individualId := common.Sanitize(r.Header.Get(config.IndividualHeaderKey))
 	dataAgreementId := common.Sanitize(mux.Vars(r)[config.DataAgreementId])
 
 	// Query params
@@ -33,7 +34,7 @@ func ServiceFetchRecordsForDataAgreement(w http.ResponseWriter, r *http.Request)
 	darRepo := daRecord.DataAgreementRecordRepository{}
 	darRepo.Init(organisationId)
 
-	pipeline, err := daRecord.CreatePipelineForFilteringDataAgreementRecordsByDataAgreementId(organisationId, dataAgreementId)
+	pipeline, err := daRecord.CreatePipelineForFilteringDataAgreementRecordsByDataAgreementId(organisationId, dataAgreementId, individualId)
 	if err != nil {
 		m := "Failed to create pipeline"
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
