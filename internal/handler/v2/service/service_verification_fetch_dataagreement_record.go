@@ -20,7 +20,6 @@ func ServiceVerificationFetchDataAgreementRecord(w http.ResponseWriter, r *http.
 
 	// Headers
 	organisationId := common.Sanitize(r.Header.Get(config.OrganizationId))
-	_ = common.Sanitize(r.Header.Get(config.IndividualHeaderKey))
 
 	consentRecordId := common.Sanitize(mux.Vars(r)[config.ConsentRecordId])
 
