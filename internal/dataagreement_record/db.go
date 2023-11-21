@@ -263,12 +263,12 @@ func CreatePipelineForFilteringDataAgreementRecordsByIndividualId(organisationId
 }
 
 // CreatePipelineForFilteringDataAgreementRecordsByDataAgreementId This pipeline is used for filtering data agreement records by data agreement id
-func CreatePipelineForFilteringDataAgreementRecordsByDataAgreementId(organisationId string, dataAgreementId string) ([]primitive.M, error) {
+func CreatePipelineForFilteringDataAgreementRecordsByDataAgreementId(organisationId string, dataAgreementId string, individualId string) ([]primitive.M, error) {
 
 	var pipeline []bson.M
 
 	// Stage 1 - Match by `organisationId`, `dataagreementId` and `isDeleted=false`
-	pipeline = append(pipeline, bson.M{"$match": bson.M{"organisationid": organisationId, "isdeleted": false, "dataagreementid": dataAgreementId}})
+	pipeline = append(pipeline, bson.M{"$match": bson.M{"organisationid": organisationId, "isdeleted": false, "dataagreementid": dataAgreementId, "individualid": individualId}})
 
 	// Stage 2 - Lookup revision by `dataAgreementRecordId`
 	// This is done to obtain timestamp for the latest revision of the data agreement records.
