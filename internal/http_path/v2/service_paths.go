@@ -11,7 +11,7 @@ const ServiceReadPolicy = "/v2/service/policy/{policyId}"
 const ServiceListDataAttributesForDataAgreement = "/v2/service/data-agreement/{dataAgreementId}/data-attributes"
 
 // Verification mechanisms
-const ServiceVerificationFetchAllDataAgreementRecords = "/v2/service/verification/data-agreements"
+const ServiceVerificationListDataAgreements = "/v2/service/verification/data-agreements"
 const ServiceVerificationFetchDataAgreementRecord = "/v2/service/verification/consent-record/{consentRecordId}"
 const ServiceVerificationFetchDataAgreementRecords = "/v2/service/verification/consent-records"
 

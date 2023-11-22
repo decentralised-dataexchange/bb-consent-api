@@ -99,7 +99,7 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer) {
 
 	// Verification mechanisms
 
-	r.Handle(ServiceVerificationFetchAllDataAgreementRecords, m.Chain(serviceHandler.ServiceFetchDataAgreementRecords, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	r.Handle(ServiceVerificationListDataAgreements, m.Chain(serviceHandler.ServiceVerificationListDataAgreements, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
 	r.Handle(ServiceVerificationFetchDataAgreementRecord, m.Chain(serviceHandler.ServiceVerificationFetchDataAgreementRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
 	r.Handle(ServiceVerificationFetchDataAgreementRecords, m.Chain(serviceHandler.ServiceVerificationFetchDataAgreementRecords, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
