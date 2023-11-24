@@ -90,11 +90,16 @@ func dataAttributesToInterfaceSlice(dataAttributes []dataAttributeForLists) []in
 	return interfaceSlice
 }
 
-func returnHTTPResponse(resp interface{}, w http.ResponseWriter) {
-	response, _ := json.Marshal(resp)
-	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+func recreateDataAgreementFromObjectData(objectData string) (dataagreement.DataAgreement, error) {
+
+	// Deserialise data agreement
+	var da dataagreement.DataAgreement
+	err := json.Unmarshal([]byte(objectData), &da)
+	if err != nil {
+		return da, err
+	}
+
+	return da, nil
 }
 
 type dataAgreementForDataAttribute struct {
@@ -137,31 +142,49 @@ func ConfigListDataAttributes(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil && errors.Is(err, RevisionIDIsMissingError) {
 
+		// Return all data agreements
+		dataAgreements, err := dataagreement.GetAllDataAgreementsWithLatestRevisionsObjectData(organisationId)
+		if err != nil {
+			m := "Failed to fetch data agreements"
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
+
 		methodOfUse, err := ParseMethodOfUseDataAttributesQueryParams(r)
 		methodOfUse = common.Sanitize(methodOfUse)
-		var res []dataagreement.DataAgreement
-
+		var tempDataAgreements []dataagreement.DataAgreement
 		if err != nil && errors.Is(err, MethodOfUseIsMissingError) {
 
-			// Return all data attributes
-			res, err = darepo.GetAll()
-			if err != nil {
-				m := fmt.Sprintf("Failed to fetch data attribute by method of use: %v", methodOfUse)
-				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-				return
+			for _, dataAgreement := range dataAgreements {
+				if len(dataAgreement.ObjectData) >= 1 {
+					tempDataAgreement, err := recreateDataAgreementFromObjectData(dataAgreement.ObjectData)
+					if err != nil {
+						m := "Failed to receate data agreement"
+						common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+						return
+					}
+					tempDataAgreements = append(tempDataAgreements, tempDataAgreement)
+				}
 			}
 
 		} else {
 			// List by method of use
-			res, err = darepo.GetByMethodOfUse(methodOfUse)
-			if err != nil {
-				m := fmt.Sprintf("Failed to fetch data attribute by method of use: %v", methodOfUse)
-				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-				return
+			for _, dataAgreement := range dataAgreements {
+				if len(dataAgreement.ObjectData) >= 1 {
+					tempDataAgreement, err := recreateDataAgreementFromObjectData(dataAgreement.ObjectData)
+					if err != nil {
+						m := "Failed to receate data agreement"
+						common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+						return
+					}
+					if tempDataAgreement.MethodOfUse == methodOfUse {
+						tempDataAgreements = append(tempDataAgreements, tempDataAgreement)
+					}
+				}
 			}
 
 		}
-		dataAttributes := dataAttributesForList(res)
+		dataAttributes := dataAttributesForList(tempDataAgreements)
 
 		query := paginate.PaginateObjectsQuery{
 			Limit:  limit,
@@ -173,7 +196,7 @@ func ConfigListDataAttributes(w http.ResponseWriter, r *http.Request) {
 			DataAttributes: result.Items,
 			Pagination:     result.Pagination,
 		}
-		returnHTTPResponse(resp, w)
+		common.ReturnHTTPResponse(resp, w)
 		return
 
 	} else {
@@ -224,5 +247,5 @@ func ConfigListDataAttributes(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	returnHTTPResponse(resp, w)
+	common.ReturnHTTPResponse(resp, w)
 }
