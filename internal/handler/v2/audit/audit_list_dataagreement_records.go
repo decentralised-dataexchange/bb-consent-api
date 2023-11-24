@@ -5,6 +5,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"sort"
+	"time"
 
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
@@ -143,6 +145,13 @@ func AuditListDataAgreementRecords(w http.ResponseWriter, r *http.Request) {
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
+
+	// Sort the consentRecords based on timestamp
+	sort.SliceStable(consentRecords, func(i, j int) bool {
+		timeI, _ := time.Parse(time.RFC3339, consentRecords[i].Timestamp)
+		timeJ, _ := time.Parse(time.RFC3339, consentRecords[j].Timestamp)
+		return timeI.After(timeJ)
+	})
 
 	query := paginate.PaginateObjectsQuery{
 		Limit:  limit,
