@@ -314,9 +314,9 @@ func CreatePipelineForFilteringDataAgreementRecordsByDataAgreementId(organisatio
 }
 
 // GetAllUsingPipeline
-func GetAllUsingPipeline(pipeline []bson.M) ([]DataAgreementRecord, error) {
+func GetAllUsingPipeline(pipeline []bson.M) ([]DataAgreementRecordWithTimestamp, error) {
 
-	var results []DataAgreementRecord
+	var results []DataAgreementRecordWithTimestamp
 	cursor, err := Collection().Aggregate(context.Background(), pipeline)
 	if err != nil {
 		return results, err

@@ -72,3 +72,15 @@ func ParseQueryParams(r *http.Request, paramName string, errorType DataAgreement
 	}
 	return "", errorType
 }
+
+type DataAgreementRecordWithTimestamp struct {
+	Id                        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	DataAgreementId           string             `json:"dataAgreementId"`
+	DataAgreementRevisionId   string             `json:"dataAgreementRevisionId"`
+	DataAgreementRevisionHash string             `json:"dataAgreementRevisionHash"`
+	IndividualId              string             `json:"individualId"`
+	OptIn                     bool               `json:"optIn"`
+	State                     string             `json:"state" valid:"required"`
+	SignatureId               string             `json:"signatureId"`
+	Timestamp                 string             `json:"timestamp"`
+}

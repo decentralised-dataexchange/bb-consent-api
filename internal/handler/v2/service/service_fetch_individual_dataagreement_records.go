@@ -12,7 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func dataAgreementRecordsToInterfaceSlice(dataAgreementRecords []daRecord.DataAgreementRecord) []interface{} {
+func dataAgreementRecordsToInterfaceSlice(dataAgreementRecords []daRecord.DataAgreementRecordWithTimestamp) []interface{} {
 	interfaceSlice := make([]interface{}, len(dataAgreementRecords))
 	for i, r := range dataAgreementRecords {
 		interfaceSlice[i] = r
@@ -60,7 +60,7 @@ func ServiceFetchIndividualDataAgreementRecords(w http.ResponseWriter, r *http.R
 	darepo.Init(organisationId)
 
 	// filter consent records that are associated with non deleted data agreements
-	var consentRecords []daRecord.DataAgreementRecord
+	var consentRecords []daRecord.DataAgreementRecordWithTimestamp
 	for _, dataAgreementRecord := range dataAgreementRecords {
 		_, err := darepo.Get(dataAgreementRecord.DataAgreementId)
 		if err == nil {
