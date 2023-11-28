@@ -47,7 +47,7 @@ func ServiceShowDataSharingUiHandler(w http.ResponseWriter, r *http.Request) {
 		<title>Consent BB Data Sharing UI</title>
 		<link
 		  rel="stylesheet"
-		  href="https://cdn.jsdelivr.net/gh/decentralised-dataexchange/bb-consent-data-sharing-ui@2023.11.8/dist/consentBbDataSharingUi.css"
+		  href="https://cdn.jsdelivr.net/gh/decentralised-dataexchange/bb-consent-data-sharing-ui@2023.11.9/dist/consentBbDataSharingUi.css"
 		/>
 	  </head>
 	  <body style="margin: 0px">
@@ -56,7 +56,7 @@ func ServiceShowDataSharingUiHandler(w http.ResponseWriter, r *http.Request) {
 		<script
 		  data-element-id="consentBbDataSharingUi"
 		  id="consentBbDataSharingUi-script"
-		  src="https://cdn.jsdelivr.net/gh/decentralised-dataexchange/bb-consent-data-sharing-ui@2023.11.8/dist/consentBbDataSharingUi.js"
+		  src="https://cdn.jsdelivr.net/gh/decentralised-dataexchange/bb-consent-data-sharing-ui@2023.11.9/dist/consentBbDataSharingUi.js"
 		></script>
 		<script>
 			window.ConsentBbDataSharingUi({
