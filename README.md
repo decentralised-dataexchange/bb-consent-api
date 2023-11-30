@@ -42,8 +42,8 @@ Now, follow the steps below to get the ConsentBB API server up and running:
 1. Clone this repository to your local server using `git clone`.
 2. Check out the latest release or any available release you wish to run. E.g. `git checkout tags/2023.10.4`.
 3. Execute `make setup`. This sets up the necessary dependencies and configurations for running the Consent BB API server instance.
-4. Execute `make build`. The compiles and assembles source code into executable files or libraries, following the instructions specified in the Makefile of Consent BB API server instance.
-5. Execute `make run`.  This executes a predefined set of instructions in the  Makefile to launch or run the compiled Consent BB API server instance.
+4. Execute `make api/build`. The compiles and assembles source code into executable files or libraries, following the instructions specified in the Makefile of Consent BB API server instance.
+5. Execute `make api/run`.  This executes a predefined set of instructions in the  Makefile to launch or run the compiled Consent BB API server instance.
 
 The server is up and running now locally at https://api.bb-consent.dev/v2. You can use openAPIs with postman or the admin dashboard to interact with the Consent BB server instance.
 
