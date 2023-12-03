@@ -11,7 +11,6 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
-	m "github.com/bb-consent/api/internal/middleware"
 	"github.com/bb-consent/api/internal/org"
 	"github.com/bb-consent/api/internal/policy"
 	"github.com/bb-consent/api/internal/revision"
@@ -96,15 +95,6 @@ func ConfigCreatePolicy(w http.ResponseWriter, r *http.Request) {
 	// Repository
 	prepo := policy.PolicyRepository{}
 	prepo.Init(organisationId)
-
-	if m.ApplicationMode == config.SingleTenant {
-		policyCount, _ := prepo.GetPolicyCountByOrganisation()
-		if policyCount >= 1 {
-			m := "Only one policy allowed for an organisation"
-			common.HandleErrorV2(w, http.StatusBadRequest, m, errors.New("policy already exists"))
-			return
-		}
-	}
 
 	// Request body
 	var policyReq addPolicyReq
