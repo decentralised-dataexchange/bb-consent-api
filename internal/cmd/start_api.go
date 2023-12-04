@@ -75,7 +75,7 @@ func StartApiCmdHandler(cmd *cobra.Command, args []string) {
 	}
 
 	// Load the policy into the enforcer.
-	_, err = authEnforcer.AddPolicies(rbac.GetRbacPolicies())
+	_, err = authEnforcer.AddPolicies(rbac.GetRbacPolicies(loadedConfig.TestMode))
 	if err != nil {
 		panic(err)
 	}
@@ -95,7 +95,13 @@ func StartApiCmdHandler(cmd *cobra.Command, args []string) {
 
 	// Router
 	router := mux.NewRouter()
-	v2HttpPaths.SetRoutes(router, authEnforcer)
+	if loadedConfig.TestMode {
+		router.StrictSlash(true)
+		v2HttpPaths.SetRoutes(router, authEnforcer, loadedConfig.TestMode)
+	} else {
+		subrouter := router.PathPrefix("/v2").Subrouter()
+		v2HttpPaths.SetRoutes(subrouter, authEnforcer, loadedConfig.TestMode)
+	}
 
 	// Start server and listen in port 80
 	log.Println("Listening port 80")

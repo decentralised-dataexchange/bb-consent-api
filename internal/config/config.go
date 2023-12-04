@@ -69,6 +69,7 @@ type Configuration struct {
 		Password string
 	}
 	ApplicationMode            string
+	TestMode                   bool
 	Organization               Organization
 	User                       User
 	ApiSecretKey               string
