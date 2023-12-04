@@ -159,8 +159,10 @@ func GetRbacPolicies(testMode bool) [][]string {
 	}
 
 	for _, policy := range policies {
-		if !testMode {
-			policy[1] = "/v2" + policy[1] + "/" // Prefix with '/v2' and suffix with '/' if testmode is false
+		if testMode {
+			policy[1] = policy[1] + "/" // suffix with '/'
+		} else {
+			policy[1] = "/v2" + policy[1] // Prefix with '/v2'
 		}
 	}
 
