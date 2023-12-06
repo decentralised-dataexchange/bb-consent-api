@@ -158,6 +158,10 @@ func setDataAgreementWithRevisions(dataAgreement dataagreement.DataAgreement, re
 	dataAgreementWithRevision.ControllerUrl = dataAgreement.ControllerUrl
 	dataAgreementWithRevision.Version = dataAgreement.Version
 	dataAgreementWithRevision.Revisions = revisions
+	dataAgreementWithRevision.Controller = dataAgreement.Controller
+	dataAgreementWithRevision.Dpia = dataAgreement.Dpia
+	dataAgreementWithRevision.DataUse = dataAgreement.DataUse
+	dataAgreementWithRevision.CompatibleWithVersion = dataAgreement.CompatibleWithVersion
 
 	return dataAgreementWithRevision
 }
@@ -236,6 +240,10 @@ type dataAgreementWithRevisions struct {
 	IsDeleted               bool                          `json:"-"`
 	Timestamp               string                        `json:"-"`
 	Revisions               []revision.Revision           `json:"revisions"`
+	DataUse                 string                        `json:"dataUse"`
+	Dpia                    string                        `json:"dpia"`
+	CompatibleWithVersion   string                        `json:"compatibleWithVersion"`
+	Controller              dataagreement.Controller      `json:"controller"`
 }
 
 func dataAgreementsWithRevisionsToInterfaceSlice(dataAgreements []dataAgreementWithRevisions) []interface{} {
