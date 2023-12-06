@@ -42,6 +42,12 @@ type Signature struct {
 	ObjectReference              string `json:"objectReference"`
 }
 
+type Controller struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+	Url  string `json:"url"`
+}
+
 type DataAgreement struct {
 	Id                      string          `json:"id" bson:"_id,omitempty"`
 	Version                 string          `json:"version"`
@@ -52,7 +58,7 @@ type DataAgreement struct {
 	Purpose                 string          `json:"purpose" valid:"required"`
 	PurposeDescription      string          `json:"purposeDescription" valid:"required"`
 	LawfulBasis             string          `json:"lawfulBasis" valid:"required"`
-	MethodOfUse             string          `json:"methodOfUse" valid:"required"`
+	MethodOfUse             string          `json:"methodOfUse"`
 	DpiaDate                string          `json:"dpiaDate"`
 	DpiaSummaryUrl          string          `json:"dpiaSummaryUrl"`
 	Signature               Signature       `json:"signature"`
@@ -64,6 +70,10 @@ type DataAgreement struct {
 	OrganisationId          string          `json:"-"`
 	IsDeleted               bool            `json:"-"`
 	Timestamp               string          `json:"-"`
+	DataUse                 string          `json:"dataUse"`
+	Dpia                    string          `json:"dpia"`
+	CompatibleWithVersion   string          `json:"compatibleWithVersion"`
+	Controller              Controller      `json:"controller"`
 }
 
 type DataAgreementWithObjectData struct {
@@ -118,16 +128,12 @@ func (darepo *DataAgreementRepository) Update(dataAgreement DataAgreement) (Data
 }
 
 // IsDataAgreementExist Check if data agreement with given id exists
-func (darepo *DataAgreementRepository) IsDataAgreementExist(dataAgreementID string) (int64, error) {
+func (darepo *DataAgreementRepository) IsDataAgreementExist(dataAgreementId string) (int64, error) {
 	var exists int64
-	dataAgreementId, err := primitive.ObjectIDFromHex(dataAgreementID)
-	if err != nil {
-		return exists, err
-	}
 
 	filter := common.CombineFilters(darepo.DefaultFilter, bson.M{"_id": dataAgreementId})
 
-	exists, err = Collection().CountDocuments(context.TODO(), filter)
+	exists, err := Collection().CountDocuments(context.TODO(), filter)
 	if err != nil {
 		return exists, err
 	}

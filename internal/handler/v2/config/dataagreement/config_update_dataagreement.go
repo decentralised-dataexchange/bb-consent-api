@@ -41,9 +41,16 @@ func validateUpdateDataAgreementRequestBody(dataAgreementReq updateDataAgreement
 		return errors.New("invalid lawful basis provided")
 	}
 
-	// Proceed if method of use is valid
-	if !isValidMethodOfUse(dataAgreementReq.DataAgreement.MethodOfUse) {
+	if len(strings.TrimSpace(dataAgreementReq.DataAgreement.DataUse)) < 1 && len(strings.TrimSpace(dataAgreementReq.DataAgreement.MethodOfUse)) < 1 {
+		return errors.New("missing mandatory param dataUse")
+	}
+
+	if len(strings.TrimSpace(dataAgreementReq.DataAgreement.MethodOfUse)) > 1 && !isValidMethodOfUse(dataAgreementReq.DataAgreement.MethodOfUse) {
 		return errors.New("invalid method of use provided")
+	}
+
+	if len(strings.TrimSpace(dataAgreementReq.DataAgreement.DataUse)) > 1 && !isValidMethodOfUse(dataAgreementReq.DataAgreement.DataUse) {
+		return errors.New("invalid data use provided")
 	}
 
 	return nil
@@ -82,6 +89,17 @@ func updateDataAttributeFromUpdateDataAgreementRequestBody(requestBody updateDat
 	return newDataAttributes
 }
 
+func updateControllerFromReq(o org.Organization, toBeUpdatedDataAgreement dataagreement.DataAgreement) dataagreement.DataAgreement {
+	toBeUpdatedDataAgreement.ControllerId = o.ID
+	toBeUpdatedDataAgreement.ControllerName = o.Name
+	toBeUpdatedDataAgreement.ControllerUrl = o.EulaURL
+
+	toBeUpdatedDataAgreement.Controller.Id = o.ID
+	toBeUpdatedDataAgreement.Controller.Name = o.Name
+	toBeUpdatedDataAgreement.Controller.Url = o.EulaURL
+	return toBeUpdatedDataAgreement
+}
+
 func updateDataAgreementFromRequestBody(requestBody updateDataAgreementReq, toBeUpdatedDataAgreement dataagreement.DataAgreement) dataagreement.DataAgreement {
 
 	toBeUpdatedDataAgreement.Policy.Name = requestBody.DataAgreement.Policy.Name
@@ -100,6 +118,8 @@ func updateDataAgreementFromRequestBody(requestBody updateDataAgreementReq, toBe
 	toBeUpdatedDataAgreement.MethodOfUse = requestBody.DataAgreement.MethodOfUse
 	toBeUpdatedDataAgreement.DpiaDate = requestBody.DataAgreement.DpiaDate
 	toBeUpdatedDataAgreement.DpiaSummaryUrl = requestBody.DataAgreement.DpiaSummaryUrl
+	toBeUpdatedDataAgreement.Dpia = requestBody.DataAgreement.Dpia
+	toBeUpdatedDataAgreement.CompatibleWithVersion = requestBody.DataAgreement.CompatibleWithVersion
 
 	toBeUpdatedDataAgreement.Signature.Payload = requestBody.DataAgreement.Signature.Payload
 	toBeUpdatedDataAgreement.Signature.Signature = requestBody.DataAgreement.Signature.Signature
@@ -125,6 +145,14 @@ func updateDataAgreementFromRequestBody(requestBody updateDataAgreementReq, toBe
 	dataAttributes := updateDataAttributeFromUpdateDataAgreementRequestBody(requestBody, toBeUpdatedDataAgreement.DataAttributes)
 
 	toBeUpdatedDataAgreement.DataAttributes = dataAttributes
+
+	// update method of use if data use not empty and is valid
+	if len(strings.TrimSpace(requestBody.DataAgreement.DataUse)) > 0 && isValidMethodOfUse(requestBody.DataAgreement.DataUse) {
+		toBeUpdatedDataAgreement.DataUse = requestBody.DataAgreement.DataUse
+		toBeUpdatedDataAgreement.MethodOfUse = requestBody.DataAgreement.DataUse
+	} else {
+		toBeUpdatedDataAgreement.DataUse = requestBody.DataAgreement.MethodOfUse
+	}
 
 	return toBeUpdatedDataAgreement
 }
@@ -156,7 +184,7 @@ func ConfigUpdateDataAgreement(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Query organisation by Id
-	_, err = org.Get(organisationId)
+	o, err := org.Get(organisationId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get organization by ID :%v", organisationId)
 		common.HandleErrorV2(w, http.StatusNotFound, m, err)
@@ -192,6 +220,7 @@ func ConfigUpdateDataAgreement(w http.ResponseWriter, r *http.Request) {
 
 	// Update data agreement from request body
 	toBeUpdatedDataAgreement := updateDataAgreementFromRequestBody(dataAgreementReq, currentDataAgreement)
+	toBeUpdatedDataAgreement = updateControllerFromReq(o, toBeUpdatedDataAgreement)
 
 	// Bump major version for data agreement
 	updatedVersion, err := common.BumpMajorVersion(toBeUpdatedDataAgreement.Version)

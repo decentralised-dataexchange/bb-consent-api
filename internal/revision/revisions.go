@@ -258,6 +258,10 @@ type dataAgreementForObjectData struct {
 	DataAttributes          []dataagreement.DataAttribute `json:"dataAttributes" valid:"required"`
 	OrganisationId          string                        `json:"-"`
 	IsDeleted               bool                          `json:"-"`
+	DataUse                 string                        `json:"dataUse"`
+	Dpia                    string                        `json:"dpia"`
+	CompatibleWithVersion   string                        `json:"compatibleWithVersion"`
+	Controller              dataagreement.Controller      `json:"controller"`
 }
 
 // InitForDraftDataAgreement
@@ -292,6 +296,11 @@ func CreateRevisionForDataAgreement(newDataAgreement dataagreement.DataAgreement
 		CompatibleWithVersionId: newDataAgreement.CompatibleWithVersionId,
 		Lifecycle:               newDataAgreement.Lifecycle,
 		DataAttributes:          newDataAgreement.DataAttributes,
+		DataUse:                 newDataAgreement.DataUse,
+		Dpia:                    newDataAgreement.Dpia,
+		CompatibleWithVersion:   newDataAgreement.CompatibleWithVersion,
+		ControllerName:          newDataAgreement.ControllerName,
+		Controller:              newDataAgreement.Controller,
 	}
 
 	// Create revision
@@ -323,6 +332,11 @@ func UpdateRevisionForDataAgreement(updatedDataAgreement dataagreement.DataAgree
 		CompatibleWithVersionId: updatedDataAgreement.CompatibleWithVersionId,
 		Lifecycle:               updatedDataAgreement.Lifecycle,
 		DataAttributes:          updatedDataAgreement.DataAttributes,
+		DataUse:                 updatedDataAgreement.DataUse,
+		Dpia:                    updatedDataAgreement.Dpia,
+		CompatibleWithVersion:   updatedDataAgreement.CompatibleWithVersion,
+		ControllerName:          updatedDataAgreement.ControllerName,
+		Controller:              updatedDataAgreement.Controller,
 	}
 
 	// Initialise revision
@@ -400,6 +414,11 @@ func CreateRevisionForDraftDataAgreement(newDataAgreement dataagreement.DataAgre
 		CompatibleWithVersionId: newDataAgreement.CompatibleWithVersionId,
 		Lifecycle:               newDataAgreement.Lifecycle,
 		DataAttributes:          newDataAgreement.DataAttributes,
+		DataUse:                 newDataAgreement.DataUse,
+		Dpia:                    newDataAgreement.Dpia,
+		CompatibleWithVersion:   newDataAgreement.CompatibleWithVersion,
+		ControllerName:          newDataAgreement.ControllerName,
+		Controller:              newDataAgreement.Controller,
 	}
 
 	// Create revision

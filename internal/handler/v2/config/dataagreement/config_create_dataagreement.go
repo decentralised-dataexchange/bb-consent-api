@@ -87,7 +87,7 @@ type dataAgreement struct {
 	Purpose                 string                          `json:"purpose" validate:"required_if=Active true"`
 	PurposeDescription      string                          `json:"purposeDescription" validate:"required_if=Active true,max=500"`
 	LawfulBasis             string                          `json:"lawfulBasis" validate:"required_if=Active true"`
-	MethodOfUse             string                          `json:"methodOfUse" validate:"required_if=Active true"`
+	MethodOfUse             string                          `json:"methodOfUse"`
 	DpiaDate                string                          `json:"dpiaDate"`
 	DpiaSummaryUrl          string                          `json:"dpiaSummaryUrl"`
 	Signature               dataagreement.Signature         `json:"signature"`
@@ -98,6 +98,10 @@ type dataAgreement struct {
 	DataAttributes          []dataAttributeForDataAgreement `json:"dataAttributes" validate:"required_if=Active true"`
 	OrganisationId          string                          `json:"-"`
 	IsDeleted               bool                            `json:"-"`
+	DataUse                 string                          `json:"dataUse"`
+	Dpia                    string                          `json:"dpia"`
+	CompatibleWithVersion   string                          `json:"compatibleWithVersion"`
+	Controller              dataagreement.Controller        `json:"controller"`
 }
 
 type addDataAgreementReq struct {
@@ -147,9 +151,16 @@ func validateAddDataAgreementRequestBody(dataAgreementReq addDataAgreementReq) e
 		return errors.New("invalid lawful basis provided")
 	}
 
-	// Proceed if method of use is valid
-	if !isValidMethodOfUse(dataAgreementReq.DataAgreement.MethodOfUse) {
+	if len(strings.TrimSpace(dataAgreementReq.DataAgreement.DataUse)) < 1 && len(strings.TrimSpace(dataAgreementReq.DataAgreement.MethodOfUse)) < 1 {
+		return errors.New("missing mandatory param dataUse")
+	}
+
+	if len(strings.TrimSpace(dataAgreementReq.DataAgreement.MethodOfUse)) > 1 && !isValidMethodOfUse(dataAgreementReq.DataAgreement.MethodOfUse) {
 		return errors.New("invalid method of use provided")
+	}
+
+	if len(strings.TrimSpace(dataAgreementReq.DataAgreement.DataUse)) > 1 && !isValidMethodOfUse(dataAgreementReq.DataAgreement.DataUse) {
+		return errors.New("invalid data use provided")
 	}
 
 	return nil
@@ -222,7 +233,18 @@ func setDataAgreementFromReq(requestBody addDataAgreementReq, newDataAgreement d
 	newDataAgreement.Forgettable = requestBody.DataAgreement.Forgettable
 	newDataAgreement.CompatibleWithVersionId = requestBody.DataAgreement.CompatibleWithVersionId
 	newDataAgreement.DataAttributes = setDataAttributesFromReq(requestBody)
+	newDataAgreement.Dpia = requestBody.DataAgreement.Dpia
+	newDataAgreement.CompatibleWithVersion = requestBody.DataAgreement.CompatibleWithVersion
+
 	newDataAgreement.Lifecycle = setDataAgreementLifecycle(requestBody.DataAgreement.Active)
+
+	// update method of use if data use not empty and is valid
+	if len(strings.TrimSpace(requestBody.DataAgreement.DataUse)) > 0 && isValidMethodOfUse(requestBody.DataAgreement.DataUse) {
+		newDataAgreement.DataUse = requestBody.DataAgreement.DataUse
+		newDataAgreement.MethodOfUse = requestBody.DataAgreement.DataUse
+	} else {
+		newDataAgreement.DataUse = requestBody.DataAgreement.MethodOfUse
+	}
 
 	return newDataAgreement
 }
@@ -232,6 +254,10 @@ func setControllerFromReq(o org.Organization, newDataAgreement dataagreement.Dat
 	newDataAgreement.ControllerId = o.ID
 	newDataAgreement.ControllerName = o.Name
 	newDataAgreement.ControllerUrl = o.EulaURL
+
+	newDataAgreement.Controller.Id = o.ID
+	newDataAgreement.Controller.Name = o.Name
+	newDataAgreement.Controller.Url = o.EulaURL
 	return newDataAgreement
 }
 
