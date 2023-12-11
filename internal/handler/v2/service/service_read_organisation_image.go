@@ -14,7 +14,7 @@ import (
 func ServiceReadOrganisationImage(w http.ResponseWriter, r *http.Request) {
 	organizationID := r.Header.Get(config.OrganizationId)
 	// Path params
-	imageId := mux.Vars(r)["imageId"]
+	imageId := common.Sanitize(mux.Vars(r)["imageId"])
 
 	image, err := image.Get(imageId)
 	if err != nil {

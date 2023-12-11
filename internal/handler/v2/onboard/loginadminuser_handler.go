@@ -84,7 +84,7 @@ func LoginAdminUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	actionLog := fmt.Sprintf("%v logged in", u.Email)
-	actionlog.LogOrgSecurityCalls(u.ID.Hex(), u.Email, u.Roles[0].OrgID, actionLog)
+	actionlog.LogOrgSecurityCalls(u.ID, u.Email, u.Roles[0].OrgID, actionLog)
 	lResp := loginResp{
 		AccessToken:      t.AccessToken,
 		ExpiresIn:        t.ExpiresIn,

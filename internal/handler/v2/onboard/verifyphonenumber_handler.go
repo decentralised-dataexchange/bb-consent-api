@@ -123,7 +123,7 @@ func verifyPhoneNumber(w http.ResponseWriter, r *http.Request, clientType int) {
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
-	var o otp.OtpV2
+	var o otp.Otp
 	o.Phone = verifyReq.Phone
 	o.Otp = vCode
 
@@ -131,10 +131,10 @@ func verifyPhoneNumber(w http.ResponseWriter, r *http.Request, clientType int) {
 
 	oldOtp, err := otp.SearchPhone(sanitizedPhoneNumber)
 	if err == nil {
-		otp.Delete(oldOtp.ID.Hex())
+		otp.Delete(oldOtp.ID)
 	}
 
-	o, err = otp.AddV2(o)
+	o, err = otp.Add(o)
 	if err != nil {
 		m := fmt.Sprintf("Failed to store otp details")
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)

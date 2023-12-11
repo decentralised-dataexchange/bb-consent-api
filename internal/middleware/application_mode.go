@@ -54,7 +54,7 @@ func singleTenantConfig(r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	organizationId := organization.ID.Hex()
+	organizationId := organization.ID
 	r.Header.Set(config.OrganizationId, organizationId)
 	return nil
 }

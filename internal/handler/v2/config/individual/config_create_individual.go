@@ -66,7 +66,7 @@ func ConfigCreateIndividual(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newIndividual := updateIndividualFromRequestBody(individualReq)
-	newIndividual.Id = primitive.NewObjectID()
+	newIndividual.Id = primitive.NewObjectID().Hex()
 	newIndividual.OrganisationId = organisationId
 	newIndividual.IsDeleted = false
 	newIndividual.IsOnboardedFromIdp = false

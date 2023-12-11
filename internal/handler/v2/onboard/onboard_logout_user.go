@@ -35,7 +35,7 @@ func logoutUser(accessToken string, refreshToken string, iamId string, organisat
 	// log security calls
 	if len(orgAdmin.Roles) > 0 {
 		actionLog := fmt.Sprintf("%v logged out", orgAdmin.Email)
-		actionlog.LogOrgSecurityCalls(orgAdmin.ID.Hex(), orgAdmin.Email, organisationId, actionLog)
+		actionlog.LogOrgSecurityCalls(orgAdmin.ID, orgAdmin.Email, organisationId, actionLog)
 	}
 	return nil
 }

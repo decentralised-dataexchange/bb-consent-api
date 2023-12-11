@@ -69,7 +69,7 @@ type Webhook struct {
 
 // WebhookDelivery Details of payload delivery to webhook endpoint
 type WebhookDelivery struct {
-	ID                      primitive.ObjectID  `bson:"_id,omitempty"` // Webhook delivery ID
+	ID                      string              `bson:"_id,omitempty"` // Webhook delivery ID
 	WebhookID               string              // Webhook ID
 	UserID                  string              // ID of user who triggered the webhook event
 	WebhookEventType        string              // Webhook event type for e.g. data.delete.initiated
@@ -124,7 +124,7 @@ func ProcessWebhooks(webhookEventType string, value []byte) {
 
 	// Instantiating webhook delivery
 	webhookDelivery = WebhookDelivery{
-		ID:                      primitive.NewObjectID(),
+		ID:                      primitive.NewObjectID().Hex(),
 		WebhookID:               webhookEvent.WebhookID,
 		UserID:                  userID,
 		WebhookEventType:        webhookEventType,
@@ -148,7 +148,7 @@ func ProcessWebhooks(webhookEventType string, value []byte) {
 	secretKey := webhook.SecretKey
 
 	// Updating webhook event payload with delivery ID
-	webhookEvent.DeliveryID = webhookDelivery.ID.Hex()
+	webhookEvent.DeliveryID = webhookDelivery.ID
 
 	// Constructing webhook payload bytes
 	requestPayload, _ := json.Marshal(&webhookEvent)

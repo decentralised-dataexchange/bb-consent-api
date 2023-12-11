@@ -7,7 +7,6 @@ import (
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/database"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -44,14 +43,14 @@ func GetTypeStr(logType int) string {
 
 // ActionLog All access logs
 type ActionLog struct {
-	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Type      int                `json:"type"`
-	TypeStr   string             `json:"typeStr"`
-	OrgID     string             `json:"orgId"`
-	UserID    string             `json:"userId"`
-	UserName  string             `json:"userName"`
-	Action    string             `json:"action"` //Free string storing the real log
-	Timestamp string             `json:"timestamp"`
+	ID        string `json:"id" bson:"_id,omitempty"`
+	Type      int    `json:"type"`
+	TypeStr   string `json:"typeStr"`
+	OrgID     string `json:"orgId"`
+	UserID    string `json:"userId"`
+	UserName  string `json:"userName"`
+	Action    string `json:"action"` //Free string storing the real log
+	Timestamp string `json:"timestamp"`
 }
 
 type ActionLogRepository struct {

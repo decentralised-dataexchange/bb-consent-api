@@ -8,16 +8,15 @@ import (
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/org"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type organizationResp struct {
-	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Name        string             `json:"name"`
-	Description string             `json:"description"`
-	Sector      string             `json:"sector"`
-	Location    string             `json:"location"`
-	PolicyURL   string             `json:"policyUrl"`
+	ID          string `bson:"_id,omitempty" json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Sector      string `json:"sector"`
+	Location    string `json:"location"`
+	PolicyURL   string `json:"policyUrl"`
 }
 
 type getOrgResp struct {
@@ -26,7 +25,7 @@ type getOrgResp struct {
 
 // OnboardReadOrganisation Gets a single organisation by given id
 func OnboardReadOrganisation(w http.ResponseWriter, r *http.Request) {
-	organizationID := r.Header.Get(config.OrganizationId)
+	organizationID := common.Sanitize(r.Header.Get(config.OrganizationId))
 	o, err := org.Get(organizationID)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get organization by ID :%v", organizationID)

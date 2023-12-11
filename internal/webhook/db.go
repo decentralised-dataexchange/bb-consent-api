@@ -6,28 +6,27 @@ import (
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/database"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Webhook Defines the structure for an organisation webhook
 type Webhook struct {
-	ID                  primitive.ObjectID `json:"id" bson:"_id,omitempty"`           // Webhook ID
-	OrganisationId      string             `json:"orgId" bson:"orgid"`                // Organisation ID
-	PayloadURL          string             `json:"payloadUrl" valid:"required"`       // Webhook payload URL
-	ContentType         string             `json:"contentType" valid:"required"`      // Webhook payload content type for e.g application/json
-	SubscribedEvents    []string           `json:"subscribedEvents" valid:"required"` // Events subscribed for e.g. user.data.delete
-	Disabled            bool               `json:"disabled"`                          // Disabled or not
-	SecretKey           string             `json:"secretKey" valid:"required"`        // For calculating SHA256 HMAC to verify data integrity and authenticity
-	SkipSSLVerification bool               `json:"skipSslVerification"`               // Skip SSL certificate verification or not (expiry is checked)
-	TimeStamp           string             `json:"timestamp"`                         // UTC timestamp
-	IsDeleted           bool               `json:"-"`
+	ID                  string   `json:"id" bson:"_id,omitempty"`           // Webhook ID
+	OrganisationId      string   `json:"orgId" bson:"orgid"`                // Organisation ID
+	PayloadURL          string   `json:"payloadUrl" valid:"required"`       // Webhook payload URL
+	ContentType         string   `json:"contentType" valid:"required"`      // Webhook payload content type for e.g application/json
+	SubscribedEvents    []string `json:"subscribedEvents" valid:"required"` // Events subscribed for e.g. user.data.delete
+	Disabled            bool     `json:"disabled"`                          // Disabled or not
+	SecretKey           string   `json:"secretKey" valid:"required"`        // For calculating SHA256 HMAC to verify data integrity and authenticity
+	SkipSSLVerification bool     `json:"skipSslVerification"`               // Skip SSL certificate verification or not (expiry is checked)
+	TimeStamp           string   `json:"timestamp"`                         // UTC timestamp
+	IsDeleted           bool     `json:"-"`
 }
 
 // WebhookDelivery Details of payload delivery to webhook endpoint
 type WebhookDelivery struct {
-	ID                      primitive.ObjectID  `bson:"_id,omitempty"` // Webhook delivery ID
+	ID                      string              `bson:"_id,omitempty"` // Webhook delivery ID
 	WebhookID               string              // Webhook ID
 	UserID                  string              // ID of user who triggered the webhook event
 	WebhookEventType        string              // Webhook event type for e.g. data.delete.initiated
@@ -43,18 +42,18 @@ type WebhookDelivery struct {
 	StatusDescription       string              // Describe the status for e.g. Reason for failure
 }
 
-func webhookCollection() *mongo.Collection {
+func WebhookCollection() *mongo.Collection {
 	return database.DB.Client.Database(database.DB.Name).Collection("webhooks")
 }
 
-func webhookDeliveryCollection() *mongo.Collection {
+func WebhookDeliveryCollection() *mongo.Collection {
 	return database.DB.Client.Database(database.DB.Name).Collection("webhookDeliveries")
 }
 
 // CreateWebhook Adds a webhook for an organisation
 func CreateWebhook(webhook Webhook) (Webhook, error) {
 
-	_, err := webhookCollection().InsertOne(context.TODO(), &webhook)
+	_, err := WebhookCollection().InsertOne(context.TODO(), &webhook)
 	if err != nil {
 		return webhook, err
 	}
@@ -62,27 +61,19 @@ func CreateWebhook(webhook Webhook) (Webhook, error) {
 }
 
 // GetByOrgID Gets a webhook by organisation ID and webhook ID
-func GetByOrgID(webhookID, orgID string) (result Webhook, err error) {
-	webhookId, err := primitive.ObjectIDFromHex(webhookID)
-	if err != nil {
-		return result, err
-	}
+func GetByOrgID(webhookId, orgID string) (result Webhook, err error) {
 
-	err = webhookCollection().FindOne(context.TODO(), bson.M{"_id": webhookId, "orgid": orgID}).Decode(&result)
+	err = WebhookCollection().FindOne(context.TODO(), bson.M{"_id": webhookId, "orgid": orgID}).Decode(&result)
 
 	return result, err
 }
 
 // DeleteWebhook Deletes a webhook for an organisation
-func DeleteWebhook(webhookID string) error {
-	webhookId, err := primitive.ObjectIDFromHex(webhookID)
-	if err != nil {
-		return err
-	}
+func DeleteWebhook(webhookId string) error {
 
 	filter := bson.M{"_id": webhookId}
 
-	_, err = webhookCollection().DeleteOne(context.TODO(), filter)
+	_, err := WebhookCollection().DeleteOne(context.TODO(), filter)
 	if err != nil {
 		return err
 	}
@@ -96,7 +87,7 @@ func UpdateWebhook(webhook Webhook) (Webhook, error) {
 	filter := bson.M{"_id": webhook.ID}
 	update := bson.M{"$set": webhook}
 
-	_, err := webhookCollection().UpdateOne(context.TODO(), filter, update)
+	_, err := WebhookCollection().UpdateOne(context.TODO(), filter, update)
 	return webhook, err
 }
 
@@ -104,7 +95,7 @@ func UpdateWebhook(webhook Webhook) (Webhook, error) {
 func GetActiveWebhooksByOrgID(orgID string) (results []Webhook, err error) {
 	filter := bson.M{"orgid": orgID, "disabled": false, "isdeleted": false}
 
-	cursor, err := webhookCollection().Find(context.TODO(), filter)
+	cursor, err := WebhookCollection().Find(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +111,7 @@ func GetActiveWebhooksByOrgID(orgID string) (results []Webhook, err error) {
 // GetWebhookCountByPayloadURL Gets the count of webhooks with same payload URL for an organisation
 func GetWebhookCountByPayloadURL(orgID string, payloadURL string) (count int64, err error) {
 
-	count, err = webhookCollection().CountDocuments(context.TODO(), bson.M{"orgid": orgID, "payloadurl": payloadURL})
+	count, err = WebhookCollection().CountDocuments(context.TODO(), bson.M{"orgid": orgID, "payloadurl": payloadURL})
 
 	return count, err
 }
@@ -131,7 +122,7 @@ func GetAllWebhooksByOrgID(orgID string) (results []Webhook, err error) {
 
 	options := options.Find().SetSort(bson.D{{Key: "timestamp", Value: -1}})
 
-	cursor, err := webhookCollection().Find(context.TODO(), filter, options)
+	cursor, err := WebhookCollection().Find(context.TODO(), filter, options)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +141,7 @@ func GetLastWebhookDelivery(webhookID string) (result WebhookDelivery, err error
 
 	options := options.FindOne().SetSort(bson.D{{Key: "executionstarttimestamp", Value: -1}})
 
-	err = webhookDeliveryCollection().FindOne(context.TODO(), filter, options).Decode(&result)
+	err = WebhookDeliveryCollection().FindOne(context.TODO(), filter, options).Decode(&result)
 	if err != nil {
 		return WebhookDelivery{}, err
 	}
@@ -161,19 +152,15 @@ func GetLastWebhookDelivery(webhookID string) (result WebhookDelivery, err error
 // GetWebhookByPayloadURL Get the webhook for an organisation by payload URL
 func GetWebhookByPayloadURL(orgID string, payloadURL string) (result Webhook, err error) {
 
-	err = webhookCollection().FindOne(context.TODO(), bson.M{"orgid": orgID, "payloadurl": payloadURL}).Decode(&result)
+	err = WebhookCollection().FindOne(context.TODO(), bson.M{"orgid": orgID, "payloadurl": payloadURL}).Decode(&result)
 
 	return result, err
 }
 
 // GetWebhookDeliveryByID Gets payload delivery details by ID
-func GetWebhookDeliveryByID(webhookID string, webhookDeliveryID string) (result WebhookDelivery, err error) {
-	webhookDeliveryId, err := primitive.ObjectIDFromHex(webhookDeliveryID)
-	if err != nil {
-		return result, err
-	}
+func GetWebhookDeliveryByID(webhookID string, webhookDeliveryId string) (result WebhookDelivery, err error) {
 
-	err = webhookDeliveryCollection().FindOne(context.TODO(), bson.M{"webhookid": webhookID, "_id": webhookDeliveryId}).Decode(&result)
+	err = WebhookDeliveryCollection().FindOne(context.TODO(), bson.M{"webhookid": webhookID, "_id": webhookDeliveryId}).Decode(&result)
 
 	return result, err
 }
@@ -185,7 +172,7 @@ func GetAllDeliveryByWebhookId(webhookId string) (results []WebhookDelivery, err
 	options := options.Find()
 	options.SetSort(bson.D{{Key: "executionstarttimestamp", Value: -1}})
 
-	cursor, err := webhookDeliveryCollection().Find(context.TODO(), filter, options)
+	cursor, err := WebhookDeliveryCollection().Find(context.TODO(), filter, options)
 	if err != nil {
 		return results, err
 	}
@@ -210,7 +197,7 @@ func (whRepo *WebhookRepository) Init(organisationId string) {
 // CreateWebhook Adds a webhook for an organisation
 func (whRepo *WebhookRepository) CreateWebhook(webhook Webhook) (Webhook, error) {
 
-	_, err := webhookCollection().InsertOne(context.TODO(), &webhook)
+	_, err := WebhookCollection().InsertOne(context.TODO(), &webhook)
 	if err != nil {
 		return webhook, err
 	}
@@ -221,22 +208,18 @@ func (whRepo *WebhookRepository) CreateWebhook(webhook Webhook) (Webhook, error)
 func (whRepo *WebhookRepository) GetWebhookCountByPayloadURL(payloadURL string) (count int64, err error) {
 	filter := common.CombineFilters(whRepo.DefaultFilter, bson.M{"payloadurl": payloadURL})
 
-	count, err = webhookCollection().CountDocuments(context.TODO(), filter)
+	count, err = WebhookCollection().CountDocuments(context.TODO(), filter)
 
 	return count, err
 }
 
 // GetByOrgID Gets a webhook by organisation ID and webhook ID
-func (whRepo *WebhookRepository) GetByOrgID(webhookID string) (Webhook, error) {
+func (whRepo *WebhookRepository) GetByOrgID(webhookId string) (Webhook, error) {
 	var result Webhook
-	webhookId, err := primitive.ObjectIDFromHex(webhookID)
-	if err != nil {
-		return result, err
-	}
 
 	filter := common.CombineFilters(whRepo.DefaultFilter, bson.M{"_id": webhookId})
 
-	err = webhookCollection().FindOne(context.TODO(), filter).Decode(&result)
+	err := WebhookCollection().FindOne(context.TODO(), filter).Decode(&result)
 
 	return result, err
 }
@@ -245,7 +228,7 @@ func (whRepo *WebhookRepository) GetByOrgID(webhookID string) (Webhook, error) {
 func (whRepo *WebhookRepository) GetWebhookByPayloadURL(payloadURL string) (result Webhook, err error) {
 	filter := common.CombineFilters(whRepo.DefaultFilter, bson.M{"payloadurl": payloadURL})
 
-	err = webhookCollection().FindOne(context.TODO(), filter).Decode(&result)
+	err = WebhookCollection().FindOne(context.TODO(), filter).Decode(&result)
 
 	return result, err
 }
@@ -255,7 +238,7 @@ func (whRepo *WebhookRepository) UpdateWebhook(webhook Webhook) (Webhook, error)
 	filter := bson.M{"_id": webhook.ID, "orgid": webhook.OrganisationId, "isdeleted": false}
 	update := bson.M{"$set": webhook}
 
-	_, err := webhookCollection().UpdateOne(context.TODO(), filter, update)
+	_, err := WebhookCollection().UpdateOne(context.TODO(), filter, update)
 	return webhook, err
 }
 
@@ -265,7 +248,7 @@ func (whRepo *WebhookRepository) GetAllWebhooksByOrgID() (results []Webhook, err
 
 	options := options.Find().SetSort(bson.D{{Key: "timestamp", Value: -1}})
 
-	cursor, err := webhookCollection().Find(context.TODO(), filter, options)
+	cursor, err := WebhookCollection().Find(context.TODO(), filter, options)
 	if err != nil {
 		return nil, err
 	}

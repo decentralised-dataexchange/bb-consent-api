@@ -111,7 +111,7 @@ func LoadOrganisationAdminAvatarImageAssets(u user.User, hostUrl string) (user.U
 	// Update avatar image for organisation
 	u.ImageURL = "https://" + hostUrl + "/v2/onboard/admin/avatarimage"
 	u.ImageID = avatarImageId
-	u, err = user.Update(u.ID.Hex(), u)
+	u, err = user.Update(u.ID, u)
 	if err != nil {
 		return user.User{}, err
 	}
@@ -128,7 +128,7 @@ func LoadImageAssetsForSingleTenantConfiguration() error {
 
 	// Check if cover image is present
 	if len(strings.TrimSpace(o.CoverImageID)) == 0 {
-		err = loadCoverImageAssets(o.ID.Hex())
+		err = loadCoverImageAssets(o.ID)
 		if err != nil {
 			return err
 		}
@@ -136,7 +136,7 @@ func LoadImageAssetsForSingleTenantConfiguration() error {
 
 	// Check if logo image is present
 	if len(strings.TrimSpace(o.LogoImageID)) == 0 {
-		err = loadLogoImageAssets(o.ID.Hex())
+		err = loadLogoImageAssets(o.ID)
 		if err != nil {
 			return err
 		}

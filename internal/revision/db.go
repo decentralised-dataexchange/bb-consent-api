@@ -5,7 +5,6 @@ import (
 
 	"github.com/bb-consent/api/internal/database"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -71,14 +70,10 @@ func ListAllByPolicyId(policyId string) ([]Revision, error) {
 }
 
 // GetByRevisionId Get revision by id
-func GetByRevisionId(revisionID string) (Revision, error) {
+func GetByRevisionId(revisionId string) (Revision, error) {
 	var result Revision
-	revisionId, err := primitive.ObjectIDFromHex(revisionID)
-	if err != nil {
-		return result, err
-	}
 
-	err = Collection().FindOne(context.TODO(), bson.M{"_id": revisionId}).Decode(&result)
+	err := Collection().FindOne(context.TODO(), bson.M{"_id": revisionId}).Decode(&result)
 	if err != nil {
 		return Revision{}, err
 	}
@@ -150,15 +145,10 @@ func ListAllByDataAttributeId(dataAttributeId string) ([]Revision, error) {
 }
 
 // GetByRevisionIdAndSchema gets revision by id and schema
-func GetByRevisionIdAndSchema(revisionID string, schemaName string) (Revision, error) {
+func GetByRevisionIdAndSchema(revisionId string, schemaName string) (Revision, error) {
 	var result Revision
 
-	revisionId, err := primitive.ObjectIDFromHex(revisionID)
-	if err != nil {
-		return result, err
-	}
-
-	err = Collection().FindOne(context.TODO(), bson.M{"_id": revisionId, "schemaname": schemaName}).Decode(&result)
+	err := Collection().FindOne(context.TODO(), bson.M{"_id": revisionId, "schemaname": schemaName}).Decode(&result)
 	if err != nil {
 		return result, err
 	}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/bb-consent/api/internal/dataagreement"
 	"github.com/bb-consent/api/internal/org"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // DataAgreementRecordsHistory
@@ -43,6 +44,8 @@ func DataAgreementRecordHistoryAdd(darH DataAgreementRecordsHistory, optIn bool)
 			value, dataAgreement.Purpose, o.Name)
 	}
 	log.Printf("The log is: %s", darH.Log)
+
+	darH.Id = primitive.NewObjectID().Hex()
 
 	_, err = Add(darH)
 	if err != nil {

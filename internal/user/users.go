@@ -16,7 +16,6 @@ import (
 	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/database"
 	"github.com/bb-consent/api/internal/org"
-	"github.com/bb-consent/api/internal/orgtype"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -25,26 +24,12 @@ import (
 
 // Org Organization snippet stored as part of user
 type Org struct {
-	OrgID        primitive.ObjectID `bson:"orgid,omitempty"`
-	Name         string
-	Location     string
-	Type         string
-	TypeID       primitive.ObjectID
-	EulaAccepted bool
-}
-type OrgV2 struct {
-	OrgID        primitive.ObjectID `bson:"orgid,omitempty" json:"id"`
-	Name         string             `json:"name"`
-	Location     string             `json:"location"`
-	Type         string             `json:"type"`
-	TypeID       primitive.ObjectID `bson:"typeid,omitempty" json:"typeId"`
-	EulaAccepted bool               `json:"eulaAccepted"`
-}
-
-// ClientInfo The client device details.
-type ClientInfo struct {
-	Token string `json:"token"`
-	Type  int    `json:"type"`
+	OrgID        string `bson:"orgid,omitempty" json:"id"`
+	Name         string `json:"name"`
+	Location     string `json:"location"`
+	Type         string `json:"type"`
+	TypeID       string `bson:"typeid,omitempty" json:"typeId"`
+	EulaAccepted bool   `json:"eulaAccepted"`
 }
 
 // Role Role assignment to user
@@ -52,86 +37,59 @@ type Role struct {
 	RoleID int    `json:"roleId"`
 	OrgID  string `json:"orgId"`
 }
-type RoleV2 struct {
-	RoleID int    `json:"roleId"`
-	OrgID  string `json:"orgId"`
-}
 
 // User data type
 type User struct {
-	ID                primitive.ObjectID `bson:"_id,omitempty"`
-	Name              string             `json:"Name"`
-	IamID             string             `json:"IamID"`
-	Email             string             `json:"Email"`
-	Phone             string             `json:"Phone"`
-	ImageID           string             `json:"ImageID"`
-	ImageURL          string             `json:"ImageURL"`
-	LastVisit         string             `json:"LastVisit"`
-	Client            ClientInfo         `json:"Client"`
-	Orgs              []Org              `json:"Orgs"`
-	APIKey            string             `json:"APIKey"`
-	Roles             []Role             `json:"roles"`
-	IncompleteProfile bool               `json:"IncompleteProfile"`
+	ID                 string `bson:"_id,omitempty" json:"id"`
+	Name               string `json:"name"`
+	ExternalId         string `json:"externalId"`
+	ExternalIdType     string `json:"externalIdType"`
+	IdentityProviderId string `json:"identityProviderId"`
+	IamID              string `json:"iamId"`
+	Email              string `json:"email"`
+	Phone              string `json:"phone"`
+	ImageID            string `json:"imageId"`
+	ImageURL           string `json:"imageUrl"`
+	LastVisit          string `json:"lastVisit"` //TODO Replace with ISODate()
+	Orgs               []Org  `json:"orgs"`
+	APIKey             string `json:"apiKey"`
+	Roles              []Role `json:"roles"`
+	IncompleteProfile  bool   `json:"incompleteProfile"`
 }
 
-type UserV2 struct {
-	ID                 primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Name               string             `json:"name"`
-	ExternalId         string             `json:"externalId"`
-	ExternalIdType     string             `json:"externalIdType"`
-	IdentityProviderId string             `json:"identityProviderId"`
-	IamID              string             `json:"iamId"`
-	Email              string             `json:"email"`
-	Phone              string             `json:"phone"`
-	ImageID            string             `json:"imageId"`
-	ImageURL           string             `json:"imageUrl"`
-	LastVisit          string             `json:"lastVisit"` //TODO Replace with ISODate()
-	Orgs               []OrgV2            `json:"orgs"`
-	APIKey             string             `json:"apiKey"`
-	Roles              []RoleV2           `json:"roles"`
-	IncompleteProfile  bool               `json:"incompleteProfile"`
-}
-
-func collection() *mongo.Collection {
+func Collection() *mongo.Collection {
 	return database.DB.Client.Database(database.DB.Name).Collection("users")
 }
 
 // Add Adds an user to the collection
 func Add(user User) (User, error) {
 
-	user.ID = primitive.NewObjectID()
+	user.ID = primitive.NewObjectID().Hex()
 	user.LastVisit = time.Now().Format(time.RFC3339)
 
-	_, err := collection().InsertOne(context.TODO(), &user)
+	_, err := Collection().InsertOne(context.TODO(), &user)
 
 	return user, err
 }
 
 // Update Update the user details
-func Update(userID string, u User) (User, error) {
-	userId, err := primitive.ObjectIDFromHex(userID)
+func Update(userId string, u User) (User, error) {
+
+	_, err := Collection().UpdateOne(context.TODO(), bson.M{"_id": userId}, bson.M{"$set": u})
 	if err != nil {
 		return User{}, err
 	}
 
-	_, err = collection().UpdateOne(context.TODO(), bson.M{"_id": userId}, bson.M{"$set": u})
-	if err != nil {
-		return User{}, err
-	}
-
-	u, err = Get(userID)
+	u, err = Get(userId)
 	return u, err
 }
 
 // Delete Deletes the user by ID
-func Delete(userID string) error {
-	userId, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return err
-	}
+func Delete(userId string) error {
+
 	filter := bson.M{"_id": userId}
 
-	_, err = collection().DeleteOne(context.TODO(), filter)
+	_, err := Collection().DeleteOne(context.TODO(), filter)
 
 	return err
 }
@@ -140,19 +98,7 @@ func Delete(userID string) error {
 func GetByIamID(iamID string) (User, error) {
 	var result User
 
-	err := collection().FindOne(context.TODO(), bson.M{"iamid": iamID}).Decode(&result)
-	if err != nil {
-		log.Printf("Failed to find user id:%v err:%v", iamID, err)
-		return result, err
-	}
-
-	return result, err
-}
-
-func GetByIamIDV2(iamID string) (UserV2, error) {
-	var result UserV2
-
-	err := collection().FindOne(context.TODO(), bson.M{"iamid": iamID}).Decode(&result)
+	err := Collection().FindOne(context.TODO(), bson.M{"iamid": iamID}).Decode(&result)
 	if err != nil {
 		log.Printf("Failed to find user id:%v err:%v", iamID, err)
 		return result, err
@@ -162,21 +108,16 @@ func GetByIamIDV2(iamID string) (UserV2, error) {
 }
 
 // Get Gets a single user by given id
-func Get(userID string) (User, error) {
-	c := collection()
-
-	userId, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return User{}, err
-	}
+func Get(userId string) (User, error) {
+	c := Collection()
 
 	var result User
 
 	// Find the user by ID
 	filter := bson.M{"_id": userId}
-	err = c.FindOne(context.TODO(), filter).Decode(&result)
+	err := c.FindOne(context.TODO(), filter).Decode(&result)
 	if err != nil {
-		log.Printf("Failed to find user ID: %v, error: %v", userID, err)
+		log.Printf("Failed to find user ID: %v, error: %v", userId, err)
 		return result, err
 	}
 
@@ -186,7 +127,7 @@ func Get(userID string) (User, error) {
 	updateOptions := options.Update().SetUpsert(false)
 	_, err = c.UpdateOne(context.TODO(), filter, update, updateOptions)
 	if err != nil {
-		log.Printf("Failed to update LastVisit field for id:%v \n", userID)
+		log.Printf("Failed to update LastVisit field for id:%v", userId)
 	}
 
 	return result, err
@@ -202,7 +143,7 @@ func GetByEmail(email string) (User, error) {
 
 	findOptions := options.FindOne().SetProjection(projection)
 
-	err := collection().FindOne(context.TODO(), filter, findOptions).Decode(&u)
+	err := Collection().FindOne(context.TODO(), filter, findOptions).Decode(&u)
 
 	return u, err
 }
@@ -213,7 +154,7 @@ func EmailExist(email string) (bool, error) {
 
 	countOptions := options.Count().SetLimit(1)
 
-	count, err := collection().CountDocuments(context.TODO(), filter, countOptions)
+	count, err := Collection().CountDocuments(context.TODO(), filter, countOptions)
 	if err != nil {
 		return false, err
 	}
@@ -227,7 +168,7 @@ func PhoneNumberExist(phone string) (bool, error) {
 
 	countOptions := options.Count().SetLimit(1)
 
-	count, err := collection().CountDocuments(context.TODO(), filter, countOptions)
+	count, err := Collection().CountDocuments(context.TODO(), filter, countOptions)
 	if err != nil {
 		return false, err
 	}
@@ -235,155 +176,21 @@ func PhoneNumberExist(phone string) (bool, error) {
 	return count > 0, nil
 }
 
-// UpdateClientDeviceInfo Update the client device info
-func UpdateClientDeviceInfo(userID string, client ClientInfo) (User, error) {
-	userId, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return User{}, err
-	}
-
-	filter := bson.M{"_id": userId}
-	update := bson.M{"$set": bson.M{"client": client}}
-
-	_, err = collection().UpdateOne(context.TODO(), filter, update)
-	if err != nil {
-		return User{}, err
-	}
-
-	//TODO: Is this DB get necessary?
-	u, err := Get(userID)
-	return u, err
-}
-
 // AddRole Add roles to users
-func AddRole(userID string, role Role) (User, error) {
-	userId, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return User{}, err
-	}
+func AddRole(userId string, role Role) (User, error) {
 
-	_, err = collection().UpdateOne(context.TODO(), bson.M{"_id": userId}, bson.M{"$push": bson.M{"roles": role}})
+	_, err := Collection().UpdateOne(context.TODO(), bson.M{"_id": userId}, bson.M{"$push": bson.M{"roles": role}})
 	if err != nil {
 		return User{}, err
 	}
-	u, err := Get(userID)
+	u, err := Get(userId)
 	return u, err
-}
-
-// GetOrgSubscribeUsers Get list of users subscribed to an organizations
-func GetOrgSubscribeUsers(orgID string, startID string, limit int) ([]User, string, error) {
-	var results []User
-	var err error
-	limit = 10000
-
-	findOptions := options.Find()
-	findOptions.SetSort(bson.D{{Key: "_id", Value: -1}})
-	findOptions.SetLimit(int64(limit))
-
-	orgId, err := primitive.ObjectIDFromHex(orgID)
-	if err != nil {
-		return results, "", err
-	}
-
-	filter := bson.M{"orgs.orgid": orgId}
-	if startID != "" {
-		startId, err := primitive.ObjectIDFromHex(startID)
-		if err != nil {
-			return results, "", err
-		}
-
-		filter["_id"] = bson.M{"$lt": startId}
-	}
-
-	cursor, err := collection().Find(context.TODO(), filter, findOptions)
-	if err != nil {
-		return results, "", err
-	}
-	defer cursor.Close(context.TODO())
-
-	err = cursor.All(context.TODO(), &results)
-
-	lastID := ""
-	if err == nil {
-		if len(results) != 0 && len(results) == (limit) {
-			lastID = results[len(results)-1].ID.Hex()
-		}
-	}
-
-	return results, lastID, nil
-
-}
-
-// GetOrgSubscribeIter Get Iterator to users subscribed to an organizations
-func GetOrgSubscribeIter(orgID string) (*mongo.Cursor, error) {
-	orgId, err := primitive.ObjectIDFromHex(orgID)
-	if err != nil {
-		return nil, err
-	}
-
-	filter := bson.M{"orgs.orgid": orgId}
-	cursor, err := collection().Find(context.TODO(), filter)
-	if err != nil {
-		return nil, err
-	}
-
-	return cursor, nil
-}
-
-// GetOrgSubscribeCount Get count of users subscribed to an organizations
-func GetOrgSubscribeCount(orgID string) (int64, error) {
-	orgId, err := primitive.ObjectIDFromHex(orgID)
-	if err != nil {
-		return 0, err
-	}
-	filter := bson.M{"orgs.orgid": orgId}
-
-	count, err := collection().CountDocuments(context.TODO(), filter)
-	if err != nil {
-		log.Printf("Failed to find user count by org id:%v err:%v", orgID, err)
-		return 0, err
-	}
-
-	return count, err
-}
-
-// UpdateOrgTypeOfSubscribedUsers Updates the embedded organization type snippet for all users
-func UpdateOrgTypeOfSubscribedUsers(orgType orgtype.OrgType) error {
-	filter := bson.M{"orgs.typeid": orgType.ID}
-
-	cursor, err := collection().Find(context.TODO(), filter)
-	if err != nil {
-		return err
-	}
-	defer cursor.Close(context.TODO())
-
-	for cursor.Next(context.TODO()) {
-		var u User
-		err := cursor.Decode(&u)
-		if err != nil {
-			return err
-		}
-
-		for i := range u.Orgs {
-			if u.Orgs[i].TypeID == orgType.ID {
-				u.Orgs[i].Type = orgType.Type
-			}
-		}
-
-		_, err = collection().ReplaceOne(context.TODO(), bson.M{"_id": u.ID}, u)
-		if err != nil {
-			return err
-		}
-	}
-
-	log.Println("Successfully updated users for organization type name change")
-	return nil
 }
 
 // UpdateOrganizationsSubscribedUsers Updates the embedded organization snippet for all users
 func UpdateOrganizationsSubscribedUsers(org org.Organization) error {
 	filter := bson.M{"orgs.orgid": org.ID}
-	cursor, err := collection().Find(context.TODO(), filter)
+	cursor, err := Collection().Find(context.TODO(), filter)
 	if err != nil {
 		return err
 	}
@@ -403,129 +210,13 @@ func UpdateOrganizationsSubscribedUsers(org org.Organization) error {
 			}
 		}
 
-		_, err = collection().ReplaceOne(context.TODO(), bson.M{"_id": result.ID}, result)
+		_, err = Collection().ReplaceOne(context.TODO(), bson.M{"_id": result.ID}, result)
 		if err != nil {
 			return err
 		}
 	}
 
 	return nil
-}
-
-// UpdateOrganization Updates organization to user collection
-func UpdateOrganization(userID string, org Org) (User, error) {
-	var result User
-
-	userId, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return User{}, err
-	}
-
-	filter := bson.M{"_id": userId}
-
-	update := bson.M{"$push": bson.M{"orgs": org}}
-
-	_, err = collection().UpdateOne(context.TODO(), filter, update)
-	if err != nil {
-		return result, err
-	}
-
-	err = collection().FindOne(context.TODO(), filter).Decode(&result)
-	if err != nil {
-		return result, err
-	}
-
-	return result, err
-}
-
-func GetUserOrgDetails(u User, oID string) (org Org, found bool) {
-	for _, o := range u.Orgs {
-		if o.OrgID.Hex() == oID {
-			return o, true
-		}
-	}
-	return org, false
-}
-
-// DeleteOrganization Remove user from an organization
-func DeleteOrganization(userID string, orgID string) (User, error) {
-
-	u, err := Get(userID)
-	if err != nil {
-		return User{}, err
-	}
-	org, _ := GetUserOrgDetails(u, orgID)
-	//Check found == true
-
-	userId, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return User{}, err
-	}
-
-	filter := bson.M{"_id": userId}
-	update := bson.M{"$pull": bson.M{"orgs": org}}
-
-	var result User
-
-	_, err = collection().UpdateOne(context.TODO(), filter, update)
-	if err != nil {
-		return result, err
-	}
-
-	err = collection().FindOne(context.TODO(), filter).Decode(&result)
-
-	return result, err
-}
-
-// RemoveRole Remove role of an user
-func RemoveRole(userID string, role Role) (User, error) {
-	userId, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return User{}, err
-	}
-	filter := bson.M{"_id": userId}
-	update := bson.M{"$pull": bson.M{"roles": role}}
-
-	_, err = collection().UpdateOne(context.TODO(), filter, update)
-	if err != nil {
-		return User{}, err
-	}
-
-	u, err := Get(userID)
-	return u, err
-}
-
-// UpdateAPIKey update apikey to user
-func UpdateAPIKey(userID string, apiKey string) error {
-	userId, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return err
-	}
-	filter := bson.M{"_id": userId}
-	update := bson.M{"$set": bson.M{"apikey": apiKey}}
-
-	_, err = collection().UpdateOne(context.TODO(), filter, update)
-	return err
-}
-
-// GetAPIKey Gets the API key of the user
-func GetAPIKey(userID string) (string, error) {
-	userId, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return "", err
-	}
-
-	projection := bson.M{"apikey": 1}
-	opts := options.FindOne().SetProjection(projection)
-
-	var result User
-	err = collection().FindOne(context.TODO(), bson.M{"_id": userId}, opts).Decode(&result)
-	if err != nil {
-		log.Printf("Failed to find user by id:%v err:%v", userID, err)
-		return "", err
-	}
-
-	return result.APIKey, err
 }
 
 type iamCredentials struct {

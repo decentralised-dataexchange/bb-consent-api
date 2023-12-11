@@ -85,7 +85,7 @@ func ConfigCreateApiKey(w http.ResponseWriter, r *http.Request) {
 	expiryTimestamp := expiryTime.UTC().Format("2006-01-02T15:04:05Z")
 
 	var newApiKey apikey.ApiKey
-	newApiKey.Id = primitive.NewObjectID()
+	newApiKey.Id = primitive.NewObjectID().Hex()
 	newApiKey.Name = apiKeyReq.Apikey.Name
 	newApiKey.Scopes = apiKeyReq.Apikey.Scopes
 	newApiKey.Apikey = key

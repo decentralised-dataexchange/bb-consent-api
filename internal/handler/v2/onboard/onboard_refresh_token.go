@@ -27,7 +27,7 @@ func refreshTokenForExternalIdpIssuedToken(refreshToken string) (*oauth2.Token, 
 
 	// Repository
 	idpRepo := idp.IdentityProviderRepository{}
-	idpRepo.Init(organisation.ID.Hex())
+	idpRepo.Init(organisation.ID)
 
 	// Fetch IDP details based on org Id
 	idp, err := idpRepo.GetByOrgId()

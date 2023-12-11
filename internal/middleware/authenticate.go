@@ -22,7 +22,7 @@ func createIndividual(externalId string, r *http.Request, organisationId string,
 	individualRepo := individual.IndividualRepository{}
 	individualRepo.Init(organisationId)
 
-	newIndividual.Id = primitive.NewObjectID()
+	newIndividual.Id = primitive.NewObjectID().Hex()
 	newIndividual.Email = token.GetUserName(r)
 	newIndividual.ExternalId = externalId
 	newIndividual.Name = token.GetName(r)
@@ -74,7 +74,7 @@ func verifyTokenAndIdentifyRole(accessToken string, r *http.Request) error {
 
 	// Repository
 	individualRepo := individual.IndividualRepository{}
-	individualRepo.Init(organization.ID.Hex())
+	individualRepo.Init(organization.ID)
 
 	if err != nil {
 		// Individual doesn't belong to Consent BB IDP
@@ -83,7 +83,7 @@ func verifyTokenAndIdentifyRole(accessToken string, r *http.Request) error {
 
 		// Repository
 		idpRepo := idp.IdentityProviderRepository{}
-		idpRepo.Init(organization.ID.Hex())
+		idpRepo.Init(organization.ID)
 
 		// Fetch IDP for the org
 		idp, err := idpRepo.GetByOrgId()
@@ -110,7 +110,7 @@ func verifyTokenAndIdentifyRole(accessToken string, r *http.Request) error {
 		individual, err = individualRepo.GetByExternalId(externalId)
 		if err != nil {
 			log.Println("Creating individual")
-			individual, err = createIndividual(externalId, r, organization.ID.Hex(), idp.Id.Hex())
+			individual, err = createIndividual(externalId, r, organization.ID, idp.Id)
 			if err != nil {
 				m := "User does not exist, Authorization failed"
 				error_handler.Exit(http.StatusBadRequest, m)
@@ -118,7 +118,7 @@ func verifyTokenAndIdentifyRole(accessToken string, r *http.Request) error {
 		}
 
 		// Set user Id and user roles to request context
-		token.SetUserToRequestContext(r, individual.Id.Hex(), rbac.ROLE_USER)
+		token.SetUserToRequestContext(r, individual.Id, rbac.ROLE_USER)
 
 		return nil
 
@@ -138,14 +138,14 @@ func verifyTokenAndIdentifyRole(accessToken string, r *http.Request) error {
 		}
 
 		// Set user Id and user roles to request context
-		token.SetUserToRequestContext(r, individual.Id.Hex(), rbac.ROLE_USER)
+		token.SetUserToRequestContext(r, individual.Id, rbac.ROLE_USER)
 	}
 
 	// Set user Id and user roles to request context
 	if len(user.Roles) > 0 {
-		token.SetUserToRequestContext(r, user.ID.Hex(), rbac.ROLE_ADMIN)
+		token.SetUserToRequestContext(r, user.ID, rbac.ROLE_ADMIN)
 	} else {
-		token.SetUserToRequestContext(r, user.ID.Hex(), rbac.ROLE_USER)
+		token.SetUserToRequestContext(r, user.ID, rbac.ROLE_USER)
 	}
 
 	return nil

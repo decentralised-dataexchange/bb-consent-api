@@ -42,6 +42,10 @@ func StartApiCmdHandler(cmd *cobra.Command, args []string) {
 	}
 	log.Println("Data base session opened")
 
+	// Applying migration
+	log.Println("Applying migrate")
+	migrate.Migrate()
+
 	// Webhooks
 	webhook.Init(loadedConfig)
 	log.Println("Webhooks configuration initialized")
@@ -88,10 +92,6 @@ func StartApiCmdHandler(cmd *cobra.Command, args []string) {
 	default:
 		tenant.SingleTenantConfiguration(loadedConfig)
 	}
-
-	// Applying migration
-	log.Println("Applying migrate")
-	migrate.Migrate()
 
 	// Router
 	router := mux.NewRouter()

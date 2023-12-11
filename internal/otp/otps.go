@@ -9,32 +9,23 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// Otp Otp holds the generated OTP info
 type Otp struct {
-	ID       primitive.ObjectID `bson:"_id,omitempty"`
-	Name     string
-	Email    string
-	Phone    string
-	Otp      string
-	Verified bool
-}
-type OtpV2 struct {
-	ID       primitive.ObjectID `bson:"_id,omitempty"`
+	ID       string `bson:"_id,omitempty"`
 	Phone    string
 	Otp      string
 	Verified bool
 }
 
-func collection() *mongo.Collection {
+func Collection() *mongo.Collection {
 	return database.DB.Client.Database(database.DB.Name).Collection("otps")
 }
 
 // Add Adds the otp to the db
 func Add(otp Otp) (Otp, error) {
 
-	otp.ID = primitive.NewObjectID()
+	otp.ID = primitive.NewObjectID().Hex()
 
-	_, err := collection().InsertOne(context.TODO(), otp)
+	_, err := Collection().InsertOne(context.TODO(), otp)
 	if err != nil {
 		return Otp{}, err
 	}
@@ -42,27 +33,10 @@ func Add(otp Otp) (Otp, error) {
 	return otp, nil
 }
 
-// Add Adds the otp to the db
-func AddV2(otp OtpV2) (OtpV2, error) {
-
-	otp.ID = primitive.NewObjectID()
-
-	_, err := collection().InsertOne(context.TODO(), otp)
-	if err != nil {
-		return OtpV2{}, err
-	}
-
-	return otp, nil
-}
-
 // Delete Deletes the otp entry by ID
-func Delete(otpID string) error {
-	otpId, err := primitive.ObjectIDFromHex(otpID)
-	if err != nil {
-		return err
-	}
+func Delete(otpId string) error {
 
-	_, err = collection().DeleteOne(context.TODO(), bson.M{"_id": otpId})
+	_, err := Collection().DeleteOne(context.TODO(), bson.M{"_id": otpId})
 	if err != nil {
 		return err
 	}
@@ -75,7 +49,7 @@ func UpdateVerified(o Otp) error {
 	filter := bson.M{"_id": o.ID}
 	update := bson.M{"$set": bson.M{"verified": o.Verified}}
 
-	_, err := collection().UpdateOne(context.TODO(), filter, update)
+	_, err := Collection().UpdateOne(context.TODO(), filter, update)
 
 	return err
 }
@@ -84,7 +58,7 @@ func UpdateVerified(o Otp) error {
 func PhoneNumberExist(phone string) (o Otp, err error) {
 	filter := bson.M{"phone": phone}
 
-	err = collection().FindOne(context.TODO(), filter).Decode(&o)
+	err = Collection().FindOne(context.TODO(), filter).Decode(&o)
 	if err == mongo.ErrNoDocuments {
 		return o, err
 	} else if err != nil {
@@ -99,7 +73,7 @@ func SearchPhone(phone string) (Otp, error) {
 	filter := bson.M{"phone": phone}
 
 	var result Otp
-	err := collection().FindOne(context.TODO(), filter).Decode(&result)
+	err := Collection().FindOne(context.TODO(), filter).Decode(&result)
 	if err != nil {
 		return result, err
 	}

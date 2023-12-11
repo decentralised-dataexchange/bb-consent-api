@@ -26,7 +26,7 @@ type Admin struct {
 
 // Organization organization data type
 type Organization struct {
-	ID            primitive.ObjectID `bson:"_id,omitempty"`
+	ID            string `bson:"_id,omitempty"`
 	Name          string
 	CoverImageID  string
 	CoverImageURL string
@@ -55,7 +55,7 @@ func Collection() *mongo.Collection {
 // Add Adds an organization
 func Add(org Organization) (Organization, error) {
 
-	org.ID = primitive.NewObjectID()
+	org.ID = primitive.NewObjectID().Hex()
 	_, err := Collection().InsertOne(context.TODO(), &org)
 	if err != nil {
 		return org, err
@@ -64,14 +64,10 @@ func Add(org Organization) (Organization, error) {
 }
 
 // Get Gets a single organization by given id
-func Get(organizationID string) (Organization, error) {
-	orgID, err := primitive.ObjectIDFromHex(organizationID)
-	if err != nil {
-		return Organization{}, err
-	}
+func Get(organizationId string) (Organization, error) {
 
 	var result Organization
-	err = Collection().FindOne(context.TODO(), bson.M{"_id": orgID}).Decode(&result)
+	err := Collection().FindOne(context.TODO(), bson.M{"_id": organizationId}).Decode(&result)
 
 	return result, err
 }
@@ -100,12 +96,8 @@ func Update(org Organization) (Organization, error) {
 
 // UpdateCoverImage Update the organization image
 func UpdateCoverImage(organizationID string, imageID string) (Organization, error) {
-	orgID, err := primitive.ObjectIDFromHex(organizationID)
-	if err != nil {
-		return Organization{}, err
-	}
 
-	_, err = Collection().UpdateOne(context.TODO(), bson.M{"_id": orgID}, bson.M{"$set": bson.M{"coverimageid": imageID}})
+	_, err := Collection().UpdateOne(context.TODO(), bson.M{"_id": organizationID}, bson.M{"$set": bson.M{"coverimageid": imageID}})
 	if err != nil {
 		return Organization{}, err
 	}
@@ -115,12 +107,8 @@ func UpdateCoverImage(organizationID string, imageID string) (Organization, erro
 
 // UpdateLogoImage Update the organization image
 func UpdateLogoImage(organizationID string, imageID string) (Organization, error) {
-	orgID, err := primitive.ObjectIDFromHex(organizationID)
-	if err != nil {
-		return Organization{}, err
-	}
 
-	_, err = Collection().UpdateOne(context.TODO(), bson.M{"_id": orgID}, bson.M{"$set": bson.M{"logoimageid": imageID}})
+	_, err := Collection().UpdateOne(context.TODO(), bson.M{"_id": organizationID}, bson.M{"$set": bson.M{"logoimageid": imageID}})
 	if err != nil {
 		return Organization{}, err
 	}
@@ -130,12 +118,8 @@ func UpdateLogoImage(organizationID string, imageID string) (Organization, error
 
 // AddAdminUsers Add admin users to organization
 func AddAdminUsers(organizationID string, admin Admin) (Organization, error) {
-	orgID, err := primitive.ObjectIDFromHex(organizationID)
-	if err != nil {
-		return Organization{}, err
-	}
 
-	_, err = Collection().UpdateOne(context.TODO(), bson.M{"_id": orgID}, bson.M{"$push": bson.M{"admins": admin}})
+	_, err := Collection().UpdateOne(context.TODO(), bson.M{"_id": organizationID}, bson.M{"$push": bson.M{"admins": admin}})
 	if err != nil {
 		return Organization{}, err
 	}
@@ -145,30 +129,22 @@ func AddAdminUsers(organizationID string, admin Admin) (Organization, error) {
 
 // GetAdminUsers Get admin users of organization
 func GetAdminUsers(organizationID string) (Organization, error) {
-	orgID, err := primitive.ObjectIDFromHex(organizationID)
-	if err != nil {
-		return Organization{}, err
-	}
 
-	filter := bson.M{"_id": orgID}
+	filter := bson.M{"_id": organizationID}
 	projection := bson.M{"admins": 1}
 
 	findOptions := options.FindOne().SetProjection(projection)
 
 	var result Organization
-	err = Collection().FindOne(context.TODO(), filter, findOptions).Decode(&result)
+	err := Collection().FindOne(context.TODO(), filter, findOptions).Decode(&result)
 
 	return result, err
 }
 
 // DeleteAdminUsers Delete admin users from organization
 func DeleteAdminUsers(organizationID string, admin Admin) (Organization, error) {
-	orgID, err := primitive.ObjectIDFromHex(organizationID)
-	if err != nil {
-		return Organization{}, err
-	}
 
-	_, err = Collection().UpdateOne(context.TODO(), bson.M{"_id": orgID}, bson.M{"$pull": bson.M{"admins": admin}})
+	_, err := Collection().UpdateOne(context.TODO(), bson.M{"_id": organizationID}, bson.M{"$pull": bson.M{"admins": admin}})
 	if err != nil {
 		return Organization{}, err
 	}
@@ -193,12 +169,8 @@ func UpdateOrganizationsOrgType(oType orgtype.OrgType) error {
 
 // SetEnabled Sets the enabled status to true/false
 func SetEnabled(organizationID string, enabled bool) (Organization, error) {
-	orgID, err := primitive.ObjectIDFromHex(organizationID)
-	if err != nil {
-		return Organization{}, err
-	}
 
-	_, err = Collection().UpdateOne(context.TODO(), bson.M{"_id": orgID}, bson.M{"$set": bson.M{"enabled": enabled}})
+	_, err := Collection().UpdateOne(context.TODO(), bson.M{"_id": organizationID}, bson.M{"$set": bson.M{"enabled": enabled}})
 	if err != nil {
 		return Organization{}, err
 	}
@@ -207,35 +179,26 @@ func SetEnabled(organizationID string, enabled bool) (Organization, error) {
 }
 
 // GetSubscribeMethod Get org subscribe method
-func GetSubscribeMethod(orgID string) (int, error) {
+func GetSubscribeMethod(orgId string) (int, error) {
 	var result Organization
-
-	orgId, err := primitive.ObjectIDFromHex(orgID)
-	if err != nil {
-		return result.Subs.Method, err
-	}
 
 	filter := bson.M{"_id": orgId}
 	projection := bson.M{"subs.method": 1}
 
 	findOptions := options.FindOne().SetProjection(projection)
 
-	err = Collection().FindOne(context.TODO(), filter, findOptions).Decode(&result)
+	err := Collection().FindOne(context.TODO(), filter, findOptions).Decode(&result)
 
 	return result.Subs.Method, err
 }
 
 // UpdateSubscribeMethod Update subscription method
-func UpdateSubscribeMethod(orgID string, method int) error {
-	orgId, err := primitive.ObjectIDFromHex(orgID)
-	if err != nil {
-		return err
-	}
+func UpdateSubscribeMethod(orgId string, method int) error {
 
 	filter := bson.M{"_id": orgId}
 	update := bson.M{"$set": bson.M{"subs.method": method}}
 
-	_, err = Collection().UpdateOne(context.TODO(), filter, update)
+	_, err := Collection().UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return err
 	}
@@ -244,16 +207,12 @@ func UpdateSubscribeMethod(orgID string, method int) error {
 }
 
 // UpdateSubscribeKey Update subscription key
-func UpdateSubscribeKey(orgID string, key string) error {
-	orgId, err := primitive.ObjectIDFromHex(orgID)
-	if err != nil {
-		return err
-	}
+func UpdateSubscribeKey(orgId string, key string) error {
 
 	filter := bson.M{"_id": orgId}
 	update := bson.M{"$set": bson.M{"subs.key": key}}
 
-	_, err = Collection().UpdateOne(context.TODO(), filter, update)
+	_, err := Collection().UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return err
 	}
@@ -262,19 +221,14 @@ func UpdateSubscribeKey(orgID string, key string) error {
 }
 
 // GetSubscribeKey Update subscription token
-func GetSubscribeKey(orgID string) (string, error) {
+func GetSubscribeKey(orgId string) (string, error) {
 	var result Organization
-
-	orgId, err := primitive.ObjectIDFromHex(orgID)
-	if err != nil {
-		return result.Subs.Key, err
-	}
 
 	filter := bson.M{"_id": orgId}
 	projection := bson.M{"subs.key": 1}
 	findOptions := options.FindOne().SetProjection(projection)
 
-	err = Collection().FindOne(context.TODO(), filter, findOptions).Decode(&result)
+	err := Collection().FindOne(context.TODO(), filter, findOptions).Decode(&result)
 
 	return result.Subs.Key, err
 }
@@ -283,16 +237,11 @@ func GetSubscribeKey(orgID string) (string, error) {
 func GetName(organizationID string) (string, error) {
 	var result Organization
 
-	orgID, err := primitive.ObjectIDFromHex(organizationID)
-	if err != nil {
-		return result.Name, err
-	}
-
-	filter := bson.M{"_id": orgID}
+	filter := bson.M{"_id": organizationID}
 	projection := bson.M{"name": 1}
 	findOptions := options.FindOne().SetProjection(projection)
 
-	err = Collection().FindOne(context.TODO(), filter, findOptions).Decode(&result)
+	err := Collection().FindOne(context.TODO(), filter, findOptions).Decode(&result)
 
 	return result.Name, err
 }

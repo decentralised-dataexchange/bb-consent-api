@@ -11,7 +11,6 @@ import (
 	"github.com/bb-consent/api/internal/dataagreement"
 	"github.com/bb-consent/api/internal/paginate"
 	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type dataAgreementForDataAttribute struct {
@@ -20,7 +19,7 @@ type dataAgreementForDataAttribute struct {
 }
 
 type dataAttributeForLists struct {
-	Id            primitive.ObjectID            `json:"id" bson:"_id,omitempty"`
+	Id            string                        `json:"id" bson:"_id,omitempty"`
 	Name          string                        `json:"name" valid:"required"`
 	Description   string                        `json:"description" valid:"required"`
 	Sensitivity   bool                          `json:"sensitivity"`
@@ -44,7 +43,7 @@ func dataAttributesForList(dA dataagreement.DataAgreement) []dataAttributeForLis
 		tempDataAttribute.Description = dataAttribute.Description
 		tempDataAttribute.Sensitivity = dataAttribute.Sensitivity
 		tempDataAttribute.Category = dataAttribute.Category
-		tempDataAttribute.DataAgreement.Id = dA.Id.Hex()
+		tempDataAttribute.DataAgreement.Id = dA.Id
 		tempDataAttribute.DataAgreement.Purpose = dA.Purpose
 		dataAttributes = append(dataAttributes, tempDataAttribute)
 

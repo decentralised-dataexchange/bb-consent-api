@@ -18,57 +18,52 @@ func Collection() *mongo.Collection {
 }
 
 type DataAttribute struct {
-	Id          primitive.ObjectID `json:"id" bson:"id,omitempty"`
-	Name        string             `json:"name" valid:"required"`
-	Description string             `json:"description" valid:"required"`
-	Sensitivity bool               `json:"sensitivity"`
-	Category    string             `json:"category"`
+	Id          string `json:"id" bson:"id,omitempty"`
+	Name        string `json:"name" valid:"required"`
+	Description string `json:"description" valid:"required"`
+	Sensitivity bool   `json:"sensitivity"`
+	Category    string `json:"category"`
 }
 
 type Signature struct {
-	Id                           primitive.ObjectID `json:"id"`
-	Payload                      string             `json:"payload"`
-	Signature                    string             `json:"signature"`
-	VerificationMethod           string             `json:"verificationMethod"`
-	VerificationPayload          string             `json:"verificationPayload"`
-	VerificationPayloadHash      string             `json:"verificationPayloadHash"`
-	VerificationArtifact         string             `json:"verificationArtifact"`
-	VerificationSignedBy         string             `json:"verificationSignedBy"`
-	VerificationSignedAs         string             `json:"verificationSignedAs"`
-	VerificationJwsHeader        string             `json:"verificationJwsHeader"`
-	Timestamp                    string             `json:"timestamp"`
-	SignedWithoutObjectReference bool               `json:"signedWithoutObjectReference"`
-	ObjectType                   string             `json:"objectType"`
-	ObjectReference              string             `json:"objectReference"`
-}
-
-type PolicyForDataAgreement struct {
-	policy.Policy
-	Id string `json:"id"`
+	Id                           string `json:"id"`
+	Payload                      string `json:"payload"`
+	Signature                    string `json:"signature"`
+	VerificationMethod           string `json:"verificationMethod"`
+	VerificationPayload          string `json:"verificationPayload"`
+	VerificationPayloadHash      string `json:"verificationPayloadHash"`
+	VerificationArtifact         string `json:"verificationArtifact"`
+	VerificationSignedBy         string `json:"verificationSignedBy"`
+	VerificationSignedAs         string `json:"verificationSignedAs"`
+	VerificationJwsHeader        string `json:"verificationJwsHeader"`
+	Timestamp                    string `json:"timestamp"`
+	SignedWithoutObjectReference bool   `json:"signedWithoutObjectReference"`
+	ObjectType                   string `json:"objectType"`
+	ObjectReference              string `json:"objectReference"`
 }
 
 type DataAgreement struct {
-	Id                      primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Version                 string             `json:"version"`
-	ControllerId            string             `json:"controllerId"`
-	ControllerUrl           string             `json:"controllerUrl" valid:"required"`
-	ControllerName          string             `json:"controllerName" valid:"required"`
-	Policy                  policy.Policy      `json:"policy" valid:"required"`
-	Purpose                 string             `json:"purpose" valid:"required"`
-	PurposeDescription      string             `json:"purposeDescription" valid:"required"`
-	LawfulBasis             string             `json:"lawfulBasis" valid:"required"`
-	MethodOfUse             string             `json:"methodOfUse" valid:"required"`
-	DpiaDate                string             `json:"dpiaDate"`
-	DpiaSummaryUrl          string             `json:"dpiaSummaryUrl"`
-	Signature               Signature          `json:"signature"`
-	Active                  bool               `json:"active"`
-	Forgettable             bool               `json:"forgettable"`
-	CompatibleWithVersionId string             `json:"compatibleWithVersionId"`
-	Lifecycle               string             `json:"lifecycle" valid:"required"`
-	DataAttributes          []DataAttribute    `json:"dataAttributes" valid:"required"`
-	OrganisationId          string             `json:"-"`
-	IsDeleted               bool               `json:"-"`
-	Timestamp               string             `json:"-"`
+	Id                      string          `json:"id" bson:"_id,omitempty"`
+	Version                 string          `json:"version"`
+	ControllerId            string          `json:"controllerId"`
+	ControllerUrl           string          `json:"controllerUrl" valid:"required"`
+	ControllerName          string          `json:"controllerName" valid:"required"`
+	Policy                  policy.Policy   `json:"policy" valid:"required"`
+	Purpose                 string          `json:"purpose" valid:"required"`
+	PurposeDescription      string          `json:"purposeDescription" valid:"required"`
+	LawfulBasis             string          `json:"lawfulBasis" valid:"required"`
+	MethodOfUse             string          `json:"methodOfUse" valid:"required"`
+	DpiaDate                string          `json:"dpiaDate"`
+	DpiaSummaryUrl          string          `json:"dpiaSummaryUrl"`
+	Signature               Signature       `json:"signature"`
+	Active                  bool            `json:"active"`
+	Forgettable             bool            `json:"forgettable"`
+	CompatibleWithVersionId string          `json:"compatibleWithVersionId"`
+	Lifecycle               string          `json:"lifecycle" valid:"required"`
+	DataAttributes          []DataAttribute `json:"dataAttributes" valid:"required"`
+	OrganisationId          string          `json:"-"`
+	IsDeleted               bool            `json:"-"`
+	Timestamp               string          `json:"-"`
 }
 
 type DataAgreementWithObjectData struct {
@@ -99,16 +94,12 @@ func (darepo *DataAgreementRepository) Add(dataAgreement DataAgreement) (DataAgr
 }
 
 // Get Gets a single data agreement by given id
-func (darepo *DataAgreementRepository) Get(dataAgreementID string) (DataAgreement, error) {
-	dataAgreementId, err := primitive.ObjectIDFromHex(dataAgreementID)
-	if err != nil {
-		return DataAgreement{}, err
-	}
+func (darepo *DataAgreementRepository) Get(dataAgreementId string) (DataAgreement, error) {
 
 	filter := common.CombineFilters(darepo.DefaultFilter, bson.M{"_id": dataAgreementId})
 
 	var result DataAgreement
-	err = Collection().FindOne(context.TODO(), filter).Decode(&result)
+	err := Collection().FindOne(context.TODO(), filter).Decode(&result)
 	return result, err
 }
 
@@ -248,16 +239,12 @@ func CreatePipelineForFilteringDataAgreementsUsingLifecycle(organisationId strin
 }
 
 // GetDataAttributeById Gets a single data agreement by data attribute id
-func (darepo *DataAgreementRepository) GetByDataAttributeId(dataAttributeID string) (DataAgreement, error) {
-	dataAgreementId, err := primitive.ObjectIDFromHex(dataAttributeID)
-	if err != nil {
-		return DataAgreement{}, err
-	}
+func (darepo *DataAgreementRepository) GetByDataAttributeId(dataAttributeId string) (DataAgreement, error) {
 
-	filter := common.CombineFilters(darepo.DefaultFilter, bson.M{"dataattributes.id": dataAgreementId})
+	filter := common.CombineFilters(darepo.DefaultFilter, bson.M{"dataattributes.id": dataAttributeId})
 
 	var result DataAgreement
-	err = Collection().FindOne(context.TODO(), filter).Decode(&result)
+	err := Collection().FindOne(context.TODO(), filter).Decode(&result)
 	return result, err
 }
 
@@ -364,12 +351,7 @@ func (darepo *DataAgreementRepository) CountDocumentsByPurpose(purpose string) (
 	return exists, nil
 }
 
-func (darepo *DataAgreementRepository) CountDocumentsByPurposeExeptOneDataAgreement(purpose string, dataAgreementID string) (int64, error) {
-
-	dataAgreementId, err := primitive.ObjectIDFromHex(dataAgreementID)
-	if err != nil {
-		return 0, err
-	}
+func (darepo *DataAgreementRepository) CountDocumentsByPurposeExeptOneDataAgreement(purpose string, dataAgreementId string) (int64, error) {
 
 	filter := common.CombineFilters(darepo.DefaultFilter, bson.M{
 		"purpose": purpose,

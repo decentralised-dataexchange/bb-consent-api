@@ -40,7 +40,7 @@ func OnboardReadOrganisationAdmin(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	resp := readOrgAdminResp{
-		Id:             u.ID.Hex(),
+		Id:             u.ID,
 		Email:          u.Email,
 		Name:           u.Name,
 		AvatarImageId:  u.ImageID,

@@ -13,21 +13,21 @@ import (
 
 // OrgType Type related information
 type OrgType struct {
-	ID       primitive.ObjectID `bson:"_id,omitempty"`
+	ID       string `bson:"_id,omitempty"`
 	Type     string
 	ImageID  string
 	ImageURL string
 }
 
-func collection() *mongo.Collection {
+func Collection() *mongo.Collection {
 	return database.DB.Client.Database(database.DB.Name).Collection("orgTypes")
 }
 
 // Add Adds an organization
 func Add(ot OrgType) (OrgType, error) {
 
-	ot.ID = primitive.NewObjectID()
-	_, err := collection().InsertOne(context.TODO(), &ot)
+	ot.ID = primitive.NewObjectID().Hex()
+	_, err := Collection().InsertOne(context.TODO(), &ot)
 
 	return ot, err
 }
@@ -36,12 +36,7 @@ func Add(ot OrgType) (OrgType, error) {
 func Get(organizationTypeID string) (OrgType, error) {
 	var result OrgType
 
-	orgTypeID, err := primitive.ObjectIDFromHex(organizationTypeID)
-	if err != nil {
-		return result, err
-	}
-
-	err = collection().FindOne(context.Background(), bson.M{"_id": orgTypeID}).Decode(&result)
+	err := Collection().FindOne(context.Background(), bson.M{"_id": organizationTypeID}).Decode(&result)
 
 	return result, err
 }
@@ -51,7 +46,7 @@ func GetAll() ([]OrgType, error) {
 
 	var results []OrgType
 
-	cursor, err := collection().Find(context.TODO(), bson.M{})
+	cursor, err := Collection().Find(context.TODO(), bson.M{})
 	if err != nil {
 		return nil, err
 	}
@@ -66,12 +61,8 @@ func GetAll() ([]OrgType, error) {
 
 // Update Update the organization type
 func Update(organizationTypeID string, typeName string) (OrgType, error) {
-	orgTypeID, err := primitive.ObjectIDFromHex(organizationTypeID)
-	if err != nil {
-		return OrgType{}, err
-	}
 
-	_, err = collection().UpdateOne(context.TODO(), bson.M{"_id": orgTypeID}, bson.M{"$set": bson.M{"type": typeName}})
+	_, err := Collection().UpdateOne(context.TODO(), bson.M{"_id": organizationTypeID}, bson.M{"$set": bson.M{"type": typeName}})
 	if err == nil {
 		return Get(organizationTypeID)
 	}
@@ -80,31 +71,23 @@ func Update(organizationTypeID string, typeName string) (OrgType, error) {
 
 // Delete Deletes an organization
 func Delete(organizationTypeID string) error {
-	orgTypeID, err := primitive.ObjectIDFromHex(organizationTypeID)
-	if err != nil {
-		return err
-	}
 
-	_, err = collection().DeleteOne(context.TODO(), bson.M{"_id": orgTypeID})
+	_, err := Collection().DeleteOne(context.TODO(), bson.M{"_id": organizationTypeID})
 
 	return err
 }
 
 // UpdateImage Update the org type image
 func UpdateImage(organizationTypeID string, imageID string, imageURL string) error {
-	orgTypeID, err := primitive.ObjectIDFromHex(organizationTypeID)
-	if err != nil {
-		return err
-	}
 
-	_, err = collection().UpdateOne(context.TODO(), bson.M{"_id": orgTypeID},
+	_, err := Collection().UpdateOne(context.TODO(), bson.M{"_id": organizationTypeID},
 		bson.M{"$set": bson.M{"imageid": imageID, "imageurl": imageURL}})
 	return err
 }
 
 // GetTypesCount Gets types count
 func GetTypesCount() (int64, error) {
-	count, err := collection().CountDocuments(context.TODO(), bson.D{})
+	count, err := Collection().CountDocuments(context.TODO(), bson.D{})
 	if err != nil {
 		return count, err
 	}
@@ -116,7 +99,7 @@ func GetTypesCount() (int64, error) {
 func GetFirstType() (OrgType, error) {
 
 	var result OrgType
-	err := collection().FindOne(context.TODO(), bson.M{}).Decode(&result)
+	err := Collection().FindOne(context.TODO(), bson.M{}).Decode(&result)
 
 	return result, err
 }
@@ -124,7 +107,7 @@ func GetFirstType() (OrgType, error) {
 // DeleteAllTypes delete all types
 func DeleteAllTypes() (*mongo.DeleteResult, error) {
 
-	result, err := collection().DeleteMany(context.TODO(), bson.D{})
+	result, err := Collection().DeleteMany(context.TODO(), bson.D{})
 	if err != nil {
 		return result, err
 	}

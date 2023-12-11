@@ -5,24 +5,23 @@ import (
 	"time"
 
 	"github.com/bb-consent/api/internal/common"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Signature struct {
-	Id                           primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Payload                      string             `json:"payload"`
-	Signature                    string             `json:"signature"`
-	VerificationMethod           string             `json:"verificationMethod"`
-	VerificationPayload          string             `json:"verificationPayload"`
-	VerificationPayloadHash      string             `json:"verificationPayloadHash"`
-	VerificationArtifact         string             `json:"verificationArtifact"`
-	VerificationSignedBy         string             `json:"verificationSignedBy"`
-	VerificationSignedAs         string             `json:"verificationSignedAs"`
-	VerificationJwsHeader        string             `json:"verificationJwsHeader"`
-	Timestamp                    string             `json:"timestamp"`
-	SignedWithoutObjectReference bool               `json:"signedWithoutObjectReference"`
-	ObjectType                   string             `json:"objectType"`
-	ObjectReference              string             `json:"objectReference"`
+	Id                           string `json:"id" bson:"_id,omitempty"`
+	Payload                      string `json:"payload"`
+	Signature                    string `json:"signature"`
+	VerificationMethod           string `json:"verificationMethod"`
+	VerificationPayload          string `json:"verificationPayload"`
+	VerificationPayloadHash      string `json:"verificationPayloadHash"`
+	VerificationArtifact         string `json:"verificationArtifact"`
+	VerificationSignedBy         string `json:"verificationSignedBy"`
+	VerificationSignedAs         string `json:"verificationSignedAs"`
+	VerificationJwsHeader        string `json:"verificationJwsHeader"`
+	Timestamp                    string `json:"timestamp"`
+	SignedWithoutObjectReference bool   `json:"signedWithoutObjectReference"`
+	ObjectType                   string `json:"objectType"`
+	ObjectReference              string `json:"objectReference"`
 }
 
 // Init

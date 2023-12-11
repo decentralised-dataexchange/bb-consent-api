@@ -20,7 +20,7 @@ func createDraftDataAgreementRecord(dataAgreementId string, rev revision.Revisio
 
 	newDaRecord.DataAgreementId = dataAgreementId
 	newDaRecord.DataAgreementRevisionHash = rev.SerializedHash
-	newDaRecord.DataAgreementRevisionId = rev.Id.Hex()
+	newDaRecord.DataAgreementRevisionId = rev.Id
 	newDaRecord.IndividualId = individualId
 	newDaRecord.OptIn = true
 	newDaRecord.State = config.Unsigned

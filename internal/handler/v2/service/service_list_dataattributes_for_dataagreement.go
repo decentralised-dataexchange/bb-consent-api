@@ -52,7 +52,7 @@ func ServiceListDataAttributesForDataAgreement(w http.ResponseWriter, r *http.Re
 	var daRevision revision.Revision
 	if err != nil && errors.Is(err, RevisionIDIsMissingError) {
 
-		daRevision, err = revision.GetLatestByDataAgreementId(da.Id.Hex())
+		daRevision, err = revision.GetLatestByDataAgreementId(da.Id)
 		if err != nil {
 			m := fmt.Sprintf("Failed to fetch data agreement revision: %v", dataAgreementId)
 			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)

@@ -9,17 +9,16 @@ import (
 	"github.com/bb-consent/api/internal/config"
 	wh "github.com/bb-consent/api/internal/webhook"
 	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type readWebhookDeliveryResp struct {
-	Id                 primitive.ObjectID `json:"id" bson:"_id,omitempty"` // Webhook delivery ID
-	WebhookId          string             `json:"webhookId"`               // Webhook ID
-	ResponseStatusCode int                `json:"responseStatusCode"`      // HTTP response status code
-	ResponseStatusStr  string             `json:"responseStatusStr"`       // HTTP response status string
-	TimeStamp          string             `json:"timestamp"`               // UTC timestamp when webhook execution started
-	Status             string             `json:"status"`                  // Status of webhook delivery for e.g. failed or completed
-	StatusDescription  string             `json:"statusDescription"`       // Describe the status for e.g. Reason for failure
+	Id                 string `json:"id" bson:"_id,omitempty"` // Webhook delivery ID
+	WebhookId          string `json:"webhookId"`               // Webhook ID
+	ResponseStatusCode int    `json:"responseStatusCode"`      // HTTP response status code
+	ResponseStatusStr  string `json:"responseStatusStr"`       // HTTP response status string
+	TimeStamp          string `json:"timestamp"`               // UTC timestamp when webhook execution started
+	Status             string `json:"status"`                  // Status of webhook delivery for e.g. failed or completed
+	StatusDescription  string `json:"statusDescription"`       // Describe the status for e.g. Reason for failure
 }
 
 // GetRecentWebhookDeliveryById Gets the payload delivery details for a webhook by ID
@@ -47,7 +46,7 @@ func ConfigReadRecentWebhookDelivery(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the webhook delivery by ID
-	webhookDelivery, err := wh.GetWebhookDeliveryByID(webhook.ID.Hex(), deliveryId)
+	webhookDelivery, err := wh.GetWebhookDeliveryByID(webhook.ID, deliveryId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get delivery details by ID:%v for webhook:%v for organisation: %v", deliveryId, webhookId, organisationId)
 		common.HandleError(w, http.StatusBadRequest, m, err)

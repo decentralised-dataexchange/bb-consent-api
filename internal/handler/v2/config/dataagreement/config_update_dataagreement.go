@@ -49,7 +49,7 @@ func validateUpdateDataAgreementRequestBody(dataAgreementReq updateDataAgreement
 	return nil
 }
 
-func dataAttributeIdExists(dataAttributeId primitive.ObjectID, currentDataAttributes []dataagreement.DataAttribute) bool {
+func dataAttributeIdExists(dataAttributeId string, currentDataAttributes []dataagreement.DataAttribute) bool {
 	for _, dataAttribute := range currentDataAttributes {
 		if dataAttributeId == dataAttribute.Id {
 			return true
@@ -64,12 +64,11 @@ func updateDataAttributeFromUpdateDataAgreementRequestBody(requestBody updateDat
 	for _, dA := range requestBody.DataAgreement.DataAttributes {
 		var dataAttribute dataagreement.DataAttribute
 
-		dataAttributeId, _ := primitive.ObjectIDFromHex(dA.Id)
-		isExistingDataAttribute := dataAttributeIdExists(dataAttributeId, currentDataAttributes)
+		isExistingDataAttribute := dataAttributeIdExists(dA.Id, currentDataAttributes)
 		if isExistingDataAttribute {
-			dataAttribute.Id = dataAttributeId
+			dataAttribute.Id = dA.Id
 		} else {
-			dataAttribute.Id = primitive.NewObjectID()
+			dataAttribute.Id = primitive.NewObjectID().Hex()
 		}
 
 		dataAttribute.Name = dA.Name
@@ -103,7 +102,7 @@ func updateDataAgreementFromRequestBody(requestBody updateDataAgreementReq, toBe
 	toBeUpdatedDataAgreement.DpiaSummaryUrl = requestBody.DataAgreement.DpiaSummaryUrl
 
 	toBeUpdatedDataAgreement.Signature.Payload = requestBody.DataAgreement.Signature.Payload
-	toBeUpdatedDataAgreement.Signature.Signature = requestBody.DataAgreement.Signature.Signature.Signature
+	toBeUpdatedDataAgreement.Signature.Signature = requestBody.DataAgreement.Signature.Signature
 	toBeUpdatedDataAgreement.Signature.VerificationMethod = requestBody.DataAgreement.Signature.VerificationMethod
 	toBeUpdatedDataAgreement.Signature.VerificationPayload = requestBody.DataAgreement.Signature.VerificationPayload
 	toBeUpdatedDataAgreement.Signature.VerificationPayloadHash = requestBody.DataAgreement.Signature.VerificationPayloadHash
