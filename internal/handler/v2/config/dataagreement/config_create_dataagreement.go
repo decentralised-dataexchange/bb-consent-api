@@ -67,25 +67,18 @@ var MethodOfUseMappings = []MethodOfUseMapping{
 
 type policyForDataAgreement struct {
 	policy.Policy
-	Id   string `json:"id"`
 	Name string `json:"name" validate:"required_if=Active true"`
 	Url  string `json:"url" validate:"required_if=Active true"`
 }
 
 type dataAttributeForDataAgreement struct {
 	dataagreement.DataAttribute
-	Id          string `json:"id"`
 	Name        string `json:"name" validate:"required_if=Active true"`
 	Description string `json:"description" validate:"required_if=Active true,max=500"`
 }
 
-type signatureForDataAgreement struct {
-	dataagreement.Signature
-	Id string `json:"id"`
-}
-
 type dataAgreement struct {
-	Id                      primitive.ObjectID              `json:"id" bson:"_id,omitempty"`
+	Id                      string                          `json:"id" bson:"_id,omitempty"`
 	Version                 string                          `json:"version"`
 	ControllerId            string                          `json:"controllerId"`
 	ControllerUrl           string                          `json:"controllerUrl" validate:"required_if=Active true"`
@@ -97,7 +90,7 @@ type dataAgreement struct {
 	MethodOfUse             string                          `json:"methodOfUse" validate:"required_if=Active true"`
 	DpiaDate                string                          `json:"dpiaDate"`
 	DpiaSummaryUrl          string                          `json:"dpiaSummaryUrl"`
-	Signature               signatureForDataAgreement       `json:"signature"`
+	Signature               dataagreement.Signature         `json:"signature"`
 	Active                  bool                            `json:"active"`
 	Forgettable             bool                            `json:"forgettable"`
 	CompatibleWithVersionId string                          `json:"compatibleWithVersionId"`
@@ -177,7 +170,7 @@ func setDataAttributesFromReq(requestBody addDataAgreementReq) []dataagreement.D
 
 	for _, dA := range requestBody.DataAgreement.DataAttributes {
 		var dataAttribute dataagreement.DataAttribute
-		dataAttribute.Id = primitive.NewObjectID()
+		dataAttribute.Id = primitive.NewObjectID().Hex()
 		dataAttribute.Name = dA.Name
 		dataAttribute.Description = dA.Description
 		dataAttribute.Category = dA.Category
@@ -191,7 +184,7 @@ func setDataAttributesFromReq(requestBody addDataAgreementReq) []dataagreement.D
 
 func setDataAgreementFromReq(requestBody addDataAgreementReq, newDataAgreement dataagreement.DataAgreement) dataagreement.DataAgreement {
 	// Policy
-	newDataAgreement.Policy.Id = primitive.NewObjectID()
+	newDataAgreement.Policy.Id = primitive.NewObjectID().Hex()
 	newDataAgreement.Policy.Name = requestBody.DataAgreement.Policy.Name
 	newDataAgreement.Policy.Version = requestBody.DataAgreement.Policy.Version
 	newDataAgreement.Policy.Url = requestBody.DataAgreement.Policy.Url
@@ -203,9 +196,9 @@ func setDataAgreementFromReq(requestBody addDataAgreementReq, newDataAgreement d
 	newDataAgreement.Policy.ThirdPartyDataSharing = requestBody.DataAgreement.Policy.ThirdPartyDataSharing
 
 	// Signature
-	newDataAgreement.Signature.Id = primitive.NewObjectID()
+	newDataAgreement.Signature.Id = primitive.NewObjectID().Hex()
 	newDataAgreement.Signature.Payload = requestBody.DataAgreement.Signature.Payload
-	newDataAgreement.Signature.Signature = requestBody.DataAgreement.Signature.Signature.Signature
+	newDataAgreement.Signature.Signature = requestBody.DataAgreement.Signature.Signature
 	newDataAgreement.Signature.VerificationMethod = requestBody.DataAgreement.Signature.VerificationMethod
 	newDataAgreement.Signature.VerificationPayload = requestBody.DataAgreement.Signature.VerificationPayload
 	newDataAgreement.Signature.VerificationPayloadHash = requestBody.DataAgreement.Signature.VerificationPayloadHash
@@ -235,8 +228,8 @@ func setDataAgreementFromReq(requestBody addDataAgreementReq, newDataAgreement d
 }
 
 func setControllerFromReq(o org.Organization, newDataAgreement dataagreement.DataAgreement) dataagreement.DataAgreement {
-	newDataAgreement.OrganisationId = o.ID.Hex()
-	newDataAgreement.ControllerId = o.ID.Hex()
+	newDataAgreement.OrganisationId = o.ID
+	newDataAgreement.ControllerId = o.ID
 	newDataAgreement.ControllerName = o.Name
 	newDataAgreement.ControllerUrl = o.EulaURL
 	return newDataAgreement
@@ -289,7 +282,7 @@ func ConfigCreateDataAgreement(w http.ResponseWriter, r *http.Request) {
 
 	// Initialise data agreement
 	var newDataAgreement dataagreement.DataAgreement
-	newDataAgreement.Id = primitive.NewObjectID()
+	newDataAgreement.Id = primitive.NewObjectID().Hex()
 
 	// Set data agreement details from request body
 	newDataAgreement = setDataAgreementFromReq(dataAgreementReq, newDataAgreement)

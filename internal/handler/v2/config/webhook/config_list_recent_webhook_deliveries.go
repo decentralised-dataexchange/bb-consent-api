@@ -11,18 +11,17 @@ import (
 	"github.com/bb-consent/api/internal/paginate"
 	wh "github.com/bb-consent/api/internal/webhook"
 	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // recentWebhookDelivery Defines the structure for recent webhook delivery
 type recentWebhookDelivery struct {
-	Id                 primitive.ObjectID `json:"id" bson:"_id,omitempty"` // Webhook delivery ID
-	WebhookId          string             `json:"webhookId"`               // Webhook ID
-	ResponseStatusCode int                `json:"responseStatusCode"`      // HTTP response status code
-	ResponseStatusStr  string             `json:"responseStatusStr"`       // HTTP response status string
-	TimeStamp          string             `json:"timestamp"`               // UTC timestamp when webhook execution started
-	Status             string             `json:"status"`                  // Status of webhook delivery for e.g. failed or completed
-	StatusDescription  string             `json:"statusDescription"`       // Describe the status for e.g. Reason for failure
+	Id                 string `json:"id" bson:"_id,omitempty"` // Webhook delivery ID
+	WebhookId          string `json:"webhookId"`               // Webhook ID
+	ResponseStatusCode int    `json:"responseStatusCode"`      // HTTP response status code
+	ResponseStatusStr  string `json:"responseStatusStr"`       // HTTP response status string
+	TimeStamp          string `json:"timestamp"`               // UTC timestamp when webhook execution started
+	Status             string `json:"status"`                  // Status of webhook delivery for e.g. failed or completed
+	StatusDescription  string `json:"statusDescription"`       // Describe the status for e.g. Reason for failure
 }
 
 func webhookDeliveriesToInterfaceSlice(webhookdeliveries []recentWebhookDelivery) []interface{} {
@@ -64,7 +63,7 @@ func ConfigListRecentWebhookDeliveries(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get all recent webhook deliveries
-	recentWebhookDeliveries, err := wh.GetAllDeliveryByWebhookId(webhook.ID.Hex())
+	recentWebhookDeliveries, err := wh.GetAllDeliveryByWebhookId(webhook.ID)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch recent payload deliveries for webhook:%v for organisation: %v", webhookId, organisationId)
 		common.HandleError(w, http.StatusInternalServerError, m, err)

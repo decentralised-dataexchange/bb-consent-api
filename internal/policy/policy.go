@@ -15,18 +15,18 @@ func Collection() *mongo.Collection {
 }
 
 type Policy struct {
-	Id                      primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Name                    string             `json:"name" valid:"required"`
-	Version                 string             `json:"version"`
-	Url                     string             `json:"url" valid:"required"`
-	Jurisdiction            string             `json:"jurisdiction"`
-	IndustrySector          string             `json:"industrySector"`
-	DataRetentionPeriodDays int                `json:"dataRetentionPeriodDays"`
-	GeographicRestriction   string             `json:"geographicRestriction"`
-	StorageLocation         string             `json:"storageLocation"`
-	ThirdPartyDataSharing   bool               `json:"thirdPartyDataSharing"`
-	OrganisationId          string             `json:"-"`
-	IsDeleted               bool               `json:"-"`
+	Id                      string `json:"id" bson:"_id,omitempty"`
+	Name                    string `json:"name" valid:"required"`
+	Version                 string `json:"version"`
+	Url                     string `json:"url" valid:"required"`
+	Jurisdiction            string `json:"jurisdiction"`
+	IndustrySector          string `json:"industrySector"`
+	DataRetentionPeriodDays int    `json:"dataRetentionPeriodDays"`
+	GeographicRestriction   string `json:"geographicRestriction"`
+	StorageLocation         string `json:"storageLocation"`
+	ThirdPartyDataSharing   bool   `json:"thirdPartyDataSharing"`
+	OrganisationId          string `json:"-"`
+	IsDeleted               bool   `json:"-"`
 }
 
 func CombineFilters(filter1 bson.M, filter2 bson.M) bson.M {
@@ -55,16 +55,12 @@ func (prepo *PolicyRepository) Add(policy Policy) (Policy, error) {
 }
 
 // Get Gets a single policy by given id
-func (prepo *PolicyRepository) Get(policyID string) (Policy, error) {
-	policyId, err := primitive.ObjectIDFromHex(policyID)
-	if err != nil {
-		return Policy{}, err
-	}
+func (prepo *PolicyRepository) Get(policyId string) (Policy, error) {
 
 	filter := CombineFilters(prepo.DefaultFilter, bson.M{"_id": policyId})
 
 	var result Policy
-	err = Collection().FindOne(context.TODO(), filter).Decode(&result)
+	err := Collection().FindOne(context.TODO(), filter).Decode(&result)
 
 	return result, err
 }

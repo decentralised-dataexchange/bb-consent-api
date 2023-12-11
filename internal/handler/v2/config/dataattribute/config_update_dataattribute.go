@@ -30,7 +30,7 @@ func updateDataAttributeFromReq(dataAttributeId string, requestBody updateDataAt
 	updatedDataAttributes = dataAttributes
 
 	for i, dataAttribute := range dataAttributes {
-		if dataAttribute.Id.Hex() == dataAttributeId {
+		if dataAttribute.Id == dataAttributeId {
 			updatedDataAttributes[i].Name = requestBody.DataAttribute.Name
 			updatedDataAttributes[i].Description = requestBody.DataAttribute.Description
 			updatedDataAttributes[i].Sensitivity = requestBody.DataAttribute.Sensitivity
@@ -97,7 +97,7 @@ func ConfigUpdateDataAttribute(w http.ResponseWriter, r *http.Request) {
 	// Bump major version for data agreement
 	updatedVersion, err := common.BumpMajorVersion(toBeUpdatedDataAgreement.Version)
 	if err != nil {
-		m := fmt.Sprintf("Failed to bump major version for data agreement: %v", toBeUpdatedDataAgreement.Id.Hex())
+		m := fmt.Sprintf("Failed to bump major version for data agreement: %v", toBeUpdatedDataAgreement.Id)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
@@ -119,7 +119,7 @@ func ConfigUpdateDataAttribute(w http.ResponseWriter, r *http.Request) {
 		// Update revision
 		_, err = revision.UpdateRevisionForDataAgreement(toBeUpdatedDataAgreement, orgAdminId)
 		if err != nil {
-			m := fmt.Sprintf("Failed to update data agreement: %v", toBeUpdatedDataAgreement.Id.Hex())
+			m := fmt.Sprintf("Failed to update data agreement: %v", toBeUpdatedDataAgreement.Id)
 			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 			return
 		}

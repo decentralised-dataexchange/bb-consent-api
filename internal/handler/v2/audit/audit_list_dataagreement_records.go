@@ -13,7 +13,6 @@ import (
 	daRecord "github.com/bb-consent/api/internal/dataagreement_record"
 	"github.com/bb-consent/api/internal/paginate"
 	"github.com/bb-consent/api/internal/revision"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type dataAgreementForListDataAgreementRecord struct {
@@ -23,7 +22,7 @@ type dataAgreementForListDataAgreementRecord struct {
 }
 
 type listDataAgreementRecord struct {
-	Id                        primitive.ObjectID                      `json:"id" bson:"_id,omitempty"`
+	Id                        string                                  `json:"id" bson:"_id,omitempty"`
 	DataAgreementId           string                                  `json:"dataAgreementId"`
 	DataAgreementRevisionId   string                                  `json:"dataAgreementRevisionId"`
 	DataAgreementRevisionHash string                                  `json:"dataAgreementRevisionHash"`

@@ -8,7 +8,7 @@ import (
 	"github.com/bb-consent/api/internal/actionlog"
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
-	"github.com/bb-consent/api/internal/user"
+	"github.com/bb-consent/api/internal/individual"
 	wh "github.com/bb-consent/api/internal/webhook"
 	"github.com/bb-consent/api/internal/webhook_dispatcher"
 	"github.com/gorilla/mux"
@@ -39,7 +39,7 @@ func ConfigRedeliverWebhookPayloadByDeliveryID(w http.ResponseWriter, r *http.Re
 	}
 
 	// Validating the given delivery ID for a webhook
-	webhookDelivery, err := wh.GetWebhookDeliveryByID(webhook.ID.Hex(), deliveryId)
+	webhookDelivery, err := wh.GetWebhookDeliveryByID(webhook.ID, deliveryId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get delivery details by ID:%v for webhook:%v for organisation: %v", deliveryId, webhookId, organisationId)
 		common.HandleError(w, http.StatusBadRequest, m, err)
@@ -54,8 +54,12 @@ func ConfigRedeliverWebhookPayloadByDeliveryID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// Repository
+	individualRepo := individual.IndividualRepository{}
+	individualRepo.Init(organisationId)
+
 	// Get the details of who triggered webhook
-	u, err := user.Get(webhookDelivery.UserID)
+	u, err := individualRepo.Get(webhookDelivery.UserID)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get user, error:%v; Failed to redeliver payload for webhook for event:<%s>, user:<%s>, org:<%s>", err.Error(), webhookDelivery.WebhookEventType, webhookDelivery.UserID, organisationId)
 		common.HandleError(w, http.StatusInternalServerError, m, err)
@@ -66,7 +70,7 @@ func ConfigRedeliverWebhookPayloadByDeliveryID(w http.ResponseWriter, r *http.Re
 
 	// Log webhook calls in webhooks category
 	aLog := fmt.Sprintf("Organization webhook: %v triggered by user: %v by event: %v", webhook.PayloadURL, u.Email, webhookDelivery.WebhookEventType)
-	actionlog.LogOrgWebhookCalls(u.ID.Hex(), u.Email, organisationId, aLog)
+	actionlog.LogOrgWebhookCalls(u.Id, u.Email, organisationId, aLog)
 
 	w.Header().Set(config.ContentTypeHeader, config.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)

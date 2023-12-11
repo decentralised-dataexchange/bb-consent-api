@@ -5,7 +5,6 @@ import (
 
 	"github.com/bb-consent/api/internal/database"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -25,16 +24,12 @@ func Add(signature Signature) (Signature, error) {
 }
 
 // Get Gets a signature by given id
-func Get(signatureID string) (Signature, error) {
-	signatureId, err := primitive.ObjectIDFromHex(signatureID)
-	if err != nil {
-		return Signature{}, err
-	}
+func Get(signatureId string) (Signature, error) {
 
 	filter := bson.M{"_id": signatureId}
 
 	var result Signature
-	err = Collection().FindOne(context.TODO(), filter).Decode(&result)
+	err := Collection().FindOne(context.TODO(), filter).Decode(&result)
 
 	return result, err
 }

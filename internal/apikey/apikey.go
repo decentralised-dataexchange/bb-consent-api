@@ -7,19 +7,18 @@ import (
 
 	"github.com/bb-consent/api/internal/config"
 	"github.com/dgrijalva/jwt-go"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ApiKey struct {
-	Id              primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Name            string             `json:"name"`
-	Scopes          []string           `json:"scopes" valid:"required"`
-	Apikey          string             `json:"apiKey"`
-	ExpiryInDays    int                `json:"expiryInDays"`
-	OrganisationId  string             `json:"-"`
-	IsDeleted       bool               `json:"-"`
-	Timestamp       string             `json:"timestamp"`
-	ExpiryTimestamp string             `json:"expiryTimestamp"`
+	Id              string   `json:"id" bson:"_id,omitempty"`
+	Name            string   `json:"name"`
+	Scopes          []string `json:"scopes" valid:"required"`
+	Apikey          string   `json:"apiKey"`
+	ExpiryInDays    int      `json:"expiryInDays"`
+	OrganisationId  string   `json:"-"`
+	IsDeleted       bool     `json:"-"`
+	Timestamp       string   `json:"timestamp"`
+	ExpiryTimestamp string   `json:"expiryTimestamp"`
 }
 
 var ApiSecretKey string

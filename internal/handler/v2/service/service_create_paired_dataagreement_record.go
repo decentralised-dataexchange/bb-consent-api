@@ -25,7 +25,7 @@ func createPairedDataAgreementRecord(dataAgreementId string, rev revision.Revisi
 
 	newDaRecord.DataAgreementId = dataAgreementId
 	newDaRecord.DataAgreementRevisionHash = rev.SerializedHash
-	newDaRecord.DataAgreementRevisionId = rev.Id.Hex()
+	newDaRecord.DataAgreementRevisionId = rev.Id
 	newDaRecord.IndividualId = individualId
 	newDaRecord.OptIn = true
 	newDaRecord.State = config.Unsigned
@@ -34,14 +34,14 @@ func createPairedDataAgreementRecord(dataAgreementId string, rev revision.Revisi
 }
 
 type dataAgreementRecordReq struct {
-	Id                        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	DataAgreementId           string             `json:"dataAgreementId" valid:"required"`
-	DataAgreementRevisionId   string             `json:"dataAgreementRevisionId" valid:"required"`
-	DataAgreementRevisionHash string             `json:"dataAgreementRevisionHash"`
-	IndividualId              string             `json:"individualId" valid:"required"`
-	OptIn                     bool               `json:"optIn"`
-	State                     string             `json:"state"`
-	SignatureId               string             `json:"signatureId"`
+	Id                        string `json:"id" bson:"_id,omitempty"`
+	DataAgreementId           string `json:"dataAgreementId" valid:"required"`
+	DataAgreementRevisionId   string `json:"dataAgreementRevisionId" valid:"required"`
+	DataAgreementRevisionHash string `json:"dataAgreementRevisionHash"`
+	IndividualId              string `json:"individualId" valid:"required"`
+	OptIn                     bool   `json:"optIn"`
+	State                     string `json:"state"`
+	SignatureId               string `json:"signatureId"`
 }
 
 type createPairedDataAgreementRecordReq struct {
@@ -90,14 +90,14 @@ func ServiceCreatePairedDataAgreementRecord(w http.ResponseWriter, r *http.Reque
 	darRepo.Init(organisationId)
 
 	// Check for existing data agreement record with same data agreement id and individual id
-	count, err := darRepo.CountDataAgreementRecords(dataAgreementRecordReq.DataAgreementRecord.DataAgreementId, individual.Id.Hex())
+	count, err := darRepo.CountDataAgreementRecords(dataAgreementRecordReq.DataAgreementRecord.DataAgreementId, individual.Id)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch data agreement record for data agreement: %v", dataAgreementRecordReq.DataAgreementRecord.DataAgreementId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 	if count > 0 {
-		m := fmt.Sprintf("Data agreement record for data agreement: %v and individual id : %s exists", dataAgreementRecordReq.DataAgreementRecord.DataAgreementId, individual.Id.Hex())
+		m := fmt.Sprintf("Data agreement record for data agreement: %v and individual id : %s exists", dataAgreementRecordReq.DataAgreementRecord.DataAgreementId, individual.Id)
 		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
 		return
 	}
@@ -114,32 +114,32 @@ func ServiceCreatePairedDataAgreementRecord(w http.ResponseWriter, r *http.Reque
 	}
 
 	// fetch revision based on id and schema name
-	dataAgreementRevision, err := revision.GetByRevisionIdAndSchema(dataAgreementRecordReq.DataAgreementRecord.DataAgreementRevisionId, config.DataAgreement)
+	dataAgreementRevision, err := revision.GetByRevisionIdAndSchema(common.Sanitize(dataAgreementRecordReq.DataAgreementRecord.DataAgreementRevisionId), config.DataAgreement)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch revision: %v", dataAgreementRecordReq.DataAgreementRecord.DataAgreementRevisionId)
 		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
 		return
 	}
 
-	newDataAgreementRecord := createPairedDataAgreementRecord(dataAgreement.Id.Hex(), dataAgreementRevision, individual.Id.Hex())
+	newDataAgreementRecord := createPairedDataAgreementRecord(dataAgreement.Id, dataAgreementRevision, individual.Id)
 
 	dataAgreementRecord := newDataAgreementRecord
 	dataAgreementRecord.OrganisationId = organisationId
 	currentSignature := dataAgreementRecordReq.Signature
-	dataAgreementRecord.Id = primitive.NewObjectID()
-	currentSignature.Id = primitive.NewObjectID()
-	dataAgreementRecord.SignatureId = currentSignature.Id.Hex()
+	dataAgreementRecord.Id = primitive.NewObjectID().Hex()
+	currentSignature.Id = primitive.NewObjectID().Hex()
+	dataAgreementRecord.SignatureId = currentSignature.Id
 
 	newRecordRevision, err := revision.CreateRevisionForDataAgreementRecord(dataAgreementRecord, individualId)
 	if err != nil {
-		m := fmt.Sprintf("Failed to create new revision for dataAgreementRecord: %v", dataAgreementRecord.Id.Hex())
+		m := fmt.Sprintf("Failed to create new revision for dataAgreementRecord: %v", dataAgreementRecord.Id)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
 	// create signature for data agreement record
-	toBeCreatedSignature, err := signature.CreateSignatureForObject("revision", newRecordRevision.Id.Hex(), false, newRecordRevision, true, currentSignature)
+	toBeCreatedSignature, err := signature.CreateSignatureForObject("revision", newRecordRevision.Id, false, newRecordRevision, true, currentSignature)
 	if err != nil {
-		m := fmt.Sprintf("Failed to create signature for data agreement record: %v", dataAgreementRecord.Id.Hex())
+		m := fmt.Sprintf("Failed to create signature for data agreement record: %v", dataAgreementRecord.Id)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
@@ -180,8 +180,8 @@ func ServiceCreatePairedDataAgreementRecord(w http.ResponseWriter, r *http.Reque
 	darH := daRecordHistory.DataAgreementRecordsHistory{}
 	darH.DataAgreementId = dataAgreementRecord.DataAgreementId
 	darH.OrganisationId = organisationId
-	darH.ConsentRecordId = savedDataAgreementRecord.Id.Hex()
-	darH.IndividualId = individual.Id.Hex()
+	darH.ConsentRecordId = savedDataAgreementRecord.Id
+	darH.IndividualId = individual.Id
 	err = daRecordHistory.DataAgreementRecordHistoryAdd(darH, savedDataAgreementRecord.OptIn)
 	if err != nil {
 		m := "Failed to add data agreement record history"

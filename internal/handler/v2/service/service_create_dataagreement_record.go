@@ -20,10 +20,10 @@ import (
 func createDataAgreementRecord(dataAgreementId string, rev revision.Revision, individualId string) daRecord.DataAgreementRecord {
 	var newDaRecord daRecord.DataAgreementRecord
 
-	newDaRecord.Id = primitive.NewObjectID()
+	newDaRecord.Id = primitive.NewObjectID().Hex()
 	newDaRecord.DataAgreementId = dataAgreementId
 	newDaRecord.DataAgreementRevisionHash = rev.SerializedHash
-	newDaRecord.DataAgreementRevisionId = rev.Id.Hex()
+	newDaRecord.DataAgreementRevisionId = rev.Id
 	newDaRecord.IndividualId = individualId
 	newDaRecord.OptIn = true
 	newDaRecord.State = config.Unsigned
@@ -118,7 +118,7 @@ func ServiceCreateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 	darH := daRecordHistory.DataAgreementRecordsHistory{}
 	darH.DataAgreementId = dataAgreementId
 	darH.OrganisationId = organisationId
-	darH.ConsentRecordId = savedDaRecord.Id.Hex()
+	darH.ConsentRecordId = savedDaRecord.Id
 	darH.IndividualId = individualId
 	err = daRecordHistory.DataAgreementRecordHistoryAdd(darH, savedDaRecord.OptIn)
 	if err != nil {

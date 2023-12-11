@@ -113,7 +113,7 @@ func ConfigCreatePolicy(w http.ResponseWriter, r *http.Request) {
 
 	// Initialise policy
 	var newPolicy policy.Policy
-	newPolicy.Id = primitive.NewObjectID()
+	newPolicy.Id = primitive.NewObjectID().Hex()
 	// Update policy from request body
 	newPolicy = updatePolicyFromAddPolicyRequestBody(policyReq, newPolicy)
 	newPolicy.OrganisationId = organisationId

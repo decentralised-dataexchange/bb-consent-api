@@ -36,7 +36,7 @@ func ServiceCreateBlankSignature(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// create signature for data agreement record
-	toBeCreatedSignature, err := signature.CreateSignatureForObject("revision", daRecordRevision.Id.Hex(), false, daRecordRevision, false, signature.Signature{})
+	toBeCreatedSignature, err := signature.CreateSignatureForObject("revision", daRecordRevision.Id, false, daRecordRevision, false, signature.Signature{})
 	if err != nil {
 		m := fmt.Sprintf("Failed to create signature for data agreement record: %v", dataAgreementRecordId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)

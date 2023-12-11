@@ -12,6 +12,7 @@ import (
 	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/iam"
 	"github.com/bb-consent/api/internal/individual"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -123,6 +124,7 @@ func createIndividuals(individuals []individual.Individual, organisationId strin
 				individual.IsDeleted = false
 				individual.OrganisationId = organisationId
 				individual.IamId = iamId
+				individual.Id = primitive.NewObjectID().Hex()
 				// Save individual to db
 				_, err = individualRepo.Add(individual)
 				if err != nil {

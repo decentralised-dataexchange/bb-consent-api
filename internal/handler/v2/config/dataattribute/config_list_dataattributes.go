@@ -12,7 +12,6 @@ import (
 	"github.com/bb-consent/api/internal/dataagreement"
 	"github.com/bb-consent/api/internal/paginate"
 	"github.com/bb-consent/api/internal/revision"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // ListDataAttributesError is an error enumeration for list data attribute API.
@@ -47,7 +46,7 @@ func dataAttributesForList(res []dataagreement.DataAgreement) []dataAttributeFor
 			dataAttribute.Description = dA.Description
 			dataAttribute.Sensitivity = dA.Sensitivity
 			dataAttribute.Category = dA.Category
-			dataAttribute.DataAgreement.Id = res[i].Id.Hex()
+			dataAttribute.DataAgreement.Id = res[i].Id
 			dataAttribute.DataAgreement.Purpose = res[i].Purpose
 			dataAttributes = append(dataAttributes, dataAttribute)
 
@@ -108,7 +107,7 @@ type dataAgreementForDataAttribute struct {
 }
 
 type dataAttributeForLists struct {
-	Id            primitive.ObjectID            `json:"id" bson:"_id,omitempty"`
+	Id            string                        `json:"id" bson:"_id,omitempty"`
 	Name          string                        `json:"name" valid:"required"`
 	Description   string                        `json:"description" valid:"required"`
 	Sensitivity   bool                          `json:"sensitivity"`
@@ -224,7 +223,7 @@ func ConfigListDataAttributes(w http.ResponseWriter, r *http.Request) {
 			dA.Description = a.Description
 			dA.Sensitivity = a.Sensitivity
 			dA.Category = a.Category
-			dA.DataAgreement.Id = da.Id.Hex()
+			dA.DataAgreement.Id = da.Id
 			dA.DataAgreement.Purpose = da.Purpose
 			dAttributes = append(dAttributes, dA)
 		}

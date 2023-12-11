@@ -69,13 +69,13 @@ func createOrganisation(config *config.Configuration, orgType orgtype.OrgType, o
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			log.Printf("Organization doesn't exist, creating organization.")
-			organization, err = org.AddOrganization(config.Organization, orgType.ID.Hex(), organisationAdminId)
+			organization, err = org.AddOrganization(config.Organization, orgType.ID, organisationAdminId)
 			if err != nil {
 				log.Println("failed to add organization")
 				panic(err)
 			}
 			// Add roles to organisation admin user
-			addOrganisationAdminRole(organisationAdminId, organization.ID.Hex())
+			addOrganisationAdminRole(organisationAdminId, organization.ID)
 
 		} else {
 			log.Println("failed to find organization")
@@ -127,7 +127,7 @@ func deleteAllPolicies() {
 
 	// Repository
 	prepo := policy.PolicyRepository{}
-	prepo.Init(o.ID.Hex())
+	prepo.Init(o.ID)
 
 	count, err := prepo.GetPolicyCountByOrganisation()
 	if err != nil {
@@ -135,7 +135,7 @@ func deleteAllPolicies() {
 		panic(err)
 	}
 	if count > 1 {
-		err := policy.DeleteAllPolicies(o.ID.Hex())
+		err := policy.DeleteAllPolicies(o.ID)
 		if err != nil {
 			log.Println("failed to delete policies")
 			panic(err)
@@ -147,7 +147,7 @@ func deleteAllPolicies() {
 func createDefaultPolicy(config *config.Configuration, org org.Organization, orgAdminId string) (policy.Policy, error) {
 
 	var newPolicy policy.Policy
-	newPolicy.Id = primitive.NewObjectID()
+	newPolicy.Id = primitive.NewObjectID().Hex()
 	newPolicy.Name = config.Policy.Name
 	newPolicy.Url = org.PolicyURL
 	newPolicy.Jurisdiction = org.Location
@@ -156,7 +156,7 @@ func createDefaultPolicy(config *config.Configuration, org org.Organization, org
 	newPolicy.GeographicRestriction = config.Policy.GeographicRestriction
 	newPolicy.StorageLocation = config.Policy.StorageLocation
 	newPolicy.ThirdPartyDataSharing = true
-	newPolicy.OrganisationId = org.ID.Hex()
+	newPolicy.OrganisationId = org.ID
 	newPolicy.IsDeleted = false
 
 	version := common.IntegerToSemver(1)
@@ -194,7 +194,7 @@ func createGlobalPolicy(config *config.Configuration, orgAdminId string) {
 
 	// Repository
 	prepo := policy.PolicyRepository{}
-	prepo.Init(o.ID.Hex())
+	prepo.Init(o.ID)
 
 	policyCount, _ := prepo.GetPolicyCountByOrganisation()
 	if policyCount == 0 {
@@ -228,7 +228,7 @@ func SingleTenantConfiguration(config *config.Configuration) {
 
 	// Create an organisation admin
 	organisationAdmin := createOrganisationAdmin(config)
-	organisationAdminId := organisationAdmin.ID.Hex()
+	organisationAdminId := organisationAdmin.ID
 
 	// Create organisation type
 	orgType := createOrganisationType(config)

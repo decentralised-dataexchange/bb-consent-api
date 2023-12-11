@@ -78,15 +78,15 @@ func OnboardUpdateOrganisationAdmin(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	u, err = user.Update(u.ID.Hex(), u)
+	u, err = user.Update(u.ID, u)
 	if err != nil {
-		m := fmt.Sprintf("Failed to update user by id:%v", u.ID.Hex())
+		m := fmt.Sprintf("Failed to update user by id:%v", u.ID)
 		common.HandleError(w, http.StatusInternalServerError, m, err)
 		return
 	}
 
 	orgAdmin := orgAdmin{
-		Id:             u.ID.Hex(),
+		Id:             u.ID,
 		Email:          u.Email,
 		Name:           u.Name,
 		AvatarImageId:  u.ImageID,

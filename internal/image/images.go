@@ -11,35 +11,30 @@ import (
 
 // Image data type
 type Image struct {
-	ID   primitive.ObjectID `bson:"_id,omitempty"`
+	ID   string `bson:"_id,omitempty"`
 	Data []byte
 }
 
-func collection() *mongo.Collection {
+func Collection() *mongo.Collection {
 	return database.DB.Client.Database(database.DB.Name).Collection("images")
 }
 
 // Add Adds an image to image store
 func Add(image []byte) (imageID string, err error) {
 
-	i := Image{primitive.NewObjectID(), image}
-	_, err = collection().InsertOne(context.TODO(), &i)
+	i := Image{primitive.NewObjectID().Hex(), image}
+	_, err = Collection().InsertOne(context.TODO(), &i)
 	if err != nil {
 		return "", err
 	}
 
-	return i.ID.Hex(), err
+	return i.ID, err
 }
 
 // Get Fetches the image by ID
-func Get(imageID string) (Image, error) {
+func Get(imageId string) (Image, error) {
 	var image Image
 
-	imageId, err := primitive.ObjectIDFromHex(imageID)
-	if err != nil {
-		return image, err
-	}
-
-	err = collection().FindOne(context.TODO(), bson.M{"_id": imageId}).Decode(&image)
+	err := Collection().FindOne(context.TODO(), bson.M{"_id": imageId}).Decode(&image)
 	return image, err
 }

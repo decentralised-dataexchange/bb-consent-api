@@ -67,8 +67,15 @@ func ValidatePhoneNumber(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if o != (otp.Otp{}) {
-		if primitive.NewObjectID().Timestamp().Sub(o.ID.Timestamp()) > 2*time.Minute {
-			err = otp.Delete(o.ID.Hex())
+		otpId, err := primitive.ObjectIDFromHex(o.ID)
+		if err != nil {
+			m := "Failed to convert otp id to objectId"
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
+
+		if primitive.NewObjectID().Timestamp().Sub(otpId.Timestamp()) > 2*time.Minute {
+			err = otp.Delete(o.ID)
 			if err != nil {
 				m := "Failed to clear expired otp"
 				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)

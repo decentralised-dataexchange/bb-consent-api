@@ -7,7 +7,6 @@ import (
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/database"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -37,16 +36,12 @@ func (apiKeyRepo *ApiKeyRepository) Add(apiKey ApiKey) (ApiKey, error) {
 }
 
 // Get Gets a single data agreement by given id
-func (apiKeyRepo *ApiKeyRepository) Get(apiKeyID string) (ApiKey, error) {
-	apiKeyId, err := primitive.ObjectIDFromHex(apiKeyID)
-	if err != nil {
-		return ApiKey{}, err
-	}
+func (apiKeyRepo *ApiKeyRepository) Get(apiKeyId string) (ApiKey, error) {
 
 	filter := common.CombineFilters(apiKeyRepo.DefaultFilter, bson.M{"_id": apiKeyId})
 
 	var result ApiKey
-	err = Collection().FindOne(context.TODO(), filter).Decode(&result)
+	err := Collection().FindOne(context.TODO(), filter).Decode(&result)
 	return result, err
 }
 

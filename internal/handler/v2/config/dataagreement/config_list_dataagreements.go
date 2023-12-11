@@ -17,7 +17,6 @@ import (
 	"github.com/bb-consent/api/internal/policy"
 	"github.com/bb-consent/api/internal/revision"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // ListDataAgreementsError is an error enumeration for list data agreement API.
@@ -178,7 +177,7 @@ func getDataAgreementsWithRevisions(organisationId string, lifecycle string) ([]
 
 	for _, dataAgreement := range dataAgreements {
 		// list all revisions for data agreement
-		revisions, err := revision.ListAllByDataAgreementId(dataAgreement.Id.Hex())
+		revisions, err := revision.ListAllByDataAgreementId(dataAgreement.Id)
 		if err != nil {
 			return tempDataAgreements, err
 		}
@@ -215,7 +214,7 @@ func getDataAgreementsWithRevisions(organisationId string, lifecycle string) ([]
 }
 
 type dataAgreementWithRevisions struct {
-	Id                      primitive.ObjectID            `json:"id" bson:"_id,omitempty"`
+	Id                      string                        `json:"id" bson:"_id,omitempty"`
 	Version                 string                        `json:"version"`
 	ControllerId            string                        `json:"controllerId"`
 	ControllerUrl           string                        `json:"controllerUrl" valid:"required"`

@@ -14,7 +14,7 @@ import (
 
 // UpdateOrganizationCoverImage Inserts the image and update the id to user
 func UpdateOrganizationCoverImage(w http.ResponseWriter, r *http.Request) {
-	organizationID := r.Header.Get(config.OrganizationId)
+	organizationID := common.Sanitize(r.Header.Get(config.OrganizationId))
 
 	file, _, err := r.FormFile("orgimage")
 	if err != nil {

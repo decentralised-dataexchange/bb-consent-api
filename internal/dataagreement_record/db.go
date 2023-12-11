@@ -35,16 +35,12 @@ func (darRepo *DataAgreementRecordRepository) Add(dataAgreementRecord DataAgreem
 }
 
 // Get Gets a single data agreement record
-func (darRepo *DataAgreementRecordRepository) Get(dataAgreementRecordID string) (DataAgreementRecord, error) {
-	dataAgreementRecordId, err := primitive.ObjectIDFromHex(dataAgreementRecordID)
-	if err != nil {
-		return DataAgreementRecord{}, err
-	}
+func (darRepo *DataAgreementRecordRepository) Get(dataAgreementRecordId string) (DataAgreementRecord, error) {
 
 	filter := common.CombineFilters(darRepo.DefaultFilter, bson.M{"_id": dataAgreementRecordId})
 
 	var result DataAgreementRecord
-	err = Collection().FindOne(context.TODO(), filter).Decode(&result)
+	err := Collection().FindOne(context.TODO(), filter).Decode(&result)
 
 	return result, err
 }
@@ -109,16 +105,10 @@ func DataAgreementRecordsWithRevisionsFilteredById(organisationId string, id str
 		or := []bson.M{
 			{"dataagreementid": id},
 			{"individualid": id},
+			{"_id": id},
 		}
 
 		// Stage 2 - Match `id` against `dataAgreementRecordId`, `dataAgreementId`, `individualId`
-		convertIdtoObjectId, err := primitive.ObjectIDFromHex(id)
-		if err == nil {
-			// Append `dataAgreementRecordId` `or` statements only if
-			// string is converted to objectId without errors
-			or = append(or, bson.M{"_id": convertIdtoObjectId})
-		}
-
 		pipeline = append(pipeline, bson.M{"$match": bson.M{
 			"$or": or,
 		}})

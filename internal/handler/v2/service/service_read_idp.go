@@ -44,7 +44,7 @@ func ServiceReadIdp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	idpResp := serviceIdp{
-		Id:               idp.Id.Hex(),
+		Id:               idp.Id,
 		IssuerUrl:        idp.IssuerUrl,
 		AuthorizationURL: idp.AuthorizationURL,
 		TokenURL:         idp.TokenURL,

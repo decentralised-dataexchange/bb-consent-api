@@ -2,6 +2,7 @@ package revision
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/bb-consent/api/internal/common"
@@ -14,24 +15,24 @@ import (
 
 // Revision
 type Revision struct {
-	Id                       primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	SchemaName               string             `json:"schemaName"`
-	ObjectId                 string             `json:"objectId"`
-	SignedWithoutObjectId    bool               `json:"signedWithoutObjectId"`
-	Timestamp                string             `json:"timestamp"`
-	AuthorizedByIndividualId string             `json:"authorizedByIndividualId"`
-	AuthorizedByOtherId      string             `json:"authorizedByOtherId"`
-	PredecessorHash          string             `json:"predecessorHash"`
-	PredecessorSignature     string             `json:"predecessorSignature"`
-	ObjectData               string             `json:"objectData"`
-	SuccessorId              string             `json:"-"`
-	SerializedHash           string             `json:"-"`
-	SerializedSnapshot       string             `json:"-"`
+	Id                       string `json:"id" bson:"_id,omitempty"`
+	SchemaName               string `json:"schemaName"`
+	ObjectId                 string `json:"objectId"`
+	SignedWithoutObjectId    bool   `json:"signedWithoutObjectId"`
+	Timestamp                string `json:"timestamp"`
+	AuthorizedByIndividualId string `json:"authorizedByIndividualId"`
+	AuthorizedByOtherId      string `json:"authorizedByOtherId"`
+	PredecessorHash          string `json:"predecessorHash"`
+	PredecessorSignature     string `json:"predecessorSignature"`
+	ObjectData               string `json:"objectData"`
+	SuccessorId              string `json:"-"`
+	SerializedHash           string `json:"-"`
+	SerializedSnapshot       string `json:"-"`
 }
 
 // Init
 func (r *Revision) Init(objectId string, authorisedByOtherId string, schemaName string) {
-	r.Id = primitive.NewObjectID()
+	r.Id = primitive.NewObjectID().Hex()
 	r.SchemaName = schemaName
 	r.ObjectId = objectId
 	r.SignedWithoutObjectId = false
@@ -84,7 +85,7 @@ func (r *Revision) UpdateRevision(previousRevision *Revision, objectData interfa
 
 	if previousRevision != nil {
 		// Update successor for previous revision
-		previousRevision.updateSuccessorId(r.Id.Hex())
+		previousRevision.updateSuccessorId(r.Id)
 
 		// Predecessor hash
 		r.updatePredecessorHash(previousRevision.SerializedHash)
@@ -105,15 +106,15 @@ func (r *Revision) UpdateRevision(previousRevision *Revision, objectData interfa
 }
 
 type policyForObjectData struct {
-	Id                      primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Name                    string             `json:"name" valid:"required"`
-	Version                 string             `json:"version"`
-	Url                     string             `json:"url" valid:"required"`
-	Jurisdiction            string             `json:"jurisdiction"`
-	IndustrySector          string             `json:"industrySector"`
-	DataRetentionPeriodDays int                `json:"dataRetentionPeriodDays"`
-	GeographicRestriction   string             `json:"geographicRestriction"`
-	StorageLocation         string             `json:"storageLocation"`
+	Id                      string `json:"id" bson:"_id,omitempty"`
+	Name                    string `json:"name" valid:"required"`
+	Version                 string `json:"version"`
+	Url                     string `json:"url" valid:"required"`
+	Jurisdiction            string `json:"jurisdiction"`
+	IndustrySector          string `json:"industrySector"`
+	DataRetentionPeriodDays int    `json:"dataRetentionPeriodDays"`
+	GeographicRestriction   string `json:"geographicRestriction"`
+	StorageLocation         string `json:"storageLocation"`
 }
 
 // CreateRevisionForPolicy
@@ -133,7 +134,7 @@ func CreateRevisionForPolicy(newPolicy policy.Policy, orgAdminId string) (Revisi
 
 	// Create revision
 	revision := Revision{}
-	revision.Init(objectData.Id.Hex(), orgAdminId, config.Policy)
+	revision.Init(objectData.Id, orgAdminId, config.Policy)
 	err := revision.CreateRevision(objectData)
 
 	return revision, err
@@ -156,9 +157,9 @@ func UpdateRevisionForPolicy(updatedPolicy policy.Policy, orgAdminId string) (Re
 
 	// Update revision
 	r := Revision{}
-	r.Init(objectData.Id.Hex(), orgAdminId, config.Policy)
+	r.Init(objectData.Id, orgAdminId, config.Policy)
 	// Query for previous revisions
-	previousRevision, err := GetLatestByPolicyId(updatedPolicy.Id.Hex())
+	previousRevision, err := GetLatestByPolicyId(updatedPolicy.Id)
 	if err != nil {
 		// Previous revision is not present
 		err = r.UpdateRevision(nil, objectData)
@@ -210,7 +211,6 @@ func RecreatePolicyFromRevision(revision Revision) (policy.Policy, error) {
 // RevisionForHTTPResponse
 type RevisionForHTTPResponse struct {
 	Revision
-	Id                 string `json:"id"`
 	SuccessorId        string `json:"successorId"`
 	SerializedHash     string `json:"serializedHash"`
 	SerializedSnapshot string `json:"serizalizedSnapshot"`
@@ -218,10 +218,10 @@ type RevisionForHTTPResponse struct {
 
 // Init
 func (r *RevisionForHTTPResponse) Init(revision Revision) {
-	if revision.Id.IsZero() {
+	if len(strings.TrimSpace(revision.Id)) < 1 {
 		r.Id = ""
 	} else {
-		r.Id = revision.Id.Hex()
+		r.Id = revision.Id
 	}
 	r.SchemaName = revision.SchemaName
 	r.ObjectId = revision.ObjectId
@@ -262,7 +262,7 @@ type dataAgreementForObjectData struct {
 
 // InitForDraftDataAgreement
 func (r *Revision) InitForDraftDataAgreement(objectId string, authorisedByOtherId string, schemaName string) {
-	r.Id = primitive.NilObjectID
+	r.Id = ""
 	r.SchemaName = schemaName
 	r.ObjectId = objectId
 	r.SignedWithoutObjectId = false
@@ -275,7 +275,7 @@ func (r *Revision) InitForDraftDataAgreement(objectId string, authorisedByOtherI
 func CreateRevisionForDataAgreement(newDataAgreement dataagreement.DataAgreement, orgAdminId string) (Revision, error) {
 	// Object data
 	objectData := dataAgreementForObjectData{
-		Id:                      newDataAgreement.Id.Hex(),
+		Id:                      newDataAgreement.Id,
 		Version:                 newDataAgreement.Version,
 		ControllerId:            newDataAgreement.ControllerId,
 		ControllerUrl:           newDataAgreement.ControllerUrl,
@@ -306,7 +306,7 @@ func CreateRevisionForDataAgreement(newDataAgreement dataagreement.DataAgreement
 func UpdateRevisionForDataAgreement(updatedDataAgreement dataagreement.DataAgreement, orgAdminId string) (Revision, error) {
 	// Object data
 	objectData := dataAgreementForObjectData{
-		Id:                      updatedDataAgreement.Id.Hex(),
+		Id:                      updatedDataAgreement.Id,
 		Version:                 updatedDataAgreement.Version,
 		ControllerId:            updatedDataAgreement.ControllerId,
 		ControllerUrl:           updatedDataAgreement.ControllerUrl,
@@ -330,7 +330,7 @@ func UpdateRevisionForDataAgreement(updatedDataAgreement dataagreement.DataAgree
 	r.Init(objectData.Id, orgAdminId, config.DataAgreement)
 
 	// Query for previous revisions
-	previousRevision, err := GetLatestByDataAgreementId(updatedDataAgreement.Id.Hex())
+	previousRevision, err := GetLatestByDataAgreementId(updatedDataAgreement.Id)
 	if err != nil {
 		// Previous revision is not present
 		err = r.UpdateRevision(nil, objectData)
@@ -383,7 +383,7 @@ func RecreateDataAgreementFromRevision(revision Revision) (dataagreement.DataAgr
 func CreateRevisionForDraftDataAgreement(newDataAgreement dataagreement.DataAgreement, orgAdminId string) (Revision, error) {
 	// Object data
 	objectData := dataAgreementForObjectData{
-		Id:                      newDataAgreement.Id.Hex(),
+		Id:                      newDataAgreement.Id,
 		Version:                 newDataAgreement.Version,
 		ControllerId:            newDataAgreement.ControllerId,
 		ControllerUrl:           newDataAgreement.ControllerUrl,
@@ -423,14 +423,14 @@ func RecreateDataAgreementFromObjectData(objectData string) (interface{}, error)
 }
 
 type dataAgreementRecordForObjectData struct {
-	Id                        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	DataAgreementId           string             `json:"dataAgreementId"`
-	DataAgreementRevisionId   string             `json:"dataAgreementRevisionId"`
-	DataAgreementRevisionHash string             `json:"dataAgreementRevisionHash"`
-	IndividualId              string             `json:"individualId"`
-	OptIn                     bool               `json:"optIn"`
-	State                     string             `json:"state" valid:"required"`
-	SignatureId               string             `json:"signatureId"`
+	Id                        string `json:"id" bson:"_id,omitempty"`
+	DataAgreementId           string `json:"dataAgreementId"`
+	DataAgreementRevisionId   string `json:"dataAgreementRevisionId"`
+	DataAgreementRevisionHash string `json:"dataAgreementRevisionHash"`
+	IndividualId              string `json:"individualId"`
+	OptIn                     bool   `json:"optIn"`
+	State                     string `json:"state" valid:"required"`
+	SignatureId               string `json:"signatureId"`
 }
 
 // CreateRevisionForDataAgreementRecord
@@ -449,7 +449,7 @@ func CreateRevisionForDataAgreementRecord(newDataAgreementRecord daRecord.DataAg
 
 	// Create revision
 	revision := Revision{}
-	revision.Init(objectData.Id.Hex(), orgAdminId, config.DataAgreementRecord)
+	revision.Init(objectData.Id, orgAdminId, config.DataAgreementRecord)
 	err := revision.CreateRevision(objectData)
 
 	return revision, err
@@ -461,7 +461,7 @@ func UpdateRevisionForDataAgreementRecord(updatedDataAgreementRecord daRecord.Da
 	objectData := dataAgreementRecordForObjectData{
 		Id:                        updatedDataAgreementRecord.Id,
 		DataAgreementId:           updatedDataAgreementRecord.DataAgreementId,
-		DataAgreementRevisionId:   dataAgreementRevision.Id.Hex(),
+		DataAgreementRevisionId:   dataAgreementRevision.Id,
 		DataAgreementRevisionHash: dataAgreementRevision.SerializedHash,
 		IndividualId:              updatedDataAgreementRecord.IndividualId,
 		OptIn:                     updatedDataAgreementRecord.OptIn,
@@ -471,9 +471,9 @@ func UpdateRevisionForDataAgreementRecord(updatedDataAgreementRecord daRecord.Da
 
 	// Update revision
 	revision := Revision{}
-	revision.Init(objectData.Id.Hex(), orgAdminId, config.DataAgreementRecord)
+	revision.Init(objectData.Id, orgAdminId, config.DataAgreementRecord)
 	// Query for previous revisions
-	previousRevision, err := GetLatestByObjectId(updatedDataAgreementRecord.Id.Hex())
+	previousRevision, err := GetLatestByObjectId(updatedDataAgreementRecord.Id)
 	if err != nil {
 		return revision, err
 	}

@@ -45,7 +45,7 @@ func OnboardUpdateOrganisationAdminAvatar(w http.ResponseWriter, r *http.Request
 
 	file, _, err := r.FormFile("avatarimage")
 	if err != nil {
-		m := fmt.Sprintf("Failed to extract image user: %v", u.ID.Hex())
+		m := fmt.Sprintf("Failed to extract image user: %v", u.ID)
 		common.HandleError(w, http.StatusInternalServerError, m, err)
 		return
 	}
@@ -54,14 +54,14 @@ func OnboardUpdateOrganisationAdminAvatar(w http.ResponseWriter, r *http.Request
 	buf := bytes.NewBuffer(nil)
 	_, err = io.Copy(buf, file)
 	if err != nil {
-		m := fmt.Sprintf("Failed to copy image user: %v", u.ID.Hex())
+		m := fmt.Sprintf("Failed to copy image user: %v", u.ID)
 		common.HandleError(w, http.StatusInternalServerError, m, err)
 		return
 	}
 
 	imageID, err := image.Add(buf.Bytes())
 	if err != nil {
-		m := fmt.Sprintf("Failed to store image in data store user: %v", u.ID.Hex())
+		m := fmt.Sprintf("Failed to store image in data store user: %v", u.ID)
 		common.HandleError(w, http.StatusInternalServerError, m, err)
 		return
 	}
@@ -69,7 +69,7 @@ func OnboardUpdateOrganisationAdminAvatar(w http.ResponseWriter, r *http.Request
 	imageURL := "https://" + r.Host + "/onboard/admin/avatarimage"
 	u.ImageID = imageID
 	u.ImageURL = imageURL
-	u, err = user.Update(u.ID.Hex(), u)
+	u, err = user.Update(u.ID, u)
 	if err != nil {
 		m := fmt.Sprintf("Failed to update user: %v with image: %v details", u.ID, imageID)
 		common.HandleError(w, http.StatusInternalServerError, m, err)
@@ -77,7 +77,7 @@ func OnboardUpdateOrganisationAdminAvatar(w http.ResponseWriter, r *http.Request
 	}
 
 	resp := updateOrgAdminImageResp{
-		Id:             u.ID.Hex(),
+		Id:             u.ID,
 		Email:          u.Email,
 		Name:           u.Name,
 		AvatarImageId:  u.ImageID,

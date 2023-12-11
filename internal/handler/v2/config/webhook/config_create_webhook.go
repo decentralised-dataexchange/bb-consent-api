@@ -137,7 +137,7 @@ func ConfigCreateWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var newWebhook wh.Webhook
-	newWebhook.ID = primitive.NewObjectID()
+	newWebhook.ID = primitive.NewObjectID().Hex()
 	newWebhook = updateWebhookFromAddWebhookRequestBody(webhookReq, newWebhook)
 	newWebhook.OrganisationId = organisationId
 	newWebhook.IsDeleted = false

@@ -3,21 +3,19 @@ package dataagreementrecord
 import (
 	"net/http"
 	"strings"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type DataAgreementRecord struct {
-	Id                        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	DataAgreementId           string             `json:"dataAgreementId"`
-	DataAgreementRevisionId   string             `json:"dataAgreementRevisionId"`
-	DataAgreementRevisionHash string             `json:"dataAgreementRevisionHash"`
-	IndividualId              string             `json:"individualId"`
-	OptIn                     bool               `json:"optIn"`
-	State                     string             `json:"state" valid:"required"`
-	SignatureId               string             `json:"signatureId"`
-	OrganisationId            string             `json:"-"`
-	IsDeleted                 bool               `json:"-"`
+	Id                        string `json:"id" bson:"_id,omitempty"`
+	DataAgreementId           string `json:"dataAgreementId"`
+	DataAgreementRevisionId   string `json:"dataAgreementRevisionId"`
+	DataAgreementRevisionHash string `json:"dataAgreementRevisionHash"`
+	IndividualId              string `json:"individualId"`
+	OptIn                     bool   `json:"optIn"`
+	State                     string `json:"state" valid:"required"`
+	SignatureId               string `json:"signatureId"`
+	OrganisationId            string `json:"-"`
+	IsDeleted                 bool   `json:"-"`
 }
 
 type RevisionForListDataAgreementRecord struct {
@@ -26,7 +24,7 @@ type RevisionForListDataAgreementRecord struct {
 }
 
 type DataAgreementRecordForAuditList struct {
-	Id        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Id        string `json:"id" bson:"_id,omitempty"`
 	Revisions []RevisionForListDataAgreementRecord
 }
 

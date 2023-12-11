@@ -12,7 +12,7 @@ import (
 
 // ServiceReadOrganisationCoverImage Retrieves the organization cover image
 func ServiceReadOrganisationCoverImage(w http.ResponseWriter, r *http.Request) {
-	organizationID := r.Header.Get(config.OrganizationId)
+	organizationID := common.Sanitize(r.Header.Get(config.OrganizationId))
 	o, err := org.Get(organizationID)
 	if err != nil {
 		m := fmt.Sprintf("Failed to get organization by ID :%v", organizationID)

@@ -28,19 +28,8 @@ func updateIndividualFromAddRequestBody(requestBody addServiceIndividualReq) ind
 	return newIndividual
 }
 
-type individualReq struct {
-	Id                 primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	ExternalId         string             `json:"externalId"`
-	ExternalIdType     string             `json:"externalIdType"`
-	IdentityProviderId string             `json:"identityProviderId"`
-	Name               string             `json:"name"`
-	IamId              string             `json:"iamId"`
-	Email              string             `json:"email"`
-	Phone              string             `json:"phone"`
-}
-
 type addServiceIndividualReq struct {
-	Individual individualReq `json:"individual"`
+	Individual individual.Individual `json:"individual"`
 }
 
 type addServiceIndividualResp struct {
@@ -67,7 +56,7 @@ func ServiceCreateIndividual(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newIndividual := updateIndividualFromAddRequestBody(individualReq)
-	newIndividual.Id = primitive.NewObjectID()
+	newIndividual.Id = primitive.NewObjectID().Hex()
 	newIndividual.IsDeleted = false
 	newIndividual.IsOnboardedFromIdp = false
 	newIndividual.OrganisationId = organisationId
