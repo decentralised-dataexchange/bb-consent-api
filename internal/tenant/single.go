@@ -237,7 +237,7 @@ func SingleTenantConfiguration(config *config.Configuration) {
 	createOrganisation(config, orgType, organisationAdminId)
 
 	// delete all policies
-	deleteAllPolicies()
+	// deleteAllPolicies()
 
 	// Load image assets for organisation
 	err := fixture.LoadImageAssetsForSingleTenantConfiguration()
