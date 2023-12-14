@@ -126,12 +126,21 @@ func ConfigUpdatePolicy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// updates organisation policy url
-	err = updateOrganisationPolicyUrl(savedPolicy.Url, organisationId)
+	policyRepo.Init(organisationId)
+	first_policy, err := policyRepo.GetFirstPolicy()
 	if err != nil {
-		m := fmt.Sprintf("Failed to update organisation policy url: %v", organisationId)
+		m := "Failed to fetch first policy"
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
+	}
+	if first_policy.Id == toBeUpdatedPolicy.Id {
+		// updates organisation policy url
+		err = updateOrganisationPolicyUrl(savedPolicy.Url, organisationId)
+		if err != nil {
+			m := fmt.Sprintf("Failed to update organisation policy url: %v", organisationId)
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
 	}
 
 	// Constructing the response

@@ -144,12 +144,20 @@ func ConfigCreatePolicy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// updates organisation policy url
-	err = updateOrganisationPolicyUrl(savedPolicy.Url, organisationId)
+	count, err := prepo.GetPolicyCountByOrganisation()
 	if err != nil {
-		m := fmt.Sprintf("Failed to update organisation policy url: %v", organisationId)
+		m := "Failed to count policies"
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
+	}
+	if count == 1 {
+		// updates organisation policy url
+		err = updateOrganisationPolicyUrl(savedPolicy.Url, organisationId)
+		if err != nil {
+			m := fmt.Sprintf("Failed to update organisation policy url: %v", organisationId)
+			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			return
+		}
 	}
 
 	// Constructing the response
