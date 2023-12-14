@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/bb-consent/api/internal/actionlog"
 	"github.com/bb-consent/api/internal/common"
@@ -34,20 +35,26 @@ func (e ListActionLogsError) Error() string {
 	}
 }
 
-// ParseListActionLogQueryParams parses query params for listing action logs.
-func ParseListActionLogQueryParams(r *http.Request) (int, error) {
+func ParseListActionLogQueryParams(r *http.Request) ([]int, error) {
 	query := r.URL.Query()
-	var logType int
+	var logTypes []int
 
 	// Check if logType query param is provided.
-	if r, ok := query["logType"]; ok && len(r) > 0 {
-		if oInt, err := strconv.Atoi(r[0]); err == nil && oInt >= 1 {
-			logType = oInt
-			return logType, nil
+	if logTypeParams, ok := query["logType"]; ok && len(logTypeParams) > 0 {
+		for _, param := range logTypeParams {
+			params := strings.Split(param, ",") // Split by comma
+			for _, p := range params {
+				if oInt, err := strconv.Atoi(p); err == nil && oInt >= 1 {
+					logTypes = append(logTypes, oInt)
+				}
+			}
+		}
+		if len(logTypes) > 0 {
+			return logTypes, nil
 		}
 	}
 
-	return logType, ActionLogTypeIsMissingError
+	return logTypes, ActionLogTypeIsMissingError
 }
 
 type listActionLogsResp struct {
@@ -77,11 +84,11 @@ func AuditGetOrgLogs(w http.ResponseWriter, r *http.Request) {
 
 	var pipeline []primitive.M
 
-	logType, err := ParseListActionLogQueryParams(r)
+	logTypes, err := ParseListActionLogQueryParams(r)
 	if err != nil && errors.Is(err, ActionLogTypeIsMissingError) {
 		pipeline = []bson.M{{"$sort": bson.M{"timestamp": -1}}}
 	} else {
-		pipeline = []bson.M{{"$match": bson.M{"type": logType}}, {"$sort": bson.M{"timestamp": -1}}}
+		pipeline = []bson.M{{"$match": bson.M{"type": bson.M{"$in": logTypes}}}, {"$sort": bson.M{"timestamp": -1}}}
 	}
 	// Return all action logs
 	var actionLogs []actionlog.ActionLog
