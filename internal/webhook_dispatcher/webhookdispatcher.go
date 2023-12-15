@@ -20,11 +20,23 @@ import (
 
 // WebhookEvent Webhook event wrapper
 type WebhookEvent struct {
-	DeliveryID string      `json:"deliveryID"` // Webhook delivery ID
-	WebhookID  string      `json:"webhookID"`  // Webhook endpoint ID
-	Timestamp  string      `json:"timestamp"`  // UTC timestamp of webhook triggered data time
-	Data       interface{} `json:"data"`       // Event data attribute
-	Type       string      `json:"type"`       // Event type for e.g. data.delete.initiated
+	DeliveryID string                    `json:"deliveryID"` // Webhook delivery ID
+	WebhookID  string                    `json:"webhookID"`  // Webhook endpoint ID
+	Timestamp  string                    `json:"timestamp"`  // UTC timestamp of webhook triggered data time
+	Data       ConsentRecordWebhookEvent `json:"data"`       // Event data attribute
+	Type       string                    `json:"type"`       // Event type for e.g. data.delete.initiated
+}
+
+type ConsentRecordWebhookEvent struct {
+	ConsentRecordId           string `json:"consentRecordId"`
+	DataAgreementId           string `json:"dataAgreementId"`
+	DataAgreementRevisionId   string `json:"dataAgreementRevisionId"`
+	DataAgreementRevisionHash string `json:"dataAgreementRevisionHash"`
+	IndividualId              string `json:"individualId"`
+	OptIn                     bool   `json:"optIn"`
+	State                     string `json:"state"`
+	SignatureId               string `json:"signatureId"`
+	OrganisationId            string `json:"organisationId"`
 }
 
 // Payload content type const
@@ -74,7 +86,7 @@ type WebhookDelivery struct {
 	UserID                  string              // ID of user who triggered the webhook event
 	WebhookEventType        string              // Webhook event type for e.g. data.delete.initiated
 	RequestHeaders          map[string][]string // HTTP headers posted to webhook endpoint
-	RequestPayload          interface{}         // JSON payload posted to webhook endpoint
+	RequestPayload          WebhookEvent        // JSON payload posted to webhook endpoint
 	ResponseHeaders         map[string][]string // HTTP response headers received from webhook endpoint
 	ResponseBody            string              // HTTP response body received from webhook endpoint in bytes
 	ResponseStatusCode      int                 // HTTP response status code
@@ -109,16 +121,12 @@ func ProcessWebhooks(webhookEventType string, value []byte) {
 	// Webhook event data attribute
 	// Converting data attribute to appropriate webhook event struct
 
-	webhookEventData, ok := webhookEvent.Data.(map[string]interface{})
-	if !ok {
-		log.Printf("Invalid incoming webhook recieved !")
-		return
-	}
+	webhookEventData := webhookEvent.Data
 
 	// Quick fix
 	// Retrieving user and organisation ID from webhook data attribute
-	userID := webhookEventData["individualId"].(string)
-	orgID := webhookEventData["organisationId"].(string)
+	userID := webhookEventData.IndividualId
+	orgID := webhookEventData.OrganisationId
 
 	log.Printf("Processing webhook:%s triggered by user:%s of org:%s for event:%s", webhookEvent.WebhookID, userID, orgID, webhookEventType)
 

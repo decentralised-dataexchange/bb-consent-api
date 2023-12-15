@@ -37,3 +37,11 @@ func AddWebhookDelivery(webhookDelivery WebhookDelivery) (WebhookDelivery, error
 
 	return webhookDelivery, err
 }
+
+// GetWebhookDeliveryByID Gets payload delivery details by ID
+func GetWebhookDeliveryByID(webhookID string, webhookDeliveryId string) (result WebhookDelivery, err error) {
+
+	err = webhookDeliveryCollection().FindOne(context.TODO(), bson.M{"webhookid": webhookID, "_id": webhookDeliveryId}).Decode(&result)
+
+	return result, err
+}
