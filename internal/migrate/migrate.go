@@ -265,7 +265,7 @@ func migrateIdToStringInApiKeyCollection() {
 
 	var results []apikey.ApiKey
 
-	cursor, err := apiKeyCollection.Find(context.TODO(), bson.M{})
+	cursor, err := apiKeyCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$type": "objectId"}})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -310,7 +310,7 @@ func migrateIdToStringInActionLogsCollection() {
 
 	var results []actionlog.ActionLog
 
-	cursor, err := actionLogCollection.Find(context.TODO(), bson.M{})
+	cursor, err := actionLogCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$type": "objectId"}})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -355,7 +355,7 @@ func migrateIdToStringInIdentityProvidersCollection() {
 
 	var results []idp.IdentityProvider
 
-	cursor, err := idpCollection.Find(context.TODO(), bson.M{})
+	cursor, err := idpCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$type": "objectId"}})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -400,7 +400,7 @@ func migrateIdToStringInImagesCollection() {
 
 	var results []image.Image
 
-	cursor, err := imageCollection.Find(context.TODO(), bson.M{})
+	cursor, err := imageCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$type": "objectId"}})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -445,7 +445,7 @@ func migrateIdToStringInIndividualsCollection() {
 
 	var results []individual.Individual
 
-	cursor, err := individualCollection.Find(context.TODO(), bson.M{})
+	cursor, err := individualCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$type": "objectId"}})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -490,7 +490,7 @@ func migrateIdToStringInWebhooksCollection() {
 
 	var results []webhook.Webhook
 
-	cursor, err := webhookCollection.Find(context.TODO(), bson.M{})
+	cursor, err := webhookCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$type": "objectId"}})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -535,7 +535,7 @@ func migrateIdToStringInWebhookDeliveriesCollection() {
 
 	var results []webhook.WebhookDelivery
 
-	cursor, err := webhookDeliveryCollection.Find(context.TODO(), bson.M{})
+	cursor, err := webhookDeliveryCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$type": "objectId"}})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -580,7 +580,7 @@ func migrateIdToStringInOtpsCollection() {
 
 	var results []otp.Otp
 
-	cursor, err := otpCollection.Find(context.TODO(), bson.M{})
+	cursor, err := otpCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$type": "objectId"}})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -625,7 +625,7 @@ func migrateIdToStringInPoliciesCollection() {
 
 	var results []policy.Policy
 
-	cursor, err := policyCollection.Find(context.TODO(), bson.M{})
+	cursor, err := policyCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$type": "objectId"}})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -670,7 +670,7 @@ func migrateIdToStringInConsentRecordHistoriesCollection() {
 
 	var results []dataagreementrecordhistory.DataAgreementRecordsHistory
 
-	cursor, err := consentRecordHistoriesCollection.Find(context.TODO(), bson.M{})
+	cursor, err := consentRecordHistoriesCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$type": "objectId"}})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -715,7 +715,7 @@ func migrateIdToStringInConsentRecordsCollection() {
 
 	var results []dataagreementrecord.DataAgreementRecord
 
-	cursor, err := consentRecordCollection.Find(context.TODO(), bson.M{})
+	cursor, err := consentRecordCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$type": "objectId"}})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -760,7 +760,7 @@ func migrateIdToStringInDataAgreementsCollection() {
 
 	var results []dataagreement.DataAgreement
 
-	cursor, err := dataAgreementCollection.Find(context.TODO(), bson.M{})
+	cursor, err := dataAgreementCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$type": "objectId"}})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -805,7 +805,7 @@ func migrateIdToStringInSignaturesCollection() {
 
 	var results []signature.Signature
 
-	cursor, err := signatureCollection.Find(context.TODO(), bson.M{})
+	cursor, err := signatureCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$type": "objectId"}})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -850,7 +850,7 @@ func migrateIdToStringInRevisionsCollection() {
 
 	var results []revision.Revision
 
-	cursor, err := revisionCollection.Find(context.TODO(), bson.M{})
+	cursor, err := revisionCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$type": "objectId"}})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -895,7 +895,7 @@ func migrateIdToStringInUsersCollection() {
 
 	var results []user.User
 
-	cursor, err := userCollection.Find(context.TODO(), bson.M{})
+	cursor, err := userCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$type": "objectId"}})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -940,7 +940,7 @@ func migrateIdToStringInOrgTypesCollection() {
 
 	var results []orgtype.OrgType
 
-	cursor, err := orgTypeCollection.Find(context.TODO(), bson.M{})
+	cursor, err := orgTypeCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$type": "objectId"}})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -985,7 +985,7 @@ func migrateIdToStringInOrganisationCollection() {
 
 	var results []org.Organization
 
-	cursor, err := orgCollection.Find(context.TODO(), bson.M{})
+	cursor, err := orgCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$type": "objectId"}})
 	if err != nil {
 		fmt.Println(err)
 	}
