@@ -147,7 +147,12 @@ func deleteAllPolicies() {
 func createDefaultPolicy(config *config.Configuration, org org.Organization, orgAdminId string) (policy.Policy, error) {
 
 	var newPolicy policy.Policy
-	newPolicy.Id = primitive.NewObjectID().Hex()
+	if config.TestMode {
+		newPolicy.Id = "1"
+	} else {
+		newPolicy.Id = primitive.NewObjectID().Hex()
+	}
+
 	newPolicy.Name = config.Policy.Name
 	newPolicy.Url = org.PolicyURL
 	newPolicy.Jurisdiction = org.Location
