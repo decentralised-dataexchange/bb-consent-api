@@ -42,7 +42,7 @@ func ConfigReadDataAgreement(w http.ResponseWriter, r *http.Request) {
 	da, err := daRepo.Get(dataAgreementId)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch data agreement: %v", dataAgreementId)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
 		return
 	}
 
@@ -55,7 +55,7 @@ func ConfigReadDataAgreement(w http.ResponseWriter, r *http.Request) {
 		rev, err = revision.GetByRevisionId(revisionId)
 		if err != nil {
 			m := fmt.Sprintf("Failed to fetch revision: %v", dataAgreementId)
-			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+			common.HandleErrorV2(w, http.StatusBadRequest, m, err)
 			return
 		}
 
@@ -67,7 +67,7 @@ func ConfigReadDataAgreement(w http.ResponseWriter, r *http.Request) {
 			rev, err = revision.GetLatestByDataAgreementId(dataAgreementId)
 			if err != nil {
 				m := fmt.Sprintf("Failed to fetch revision: %v", dataAgreementId)
-				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+				common.HandleErrorV2(w, http.StatusBadRequest, m, err)
 				return
 			}
 
@@ -77,7 +77,7 @@ func ConfigReadDataAgreement(w http.ResponseWriter, r *http.Request) {
 			rev, err = revision.CreateRevisionForDraftDataAgreement(da, orgAdminId)
 			if err != nil {
 				m := "Failed to create revision in run time"
-				common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+				common.HandleErrorV2(w, http.StatusBadRequest, m, err)
 				return
 			}
 
