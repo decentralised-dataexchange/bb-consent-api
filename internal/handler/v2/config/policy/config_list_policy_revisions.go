@@ -47,7 +47,7 @@ func ConfigListPolicyRevisions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	revisions, err := revision.ListAllByPolicyId(policyId)
+	revisions, err := revision.ListAllByObjectIdAndSchemaName(policyId, config.Policy)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch revision: %v", policyId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
