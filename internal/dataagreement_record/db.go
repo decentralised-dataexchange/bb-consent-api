@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/bb-consent/api/internal/common"
+	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/database"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -123,7 +124,10 @@ func DataAgreementRecordsWithRevisionsFilteredById(organisationId string, id str
 			bson.M{
 				"$match": bson.M{
 					"$expr": bson.M{
-						"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
+						"$and": bson.A{
+							bson.M{"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}}},
+							bson.M{"$eq": []interface{}{"$schemaname", config.DataAgreementRecord}},
+						},
 					},
 				},
 			},
@@ -167,7 +171,10 @@ func CreatePipelineForFilteringLatestDataAgreementRecords(organisationId string)
 			bson.M{
 				"$match": bson.M{
 					"$expr": bson.M{
-						"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
+						"$and": bson.A{
+							bson.M{"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}}},
+							bson.M{"$eq": []interface{}{"$schemaname", config.DataAgreementRecord}},
+						},
 					},
 				},
 			},
@@ -218,7 +225,10 @@ func CreatePipelineForFilteringDataAgreementRecordsByIndividualId(organisationId
 			bson.M{
 				"$match": bson.M{
 					"$expr": bson.M{
-						"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
+						"$and": bson.A{
+							bson.M{"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}}},
+							bson.M{"$eq": []interface{}{"$schemaname", config.DataAgreementRecord}},
+						},
 					},
 				},
 			},
@@ -269,7 +279,10 @@ func CreatePipelineForFilteringDataAgreementRecordsByDataAgreementId(organisatio
 			bson.M{
 				"$match": bson.M{
 					"$expr": bson.M{
-						"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
+						"$and": bson.A{
+							bson.M{"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}}},
+							bson.M{"$eq": []interface{}{"$schemaname", config.DataAgreementRecord}},
+						},
 					},
 				},
 			},

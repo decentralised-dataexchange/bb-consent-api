@@ -34,7 +34,7 @@ func ServiceVerificationFetchDataAgreementRecord(w http.ResponseWriter, r *http.
 		return
 	}
 
-	currentRevision, err := revision.GetLatestByObjectId(daRecord.Id)
+	currentRevision, err := revision.GetLatestByObjectIdAndSchemaName(daRecord.Id, config.DataAgreementRecord)
 	if err != nil {
 		m := "Failed to fetch revision for data agreement record"
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)

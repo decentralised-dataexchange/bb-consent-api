@@ -51,7 +51,7 @@ func ServiceReadPolicy(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
-		revisionResp, err = revision.GetLatestByPolicyId(policyId)
+		revisionResp, err = revision.GetLatestByObjectIdAndSchemaName(policyId, config.Policy)
 		if err != nil {
 			m := fmt.Sprintf("Failed to fetch revision: %v", policyId)
 			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)

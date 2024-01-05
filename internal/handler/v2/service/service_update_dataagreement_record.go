@@ -89,7 +89,7 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentDataAgreementRecordRevision, err := revision.GetLatestByObjectId(dataAgreementRecordId)
+	currentDataAgreementRecordRevision, err := revision.GetLatestByObjectIdAndSchemaName(dataAgreementRecordId, config.DataAgreementRecord)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch latest revision for data agreement record: %v", dataAgreementRecordId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
@@ -107,7 +107,7 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 	}
 	toBeUpdatedDaRecord.OptIn = dataAgreementRecordReq.OptIn
 
-	currentDataAgreementRevision, err := revision.GetLatestByObjectId(dataAgreementId)
+	currentDataAgreementRevision, err := revision.GetLatestByObjectIdAndSchemaName(dataAgreementId, config.DataAgreement)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch latest revision for data agreement: %v", dataAgreementId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)

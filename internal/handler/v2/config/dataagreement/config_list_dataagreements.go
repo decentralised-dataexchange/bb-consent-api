@@ -181,7 +181,7 @@ func getDataAgreementsWithRevisions(organisationId string, lifecycle string) ([]
 
 	for _, dataAgreement := range dataAgreements {
 		// list all revisions for data agreement
-		revisions, err := revision.ListAllByDataAgreementId(dataAgreement.Id)
+		revisions, err := revision.ListAllByObjectIdAndSchemaName(dataAgreement.Id, config.DataAgreement)
 		if err != nil {
 			return tempDataAgreements, err
 		}

@@ -30,7 +30,7 @@ func ConfigDeletePolicy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentRevision, err := revision.GetLatestByPolicyId(policyId)
+	currentRevision, err := revision.GetLatestByObjectIdAndSchemaName(policyId, config.Policy)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch revisions: %v", policyId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)

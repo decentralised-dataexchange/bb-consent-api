@@ -3,6 +3,7 @@ package policy
 import (
 	"context"
 
+	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/database"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -105,7 +106,10 @@ func CreatePipelineForFilteringPolicies(organisationId string) ([]primitive.M, e
 			bson.M{
 				"$match": bson.M{
 					"$expr": bson.M{
-						"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
+						"$and": bson.A{
+							bson.M{"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}}},
+							bson.M{"$eq": []interface{}{"$schemaname", config.Policy}},
+						},
 					},
 				},
 			},

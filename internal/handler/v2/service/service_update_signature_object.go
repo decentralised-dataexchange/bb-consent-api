@@ -76,7 +76,7 @@ func ServiceUpdateSignatureObject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentDataAgreementRevision, err := revision.GetLatestByObjectId(toBeUpdatedDaRecord.DataAgreementId)
+	currentDataAgreementRevision, err := revision.GetLatestByObjectIdAndSchemaName(toBeUpdatedDaRecord.DataAgreementId, config.DataAgreement)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch latest revision for data agreement: %v", toBeUpdatedDaRecord.DataAgreementId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)

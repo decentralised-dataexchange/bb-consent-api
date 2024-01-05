@@ -29,7 +29,7 @@ func ServiceCreateBlankSignature(w http.ResponseWriter, r *http.Request) {
 	darRepo.Init(organisationId)
 
 	// Get latest revision for data agreement record
-	daRecordRevision, err := revision.GetLatestByObjectId(dataAgreementRecordId)
+	daRecordRevision, err := revision.GetLatestByObjectIdAndSchemaName(dataAgreementRecordId, config.DataAgreementRecord)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch revision for data agreement record: %v", dataAgreementRecordId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)

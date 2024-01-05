@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/bb-consent/api/internal/common"
+	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/database"
 	"github.com/bb-consent/api/internal/policy"
 	"go.mongodb.org/mongo-driver/bson"
@@ -157,7 +158,10 @@ func CreatePipelineForFilteringDataAgreements(organisationId string, removeRevis
 			bson.M{
 				"$match": bson.M{
 					"$expr": bson.M{
-						"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
+						"$and": bson.A{
+							bson.M{"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}}},
+							bson.M{"$eq": []interface{}{"$schemaname", config.DataAgreement}},
+						},
 					},
 				},
 			},
@@ -210,7 +214,10 @@ func CreatePipelineForFilteringDataAgreementsUsingLifecycle(organisationId strin
 			bson.M{
 				"$match": bson.M{
 					"$expr": bson.M{
-						"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}},
+						"$and": bson.A{
+							bson.M{"$eq": []interface{}{"$objectid", bson.M{"$toString": "$$localId"}}},
+							bson.M{"$eq": []interface{}{"$schemaname", config.DataAgreement}},
+						},
 					},
 				},
 			},

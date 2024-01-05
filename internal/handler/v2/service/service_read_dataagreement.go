@@ -37,7 +37,7 @@ func ServiceReadDataAgreement(w http.ResponseWriter, r *http.Request) {
 	}
 	var revisionResp revision.Revision
 
-	revisionResp, err = revision.GetLatestByDataAgreementId(da.Id)
+	revisionResp, err = revision.GetLatestByObjectIdAndSchemaName(da.Id, config.DataAgreement)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch revision: %v", dataAgreementId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
