@@ -67,7 +67,7 @@ func ServiceCreateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 
 	// If revision id is missing, fetch latest revision
 	if err != nil && errors.Is(err, daRecord.RevisionIdIsMissingError) {
-		rev, err = revision.GetLatestByObjectId(dataAgreementId)
+		rev, err = revision.GetLatestByObjectIdAndSchemaName(dataAgreementId, config.DataAgreement)
 		if err != nil {
 			m := fmt.Sprintf("Failed to fetch revision for data agreement: %v", dataAgreementId)
 			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
