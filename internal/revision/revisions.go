@@ -159,7 +159,7 @@ func UpdateRevisionForPolicy(updatedPolicy policy.Policy, orgAdminId string) (Re
 	r := Revision{}
 	r.Init(objectData.Id, orgAdminId, config.Policy)
 	// Query for previous revisions
-	previousRevision, err := GetLatestByPolicyId(updatedPolicy.Id)
+	previousRevision, err := GetLatestByObjectIdAndSchemaName(updatedPolicy.Id, config.Policy)
 	if err != nil {
 		// Previous revision is not present
 		err = r.UpdateRevision(nil, objectData)
@@ -344,7 +344,7 @@ func UpdateRevisionForDataAgreement(updatedDataAgreement dataagreement.DataAgree
 	r.Init(objectData.Id, orgAdminId, config.DataAgreement)
 
 	// Query for previous revisions
-	previousRevision, err := GetLatestByDataAgreementId(updatedDataAgreement.Id)
+	previousRevision, err := GetLatestByObjectIdAndSchemaName(updatedDataAgreement.Id, config.DataAgreement)
 	if err != nil {
 		// Previous revision is not present
 		err = r.UpdateRevision(nil, objectData)
@@ -492,7 +492,7 @@ func UpdateRevisionForDataAgreementRecord(updatedDataAgreementRecord daRecord.Da
 	revision := Revision{}
 	revision.Init(objectData.Id, orgAdminId, config.DataAgreementRecord)
 	// Query for previous revisions
-	previousRevision, err := GetLatestByObjectId(updatedDataAgreementRecord.Id)
+	previousRevision, err := GetLatestByObjectIdAndSchemaName(updatedDataAgreementRecord.Id, config.DataAgreementRecord)
 	if err != nil {
 		return revision, err
 	}
