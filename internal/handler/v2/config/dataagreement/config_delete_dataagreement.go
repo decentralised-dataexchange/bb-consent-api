@@ -43,7 +43,7 @@ func ConfigDeleteDataAgreement(w http.ResponseWriter, r *http.Request) {
 	// If data agreement is published then:
 	// a. Fetch latest revision
 	if toBeDeletedDA.Active {
-		rev, err = revision.GetLatestByDataAgreementId(dataAgreementId)
+		rev, err = revision.GetLatestByObjectIdAndSchemaName(dataAgreementId, config.DataAgreement)
 		if err != nil {
 			m := fmt.Sprintf("Failed to fetch revision: %v", dataAgreementId)
 			common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
