@@ -37,38 +37,6 @@ func Update(revision Revision) (Revision, error) {
 	return revision, err
 }
 
-// Get Gets revision by policy id
-func GetLatestByPolicyId(policyId string) (Revision, error) {
-
-	var result Revision
-	opts := options.FindOne().SetSort(bson.M{"timestamp": -1})
-	err := Collection().FindOne(context.TODO(), bson.M{"objectid": policyId}, opts).Decode(&result)
-	if err != nil {
-		return Revision{}, err
-	}
-
-	return result, err
-}
-
-// Get Gets revisions by policy id
-func ListAllByPolicyId(policyId string) ([]Revision, error) {
-
-	var results []Revision
-	opts := options.Find().SetSort(bson.M{"timestamp": -1})
-	cursor, err := Collection().Find(context.TODO(), bson.M{"objectid": policyId}, opts)
-	if err != nil {
-		return []Revision{}, err
-	}
-
-	defer cursor.Close(context.TODO())
-
-	if err := cursor.All(context.TODO(), &results); err != nil {
-		return []Revision{}, err
-	}
-
-	return results, err
-}
-
 // GetByRevisionId Get revision by id
 func GetByRevisionId(revisionId string) (Revision, error) {
 	var result Revision
@@ -81,69 +49,6 @@ func GetByRevisionId(revisionId string) (Revision, error) {
 	return result, err
 }
 
-// Get Gets revision by data agreement id
-func GetLatestByDataAgreementId(dataAgreementId string) (Revision, error) {
-
-	var result Revision
-	opts := options.FindOne().SetSort(bson.M{"timestamp": -1})
-	err := Collection().FindOne(context.TODO(), bson.M{"objectid": dataAgreementId}, opts).Decode(&result)
-	if err != nil {
-		return Revision{}, err
-	}
-
-	return result, err
-}
-
-// Get Gets revisions by data agreement id
-func ListAllByDataAgreementId(dataAgreementId string) ([]Revision, error) {
-
-	var results []Revision
-	opts := options.Find().SetSort(bson.M{"timestamp": -1})
-	cursor, err := Collection().Find(context.TODO(), bson.M{"objectid": dataAgreementId}, opts)
-	if err != nil {
-		return []Revision{}, err
-	}
-
-	defer cursor.Close(context.TODO())
-
-	if err := cursor.All(context.TODO(), &results); err != nil {
-		return []Revision{}, err
-	}
-
-	return results, err
-}
-
-// Get Gets revision by data attribute id
-func GetLatestByDataAttributeId(dataAttributeId string) (Revision, error) {
-
-	var result Revision
-	opts := options.FindOne().SetSort(bson.M{"timestamp": -1})
-	err := Collection().FindOne(context.TODO(), bson.M{"objectid": dataAttributeId}, opts).Decode(&result)
-	if err != nil {
-		return Revision{}, err
-	}
-
-	return result, err
-}
-
-// Get Gets revisions by data attribute id
-func ListAllByDataAttributeId(dataAttributeId string) ([]Revision, error) {
-
-	var results []Revision
-	cursor, err := Collection().Find(context.TODO(), bson.M{"objectid": dataAttributeId})
-	if err != nil {
-		return []Revision{}, err
-	}
-
-	defer cursor.Close(context.TODO())
-
-	if err := cursor.All(context.TODO(), &results); err != nil {
-		return []Revision{}, err
-	}
-
-	return results, err
-}
-
 // GetByRevisionIdAndSchema gets revision by id and schema
 func GetByRevisionIdAndSchema(revisionId string, schemaName string) (Revision, error) {
 	var result Revision
@@ -151,19 +56,6 @@ func GetByRevisionIdAndSchema(revisionId string, schemaName string) (Revision, e
 	err := Collection().FindOne(context.TODO(), bson.M{"_id": revisionId, "schemaname": schemaName}).Decode(&result)
 	if err != nil {
 		return result, err
-	}
-
-	return result, err
-}
-
-// Get Gets revision by object id
-func GetLatestByObjectId(objectId string) (Revision, error) {
-
-	var result Revision
-	opts := options.FindOne().SetSort(bson.M{"timestamp": -1})
-	err := Collection().FindOne(context.TODO(), bson.M{"objectid": objectId}, opts).Decode(&result)
-	if err != nil {
-		return Revision{}, err
 	}
 
 	return result, err
