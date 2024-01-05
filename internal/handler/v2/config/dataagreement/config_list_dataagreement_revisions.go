@@ -47,7 +47,7 @@ func ConfigListDataAgreementRevisions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	revisions, err := revision.ListAllByDataAgreementId(dataAgreementId)
+	revisions, err := revision.ListAllByObjectIdAndSchemaName(dataAgreementId, config.DataAgreement)
 	if err != nil {
 		m := fmt.Sprintf("Failed to fetch revision: %v", dataAgreementId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
