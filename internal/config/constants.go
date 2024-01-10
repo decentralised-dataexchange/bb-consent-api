@@ -39,10 +39,10 @@ const (
 
 // Schemas
 const (
-	DataAgreement       = "dataAgreement"
-	Policy              = "policy"
-	DataAgreementRecord = "consentRecord"
-	DataAttribute       = "dataAttribute"
+	DataAgreement       = "DataAgreement"
+	Policy              = "Policy"
+	DataAgreementRecord = "ConsentRecord"
+	DataAttribute       = "DataAttribute"
 )
 
 // Data Agreement Method of Use

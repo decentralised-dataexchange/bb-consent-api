@@ -21,24 +21,34 @@ type Revision struct {
 	SignedWithoutObjectId    bool   `json:"signedWithoutObjectId"`
 	Timestamp                string `json:"timestamp"`
 	AuthorizedByIndividualId string `json:"authorizedByIndividualId"`
-	AuthorizedByOtherId      string `json:"authorizedByOtherId"`
+	AuthorizedByOther        string `json:"authorizedByOther"`
 	PredecessorHash          string `json:"predecessorHash"`
 	PredecessorSignature     string `json:"predecessorSignature"`
 	ObjectData               string `json:"objectData"`
-	SuccessorId              string `json:"-"`
-	SerializedHash           string `json:"-"`
-	SerializedSnapshot       string `json:"-"`
+	SuccessorId              string `json:"successorId"`
+	SerializedHash           string `json:"serializedHash"`
+	SerializedSnapshot       string `json:"serializedSnapshot"`
+}
+
+type RevisionForSerializedSnapshot struct {
+	SchemaName               string `json:"schemaName"`
+	ObjectId                 string `json:"objectId"`
+	SignedWithoutObjectId    bool   `json:"signedWithoutObjectId"`
+	Timestamp                string `json:"timestamp"`
+	AuthorizedByIndividualId string `json:"authorizedByIndividualId"`
+	AuthorizedByOther        string `json:"authorizedByOther"`
+	ObjectData               string `json:"objectData"`
 }
 
 // Init
-func (r *Revision) Init(objectId string, authorisedByOtherId string, schemaName string) {
+func (r *Revision) Init(objectId string, authorisedByOther string, schemaName string) {
 	r.Id = primitive.NewObjectID().Hex()
 	r.SchemaName = schemaName
 	r.ObjectId = objectId
 	r.SignedWithoutObjectId = false
 	r.Timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 	r.AuthorizedByIndividualId = ""
-	r.AuthorizedByOtherId = authorisedByOtherId
+	r.AuthorizedByOther = authorisedByOther
 }
 func (r *Revision) updateSuccessorId(successorId string) {
 	r.SuccessorId = successorId
@@ -62,9 +72,18 @@ func (r *Revision) CreateRevision(objectData interface{}) error {
 	}
 	r.ObjectData = string(objectDataSerialised)
 
+	var revisionForSerializedSnapshot RevisionForSerializedSnapshot
+	revisionForSerializedSnapshot.SchemaName = r.SchemaName
+	revisionForSerializedSnapshot.ObjectId = r.ObjectId
+	revisionForSerializedSnapshot.SignedWithoutObjectId = r.SignedWithoutObjectId
+	revisionForSerializedSnapshot.Timestamp = r.Timestamp
+	revisionForSerializedSnapshot.AuthorizedByIndividualId = r.AuthorizedByIndividualId
+	revisionForSerializedSnapshot.AuthorizedByOther = r.AuthorizedByOther
+	revisionForSerializedSnapshot.ObjectData = r.ObjectData
+
 	// Serialised snapshot
 	// TODO: Use a standard json normalisation algorithm for .e.g JCS
-	serialisedSnapshot, err := json.Marshal(r)
+	serialisedSnapshot, err := json.Marshal(revisionForSerializedSnapshot)
 	if err != nil {
 		return err
 	}
@@ -211,9 +230,6 @@ func RecreatePolicyFromRevision(revision Revision) (policy.Policy, error) {
 // RevisionForHTTPResponse
 type RevisionForHTTPResponse struct {
 	Revision
-	SuccessorId        string `json:"successorId"`
-	SerializedHash     string `json:"serializedHash"`
-	SerializedSnapshot string `json:"serizalizedSnapshot"`
 }
 
 // Init
@@ -228,7 +244,7 @@ func (r *RevisionForHTTPResponse) Init(revision Revision) {
 	r.SignedWithoutObjectId = revision.SignedWithoutObjectId
 	r.Timestamp = revision.Timestamp
 	r.AuthorizedByIndividualId = revision.AuthorizedByIndividualId
-	r.AuthorizedByOtherId = revision.AuthorizedByOtherId
+	r.AuthorizedByOther = revision.AuthorizedByOther
 	r.PredecessorHash = revision.PredecessorHash
 	r.PredecessorSignature = revision.PredecessorSignature
 	r.ObjectData = revision.ObjectData
@@ -272,7 +288,7 @@ func (r *Revision) InitForDraftDataAgreement(objectId string, authorisedByOtherI
 	r.SignedWithoutObjectId = false
 	r.Timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 	r.AuthorizedByIndividualId = ""
-	r.AuthorizedByOtherId = authorisedByOtherId
+	r.AuthorizedByOther = authorisedByOtherId
 }
 
 // CreateRevisionForDataAgreement
