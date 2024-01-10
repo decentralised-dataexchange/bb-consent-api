@@ -3,10 +3,12 @@ package migrate
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/bb-consent/api/internal/actionlog"
 	"github.com/bb-consent/api/internal/apikey"
+	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/dataagreement"
 	dataagreementrecord "github.com/bb-consent/api/internal/dataagreement_record"
 	dataagreementrecordhistory "github.com/bb-consent/api/internal/dataagreement_record_history"
@@ -53,6 +55,7 @@ func Migrate() {
 	migrateIdToStringInDataAgreementsCollection()
 	migrateIdToStringInSignaturesCollection()
 	migrateIdToStringInRevisionsCollection()
+	migrateSchemaNameAndAuthorizedByOtherInRevisionCollection()
 }
 
 func migrateThirdPartyDataSharingToTrueInPolicyCollection() {
@@ -1023,4 +1026,48 @@ func migrateIdToStringInOrganisationCollection() {
 		}
 	}
 
+}
+
+func migrateSchemaNameAndAuthorizedByOtherInRevisionCollection() {
+	revisionCollection := revision.Collection()
+
+	var results []revision.Revision
+
+	cursor, err := revisionCollection.Find(context.TODO(), bson.M{})
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer cursor.Close(context.TODO())
+
+	if err := cursor.All(context.TODO(), &results); err != nil {
+		fmt.Println(err)
+	}
+
+	for _, revision := range results {
+
+		schemaName := ""
+
+		switch revision.SchemaName {
+		case "policy":
+			schemaName = config.Policy
+		case "dataAgreement":
+			schemaName = config.DataAgreement
+		case "consentRecord":
+			schemaName = config.DataAgreementRecord
+		}
+
+		if strings.TrimSpace(schemaName) != "" {
+			filter := bson.M{"_id": revision.Id}
+			update := bson.M{
+				"$set":    bson.M{"schemaname": schemaName},
+				"$rename": bson.M{"authorizedbyotherid": "authorizedbyother"},
+			}
+
+			_, err = revisionCollection.UpdateOne(context.TODO(), filter, update)
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+
+	}
 }
