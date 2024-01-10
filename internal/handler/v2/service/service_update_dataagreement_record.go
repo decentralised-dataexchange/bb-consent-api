@@ -2,12 +2,10 @@ package service
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 
-	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/internal/common"
 	"github.com/bb-consent/api/internal/config"
 	"github.com/bb-consent/api/internal/dataagreement"
@@ -24,6 +22,14 @@ type updateDataAgreementRecordResp struct {
 	Revision            revision.Revision            `json:"revision"`
 }
 type updateDataAgreementRecordReq struct {
+	OptIn bool `json:"optIn"`
+}
+
+type updateconsentRecordReq struct {
+	ConsentRecord consentRecord `json:"consentRecord"`
+}
+
+type consentRecord struct {
 	OptIn bool `json:"optIn"`
 }
 
@@ -45,37 +51,25 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse query params
-	dataAgreementId, err := daRecord.ParseQueryParams(r, config.DataAgreementId, daRecord.DataAgreementIdIsMissingError)
-	dataAgreementId = common.Sanitize(dataAgreementId)
-	if err != nil && errors.Is(err, daRecord.DataAgreementIdIsMissingError) {
-		m := "Query param dataAgreementId is required"
-		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
-		return
-	}
-
 	// Request body
 	var dataAgreementRecordReq updateDataAgreementRecordReq
+	var updateConsentReq updateconsentRecordReq
 	b, _ := io.ReadAll(r.Body)
 	defer r.Body.Close()
+
+	var optIn bool
+	// Unmarshal data agreement record req
 	json.Unmarshal(b, &dataAgreementRecordReq)
-
-	// validating request payload
-	valid, err := govalidator.ValidateStruct(dataAgreementRecordReq)
-	if !valid {
-		m := fmt.Sprintf("Failed to validate request body: %v", dataAgreementRecordId)
-		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
-		return
-	}
-	// Repository
-	daRepo := dataagreement.DataAgreementRepository{}
-	daRepo.Init(organisationId)
-
-	_, err = daRepo.Get(dataAgreementId)
-	if err != nil {
-		m := fmt.Sprintf("Failed to fetch data agreement: %v", dataAgreementId)
-		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
-		return
+	if dataAgreementRecordReq.OptIn {
+		optIn = dataAgreementRecordReq.OptIn
+	} else {
+		// Unmarshal update consent record req
+		json.Unmarshal(b, &updateConsentReq)
+		if updateConsentReq.ConsentRecord.OptIn {
+			optIn = updateConsentReq.ConsentRecord.OptIn
+		} else {
+			optIn = false
+		}
 	}
 
 	// Repository
@@ -88,6 +82,16 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
+	// Repository
+	daRepo := dataagreement.DataAgreementRepository{}
+	daRepo.Init(organisationId)
+
+	_, err = daRepo.Get(toBeUpdatedDaRecord.DataAgreementId)
+	if err != nil {
+		m := fmt.Sprintf("Failed to fetch data agreement: %v", toBeUpdatedDaRecord.DataAgreementId)
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
+		return
+	}
 
 	currentDataAgreementRecordRevision, err := revision.GetLatestByObjectIdAndSchemaName(dataAgreementRecordId, config.DataAgreementRecord)
 	if err != nil {
@@ -96,7 +100,7 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if toBeUpdatedDaRecord.OptIn == dataAgreementRecordReq.OptIn {
+	if toBeUpdatedDaRecord.OptIn == optIn {
 		// response
 		resp := updateDataAgreementRecordResp{
 			DataAgreementRecord: toBeUpdatedDaRecord,
@@ -105,11 +109,11 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 		common.ReturnHTTPResponse(resp, w)
 		return
 	}
-	toBeUpdatedDaRecord.OptIn = dataAgreementRecordReq.OptIn
+	toBeUpdatedDaRecord.OptIn = optIn
 
-	currentDataAgreementRevision, err := revision.GetLatestByObjectIdAndSchemaName(dataAgreementId, config.DataAgreement)
+	currentDataAgreementRevision, err := revision.GetLatestByObjectIdAndSchemaName(toBeUpdatedDaRecord.DataAgreementId, config.DataAgreement)
 	if err != nil {
-		m := fmt.Sprintf("Failed to fetch latest revision for data agreement: %v", dataAgreementId)
+		m := fmt.Sprintf("Failed to fetch latest revision for data agreement: %v", toBeUpdatedDaRecord.DataAgreementId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
