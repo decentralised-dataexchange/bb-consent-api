@@ -42,7 +42,9 @@ type updateSignatureforDataAgreementRecordReq struct {
 }
 
 type updateSignatureforDataAgreementRecordResp struct {
-	Signature signature.Signature `json:"signature"`
+	DataAgreementRecord daRecord.DataAgreementRecord `json:"consentRecord"`
+	Revision            revision.Revision            `json:"revision"`
+	Signature           signature.Signature          `json:"signature"`
 }
 
 func ServiceUpdateSignatureObject(w http.ResponseWriter, r *http.Request) {
@@ -119,7 +121,7 @@ func ServiceUpdateSignatureObject(w http.ResponseWriter, r *http.Request) {
 	toBeUpdatedDaRecord.State = config.Signed
 
 	// Save data agreement to db
-	_, err = darRepo.Update(toBeUpdatedDaRecord)
+	savedDaRecord, err := darRepo.Update(toBeUpdatedDaRecord)
 	if err != nil {
 		m := "Failed to update data agreement record"
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
@@ -137,7 +139,7 @@ func ServiceUpdateSignatureObject(w http.ResponseWriter, r *http.Request) {
 	newRevision.SerializedHash = savedSignature.VerificationPayloadHash
 
 	// Save the revision to db
-	_, err = revision.Add(newRevision)
+	savedRevision, err := revision.Add(newRevision)
 	if err != nil {
 		m := fmt.Sprintf("Failed to create new revision: %v", newRevision.Id)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
@@ -145,7 +147,9 @@ func ServiceUpdateSignatureObject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := updateSignatureforDataAgreementRecordResp{
-		Signature: savedSignature,
+		DataAgreementRecord: savedDaRecord,
+		Revision:            savedRevision,
+		Signature:           savedSignature,
 	}
 
 	response, _ := json.Marshal(resp)
