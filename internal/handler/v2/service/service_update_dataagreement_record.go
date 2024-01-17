@@ -110,6 +110,7 @@ func ServiceUpdateDataAgreementRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	toBeUpdatedDaRecord.OptIn = optIn
+	toBeUpdatedDaRecord.State = config.Unsigned
 
 	currentDataAgreementRevision, err := revision.GetLatestByObjectIdAndSchemaName(toBeUpdatedDaRecord.DataAgreementId, config.DataAgreement)
 	if err != nil {

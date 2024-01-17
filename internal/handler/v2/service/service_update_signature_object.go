@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/bb-consent/api/internal/common"
@@ -13,6 +14,7 @@ import (
 	"github.com/bb-consent/api/internal/revision"
 	"github.com/bb-consent/api/internal/signature"
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // createSignatureFromUpdateSignatureRequestBody
@@ -83,10 +85,23 @@ func ServiceUpdateSignatureObject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	toBeUpdatedSignatureObject, err := signature.Get(toBeUpdatedDaRecord.SignatureId)
+	var toBeUpdatedSignatureObject signature.Signature
+
+	if len(strings.TrimSpace(toBeUpdatedDaRecord.SignatureId)) > 1 {
+		toBeUpdatedSignatureObject, err = signature.Get(toBeUpdatedDaRecord.SignatureId)
+		if err != nil {
+			m := "Failed to fetch signature for data agreement record"
+			common.HandleErrorV2(w, http.StatusBadRequest, m, err)
+			return
+		}
+	} else {
+		toBeUpdatedSignatureObject.Id = primitive.NewObjectID().Hex()
+	}
+
+	err = signature.VerifySignature(signatureReq.Signature.Signature, signatureReq.Signature.VerificationSignedBy)
 	if err != nil {
-		m := "Failed to fetch signature for data agreement record"
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
+		m := "Failed to verify signature for consent record"
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
 		return
 	}
 
@@ -118,6 +133,8 @@ func ServiceUpdateSignatureObject(w http.ResponseWriter, r *http.Request) {
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
+	newRevision.SerializedSnapshot = savedSignature.VerificationPayload
+	newRevision.SerializedHash = savedSignature.VerificationPayloadHash
 
 	// Save the revision to db
 	_, err = revision.Add(newRevision)

@@ -1,10 +1,10 @@
 package signature
 
 import (
-	"encoding/json"
 	"time"
 
-	"github.com/bb-consent/api/internal/common"
+	"github.com/bb-consent/api/internal/jwk"
+	"github.com/bb-consent/api/internal/jws"
 )
 
 type Signature struct {
@@ -34,40 +34,32 @@ func (s *Signature) Init(ObjectType string, ObjectReference string, SignedWithou
 }
 
 // CreateSignature
-func (s *Signature) CreateSignature(VerificationPayload interface{}, IsPayload bool) error {
+func (s *Signature) CreateSignature(serialisedSnapshot string, serialisedHash string) error {
 
-	// Verification Payload
-	verificationPayloadSerialised, err := json.Marshal(VerificationPayload)
-	if err != nil {
-		return err
-	}
-	s.VerificationPayload = string(verificationPayloadSerialised)
-
-	// Serialised hash using SHA-1
-	s.VerificationPayloadHash, err = common.CalculateSHA1(string(verificationPayloadSerialised))
-	if err != nil {
-		return err
-	}
-
-	if IsPayload {
-		// Payload
-		payload, err := json.Marshal(s)
-		if err != nil {
-			return err
-		}
-		s.Payload = string(payload)
-	}
+	s.VerificationPayload = serialisedSnapshot
+	s.VerificationPayloadHash = serialisedHash
 
 	return nil
 
 }
 
-// CreateSignatureForPolicy
-func CreateSignatureForObject(ObjectType string, ObjectReference string, SignedWithoutObjectReference bool, VerificationPayload interface{}, IsPayload bool, signature Signature) (Signature, error) {
+// CreateSignatureForConsentRecord
+func CreateSignatureForConsentRecord(ObjectType string, ObjectReference string, SignedWithoutObjectReference bool, serialisedSnapshot string, serialisedHash string, signature Signature) (Signature, error) {
 
 	// Create signature
 	signature.Init(ObjectType, ObjectReference, SignedWithoutObjectReference)
-	err := signature.CreateSignature(VerificationPayload, IsPayload)
+	err := signature.CreateSignature(serialisedSnapshot, serialisedHash)
 
 	return signature, err
+}
+
+// VerifySignature
+func VerifySignature(signature string, publicKey string) error {
+
+	jwsObj := jws.JWS{Key: jwk.FromJSON(publicKey), Signature: signature}
+	err := jwsObj.Verify()
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -28,6 +28,13 @@ func ServiceCreateBlankSignature(w http.ResponseWriter, r *http.Request) {
 	darRepo := daRecord.DataAgreementRecordRepository{}
 	darRepo.Init(organisationId)
 
+	_, err := darRepo.Get(dataAgreementRecordId)
+	if err != nil {
+		m := "Failed to fetch data agreement record"
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
+		return
+	}
+
 	// Get latest revision for data agreement record
 	daRecordRevision, err := revision.GetLatestByObjectIdAndSchemaName(dataAgreementRecordId, config.DataAgreementRecord)
 	if err != nil {
@@ -36,7 +43,7 @@ func ServiceCreateBlankSignature(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// create signature for data agreement record
-	toBeCreatedSignature, err := signature.CreateSignatureForObject("revision", daRecordRevision.Id, false, daRecordRevision, false, signature.Signature{})
+	toBeCreatedSignature, err := signature.CreateSignatureForConsentRecord("Revision", daRecordRevision.Id, false, daRecordRevision.SerializedSnapshot, daRecordRevision.SerializedHash, signature.Signature{})
 	if err != nil {
 		m := fmt.Sprintf("Failed to create signature for data agreement record: %v", dataAgreementRecordId)
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)

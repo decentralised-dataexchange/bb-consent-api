@@ -28,9 +28,29 @@ func createPairedDataAgreementRecord(dataAgreementId string, rev revision.Revisi
 	newDaRecord.DataAgreementRevisionId = rev.Id
 	newDaRecord.IndividualId = individualId
 	newDaRecord.OptIn = true
-	newDaRecord.State = config.Unsigned
+	newDaRecord.State = config.Signed
 
 	return newDaRecord
+}
+
+// createSignatureFromCreateSignatureRequestBody
+func createSignatureFromCreateSignatureRequestBody(toBeCreatedSignature signature.Signature, signatureReq signature.Signature) signature.Signature {
+
+	toBeCreatedSignature.Payload = signatureReq.Payload
+	toBeCreatedSignature.Signature = signatureReq.Signature
+	toBeCreatedSignature.VerificationMethod = signatureReq.VerificationMethod
+	toBeCreatedSignature.VerificationPayload = signatureReq.VerificationPayload
+	toBeCreatedSignature.VerificationPayloadHash = signatureReq.VerificationPayloadHash
+	toBeCreatedSignature.VerificationArtifact = signatureReq.VerificationArtifact
+	toBeCreatedSignature.VerificationSignedBy = signatureReq.VerificationSignedBy
+	toBeCreatedSignature.VerificationSignedAs = signatureReq.VerificationSignedAs
+	toBeCreatedSignature.VerificationJwsHeader = signatureReq.VerificationJwsHeader
+	toBeCreatedSignature.Timestamp = signatureReq.Timestamp
+	toBeCreatedSignature.SignedWithoutObjectReference = signatureReq.SignedWithoutObjectReference
+	toBeCreatedSignature.ObjectType = signatureReq.ObjectType
+	toBeCreatedSignature.ObjectReference = signatureReq.ObjectReference
+
+	return toBeCreatedSignature
 }
 
 type dataAgreementRecordReq struct {
@@ -123,12 +143,29 @@ func ServiceCreatePairedDataAgreementRecord(w http.ResponseWriter, r *http.Reque
 
 	newDataAgreementRecord := createPairedDataAgreementRecord(dataAgreement.Id, dataAgreementRevision, individual.Id)
 
+	var toBeCreatedSignature signature.Signature
+	toBeCreatedSignature.Id = primitive.NewObjectID().Hex()
+
+	// verify signature
+	err = signature.VerifySignature(dataAgreementRecordReq.Signature.Signature, dataAgreementRecordReq.Signature.VerificationSignedBy)
+	if err != nil {
+		m := "Failed to verify signature for consent record"
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
+		return
+	}
+
+	// create signature for data agreement record
+	toBeCreatedSignature = createSignatureFromCreateSignatureRequestBody(toBeCreatedSignature, dataAgreementRecordReq.Signature)
+	if err != nil {
+		m := "Failed to create signature for consent record"
+		common.HandleErrorV2(w, http.StatusBadRequest, m, err)
+		return
+	}
+
 	dataAgreementRecord := newDataAgreementRecord
 	dataAgreementRecord.OrganisationId = organisationId
-	currentSignature := dataAgreementRecordReq.Signature
 	dataAgreementRecord.Id = primitive.NewObjectID().Hex()
-	currentSignature.Id = primitive.NewObjectID().Hex()
-	dataAgreementRecord.SignatureId = currentSignature.Id
+	dataAgreementRecord.SignatureId = toBeCreatedSignature.Id
 
 	newRecordRevision, err := revision.CreateRevisionForDataAgreementRecord(dataAgreementRecord, individualId)
 	if err != nil {
@@ -136,13 +173,11 @@ func ServiceCreatePairedDataAgreementRecord(w http.ResponseWriter, r *http.Reque
 		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
 		return
 	}
-	// create signature for data agreement record
-	toBeCreatedSignature, err := signature.CreateSignatureForObject("revision", newRecordRevision.Id, false, newRecordRevision, true, currentSignature)
-	if err != nil {
-		m := fmt.Sprintf("Failed to create signature for data agreement record: %v", dataAgreementRecord.Id)
-		common.HandleErrorV2(w, http.StatusInternalServerError, m, err)
-		return
-	}
+
+	newRecordRevision.SerializedSnapshot = toBeCreatedSignature.VerificationPayload
+	newRecordRevision.SerializedHash = toBeCreatedSignature.VerificationPayloadHash
+	newRecordRevision.SignedWithoutObjectId = true
+	toBeCreatedSignature.SignedWithoutObjectReference = true
 
 	savedDataAgreementRecord, err := darRepo.Add(dataAgreementRecord)
 	if err != nil {
