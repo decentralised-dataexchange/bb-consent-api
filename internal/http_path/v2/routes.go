@@ -94,49 +94,49 @@ func SetRoutes(r *mux.Router, e *casbin.Enforcer, testMode bool) {
 	// Service api(s)
 
 	//  Data agreements
-	wrapper(ServiceReadDataAgreement, m.Chain(serviceHandler.ServiceReadDataAgreement, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	wrapper(ServiceListDataAgreements, m.Chain(serviceHandler.ServiceListDataAgreements, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	wrapper(ServiceReadDataAgreement, m.Chain(serviceHandler.ServiceReadDataAgreement, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	wrapper(ServiceListDataAgreements, m.Chain(serviceHandler.ServiceListDataAgreements, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Read an idp
 	wrapper(ServiceReadIdp, m.Chain(serviceHandler.ServiceReadIdp, m.LoggerNoAuth(), m.SetApplicationMode(), m.AddContentType())).Methods("GET")
 
 	// Policy
-	wrapper(ServiceReadPolicy, m.Chain(serviceHandler.ServiceReadPolicy, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	wrapper(ServiceReadPolicy, m.Chain(serviceHandler.ServiceReadPolicy, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Data attributes
-	wrapper(ServiceListDataAttributesForDataAgreement, m.Chain(serviceHandler.ServiceListDataAttributesForDataAgreement, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	wrapper(ServiceListDataAttributesForDataAgreement, m.Chain(serviceHandler.ServiceListDataAttributesForDataAgreement, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Verification mechanisms
 
-	wrapper(ServiceVerificationListDataAgreements, m.Chain(serviceHandler.ServiceVerificationListDataAgreements, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	wrapper(ServiceVerificationFetchDataAgreementRecord, m.Chain(serviceHandler.ServiceVerificationFetchDataAgreementRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	wrapper(ServiceVerificationFetchDataAgreementRecords, m.Chain(serviceHandler.ServiceVerificationFetchDataAgreementRecords, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	wrapper(ServiceVerificationListDataAgreements, m.Chain(serviceHandler.ServiceVerificationListDataAgreements, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	wrapper(ServiceVerificationFetchDataAgreementRecord, m.Chain(serviceHandler.ServiceVerificationFetchDataAgreementRecord, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	wrapper(ServiceVerificationFetchDataAgreementRecords, m.Chain(serviceHandler.ServiceVerificationFetchDataAgreementRecords, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Recording consent
-	wrapper(ServiceCreateDraftConsentRecord, m.Chain(serviceHandler.ServiceCreateDraftConsentRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("POST")
-	wrapper(ServiceCreateDataAgreementRecord, m.Chain(serviceHandler.ServiceCreateDataAgreementRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("POST")
-	wrapper(ServiceUpdateDataAgreementRecord, m.Chain(serviceHandler.ServiceUpdateDataAgreementRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("PUT")
-	wrapper(ServiceDeleteIndividualDataAgreementRecords, m.Chain(serviceHandler.ServiceDeleteIndividualDataAgreementRecords, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("DELETE")
-	wrapper(ServiceCreatePairedDataAgreementRecord, m.Chain(serviceHandler.ServiceCreatePairedDataAgreementRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("POST")
-	wrapper(ServiceUpdateSignatureObject, m.Chain(serviceHandler.ServiceUpdateSignatureObject, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("PUT")
-	wrapper(ServiceCreateBlankSignature, m.Chain(serviceHandler.ServiceCreateBlankSignature, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	wrapper(ServiceCreateDraftConsentRecord, m.Chain(serviceHandler.ServiceCreateDraftConsentRecord, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	wrapper(ServiceCreateDataAgreementRecord, m.Chain(serviceHandler.ServiceCreateDataAgreementRecord, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	wrapper(ServiceUpdateDataAgreementRecord, m.Chain(serviceHandler.ServiceUpdateDataAgreementRecord, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("PUT")
+	wrapper(ServiceDeleteIndividualDataAgreementRecords, m.Chain(serviceHandler.ServiceDeleteIndividualDataAgreementRecords, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("DELETE")
+	wrapper(ServiceCreatePairedDataAgreementRecord, m.Chain(serviceHandler.ServiceCreatePairedDataAgreementRecord, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	wrapper(ServiceUpdateSignatureObject, m.Chain(serviceHandler.ServiceUpdateSignatureObject, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("PUT")
+	wrapper(ServiceCreateBlankSignature, m.Chain(serviceHandler.ServiceCreateBlankSignature, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("POST")
 
-	wrapper(ServiceReadDataAgreementRecord, m.Chain(serviceHandler.ServiceReadDataAgreementRecord, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	wrapper(ServiceFetchIndividualDataAgreementRecords, m.Chain(serviceHandler.ServiceFetchIndividualDataAgreementRecords, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	wrapper(ServiceFetchRecordsForDataAgreement, m.Chain(serviceHandler.ServiceFetchRecordsForDataAgreement, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	wrapper(ServiceReadDataAgreementRecord, m.Chain(serviceHandler.ServiceReadDataAgreementRecord, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	wrapper(ServiceFetchIndividualDataAgreementRecords, m.Chain(serviceHandler.ServiceFetchIndividualDataAgreementRecords, m.ValidateIndividualId(), m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	wrapper(ServiceFetchRecordsForDataAgreement, m.Chain(serviceHandler.ServiceFetchRecordsForDataAgreement, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
-	wrapper(ServiceFetchRecordsHistory, m.Chain(serviceHandler.ServiceFetchRecordsHistory, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	wrapper(ServiceFetchRecordsHistory, m.Chain(serviceHandler.ServiceFetchRecordsHistory, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKeyAndIndividualId(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	wrapper(ServiceReadOrganisation, m.Chain(serviceHandler.ServiceReadOrganisation, m.LoggerNoAuth(), m.SetApplicationMode(), m.AddContentType())).Methods("GET")
 	wrapper(ServiceReadOrganisationLogoImage, m.Chain(serviceHandler.ServiceReadOrganisationLogoImage, m.LoggerNoAuth(), m.SetApplicationMode(), m.AddContentType())).Methods("GET")
 	wrapper(ServiceReadOrganisationCoverImage, m.Chain(serviceHandler.ServiceReadOrganisationCoverImage, m.LoggerNoAuth(), m.SetApplicationMode(), m.AddContentType())).Methods("GET")
-	wrapper(ServiceReadOrganisationImage, m.Chain(serviceHandler.ServiceReadOrganisationImage, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	wrapper(ServiceReadOrganisationImage, m.Chain(serviceHandler.ServiceReadOrganisationImage, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Individual related api(s)
-	wrapper(ServiceReadIndividual, m.Chain(serviceIndividualHandler.ServiceReadIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
-	wrapper(ServiceCreateIndividual, m.Chain(serviceIndividualHandler.ServiceCreateIndividual, m.Logger(), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("POST")
-	wrapper(ServiceUpdateIndividual, m.Chain(serviceIndividualHandler.ServiceUpdateIndividual, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("PUT")
-	wrapper(ServiceListIndividuals, m.Chain(serviceIndividualHandler.ServiceListIndividuals, m.Logger(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	wrapper(ServiceReadIndividual, m.Chain(serviceIndividualHandler.ServiceReadIndividual, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
+	wrapper(ServiceCreateIndividual, m.Chain(serviceIndividualHandler.ServiceCreateIndividual, m.Logger(), m.ValidateIndividualId(), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("POST")
+	wrapper(ServiceUpdateIndividual, m.Chain(serviceIndividualHandler.ServiceUpdateIndividual, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("PUT")
+	wrapper(ServiceListIndividuals, m.Chain(serviceIndividualHandler.ServiceListIndividuals, m.Logger(), m.ValidateIndividualId(), m.Authorize(e), m.SetApplicationMode(), m.ValidateAPIKey(), m.Authenticate(), m.AddContentType())).Methods("GET")
 
 	// Audit api(s)
 
