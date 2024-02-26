@@ -81,7 +81,6 @@ func GetRbacPolicies(testMode bool) [][]string {
 		{"user", "/service/organisation/coverimage", "GET"},
 		{"user", "/service/organisation/logoimage", "GET"},
 		{"user", "/service/individuals", "GET"},
-		{"user", "/service/individual", "POST"},
 		{"user", "/service/individual/{individualId}", "(GET)|(PUT)"},
 		{"user", "/service/image/{imageId}", "GET"},
 		{"user", "/service/individual/record", "DELETE"},
