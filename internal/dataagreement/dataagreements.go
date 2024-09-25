@@ -49,6 +49,13 @@ type Controller struct {
 	Url  string `json:"url"`
 }
 
+type DataSource struct {
+	Name                string `json:"name" validate:"required"`
+	Sector              string `json:"sector" validate:"required"`
+	Location            string `json:"location" validate:"required"`
+	PrivacyDashboardUrl string `json:"privacyDashboardUrl"`
+}
+
 type DataAgreement struct {
 	Id                      string          `json:"id" bson:"_id,omitempty"`
 	Version                 string          `json:"version"`
@@ -75,6 +82,7 @@ type DataAgreement struct {
 	Dpia                    string          `json:"dpia"`
 	CompatibleWithVersion   string          `json:"compatibleWithVersion"`
 	Controller              Controller      `json:"controller"`
+	DataSources             []DataSource    `json:"dataSources"`
 }
 
 type DataAgreementWithObjectData struct {

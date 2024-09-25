@@ -102,6 +102,7 @@ type dataAgreement struct {
 	Dpia                    string                          `json:"dpia"`
 	CompatibleWithVersion   string                          `json:"compatibleWithVersion"`
 	Controller              dataagreement.Controller        `json:"controller"`
+	DataSources             []dataagreement.DataSource      `json:"dataSources"`
 }
 
 type addDataAgreementReq struct {
@@ -163,6 +164,14 @@ func validateAddDataAgreementRequestBody(dataAgreementReq addDataAgreementReq) e
 		return errors.New("invalid data use provided")
 	}
 
+	if strings.TrimSpace(dataAgreementReq.DataAgreement.DataUse) == "data_using_service" || strings.TrimSpace(dataAgreementReq.DataAgreement.MethodOfUse) == "data_using_service" {
+		for _, dataSource := range dataAgreementReq.DataAgreement.DataSources {
+			if err := validate.Struct(dataSource); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -174,6 +183,22 @@ func setDataAgreementLifecycle(active bool) string {
 		lifecycle = "draft"
 	}
 	return lifecycle
+}
+
+func setDataAgreementDusDataSource(dataSourcesReq []dataagreement.DataSource) []dataagreement.DataSource {
+	dataSources := []dataagreement.DataSource{}
+
+	for _, dataSource := range dataSourcesReq {
+		var tempDataSource dataagreement.DataSource
+
+		tempDataSource.Name = dataSource.Name
+		tempDataSource.Sector = dataSource.Sector
+		tempDataSource.Location = dataSource.Location
+		tempDataSource.PrivacyDashboardUrl = dataSource.PrivacyDashboardUrl
+		dataSources = append(dataSources, tempDataSource)
+
+	}
+	return dataSources
 }
 
 func setDataAttributesFromReq(requestBody addDataAgreementReq) []dataagreement.DataAttribute {
@@ -244,6 +269,13 @@ func setDataAgreementFromReq(requestBody addDataAgreementReq, newDataAgreement d
 		newDataAgreement.MethodOfUse = requestBody.DataAgreement.DataUse
 	} else {
 		newDataAgreement.DataUse = requestBody.DataAgreement.MethodOfUse
+	}
+
+	if newDataAgreement.DataUse == "data_using_service" {
+		dataSources := setDataAgreementDusDataSource(requestBody.DataAgreement.DataSources)
+		newDataAgreement.DataSources = dataSources
+	} else {
+		newDataAgreement.DataSources = []dataagreement.DataSource{}
 	}
 
 	return newDataAgreement

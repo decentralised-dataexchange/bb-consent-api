@@ -278,6 +278,7 @@ type dataAgreementForObjectData struct {
 	Dpia                    string                        `json:"dpia"`
 	CompatibleWithVersion   string                        `json:"compatibleWithVersion"`
 	Controller              dataagreement.Controller      `json:"controller"`
+	DataSources             []dataagreement.DataSource    `json:"dataSources"`
 }
 
 // InitForDraftDataAgreement
@@ -317,6 +318,7 @@ func CreateRevisionForDataAgreement(newDataAgreement dataagreement.DataAgreement
 		CompatibleWithVersion:   newDataAgreement.CompatibleWithVersion,
 		ControllerName:          newDataAgreement.ControllerName,
 		Controller:              newDataAgreement.Controller,
+		DataSources:             newDataAgreement.DataSources,
 	}
 
 	// Create revision
@@ -353,6 +355,7 @@ func UpdateRevisionForDataAgreement(updatedDataAgreement dataagreement.DataAgree
 		CompatibleWithVersion:   updatedDataAgreement.CompatibleWithVersion,
 		ControllerName:          updatedDataAgreement.ControllerName,
 		Controller:              updatedDataAgreement.Controller,
+		DataSources:             updatedDataAgreement.DataSources,
 	}
 
 	// Initialise revision
@@ -435,6 +438,7 @@ func CreateRevisionForDraftDataAgreement(newDataAgreement dataagreement.DataAgre
 		CompatibleWithVersion:   newDataAgreement.CompatibleWithVersion,
 		ControllerName:          newDataAgreement.ControllerName,
 		Controller:              newDataAgreement.Controller,
+		DataSources:             newDataAgreement.DataSources,
 	}
 
 	// Create revision
