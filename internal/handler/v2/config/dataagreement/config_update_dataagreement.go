@@ -53,6 +53,14 @@ func validateUpdateDataAgreementRequestBody(dataAgreementReq updateDataAgreement
 		return errors.New("invalid data use provided")
 	}
 
+	if strings.TrimSpace(dataAgreementReq.DataAgreement.DataUse) == "data_using_service" || strings.TrimSpace(dataAgreementReq.DataAgreement.MethodOfUse) == "data_using_service" {
+		for _, dataSource := range dataAgreementReq.DataAgreement.DataSources {
+			if err := validate.Struct(dataSource); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -152,6 +160,14 @@ func updateDataAgreementFromRequestBody(requestBody updateDataAgreementReq, toBe
 		toBeUpdatedDataAgreement.MethodOfUse = requestBody.DataAgreement.DataUse
 	} else {
 		toBeUpdatedDataAgreement.DataUse = requestBody.DataAgreement.MethodOfUse
+	}
+
+	if toBeUpdatedDataAgreement.DataUse == "data_using_service" {
+		dataSources := setDataAgreementDusDataSource(requestBody.DataAgreement.DataSources)
+		toBeUpdatedDataAgreement.DataSources = dataSources
+	} else {
+		dataSources := []dataagreement.DataSource{}
+		toBeUpdatedDataAgreement.DataSources = dataSources
 	}
 
 	return toBeUpdatedDataAgreement
