@@ -162,6 +162,7 @@ func setDataAgreementWithRevisions(dataAgreement dataagreement.DataAgreement, re
 	dataAgreementWithRevision.Dpia = dataAgreement.Dpia
 	dataAgreementWithRevision.DataUse = dataAgreement.DataUse
 	dataAgreementWithRevision.CompatibleWithVersion = dataAgreement.CompatibleWithVersion
+	dataAgreementWithRevision.DataSources = dataAgreement.DataSources
 
 	return dataAgreementWithRevision
 }
@@ -244,6 +245,7 @@ type dataAgreementWithRevisions struct {
 	Dpia                    string                        `json:"dpia"`
 	CompatibleWithVersion   string                        `json:"compatibleWithVersion"`
 	Controller              dataagreement.Controller      `json:"controller"`
+	DataSources             []dataagreement.DataSource    `json:"dataSources"`
 }
 
 func dataAgreementsWithRevisionsToInterfaceSlice(dataAgreements []dataAgreementWithRevisions) []interface{} {
